@@ -1,24 +1,24 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const Users = sequelize.define('Users', {
-        Name: {
+    const Sessions = sequelize.define('Users', {
+        SessionName: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        Password: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-		RefreshToken: {
+		Attributes: {
 			type: DataTypes.STRING,
 			allowNull: true
 		},
-		List_SessionNames: {
+        List_Players: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+		List_FinalScores: {
 			type: DataTypes.STRING,
 			allowNull: true,
 		},
     })
 
-    return Users
+    return Sessions
 }

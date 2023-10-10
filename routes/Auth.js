@@ -31,14 +31,14 @@ router.post('/login', async (req, res) => {
 //__________________________________________________Registration__________________________________________________
 
 router.post('/registration', async (req, res) => {
-
+	
 	try {
 
 		const { Name, Password } = req.body
 		if (!Name || !Password) return res.sendStatus(401)
 
 		const tmp = await Users.findOne({ where: { Name: Name } })
-		if(tmp) res.sendStatus(409)
+		if(tmp) return res.sendStatus(409)
 
 		bcrypt.hash(Password, 10).then( async (hashedPassword) => {
 
