@@ -14,10 +14,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: true
 		},
-		List_SessionNames: {
-			type: DataTypes.STRING,
-			allowNull: true,
-		},
     })
 
     return Users

@@ -5,6 +5,10 @@ require('dotenv').config()
 const express = require('express')
 const app = express()
 
+const { Users, Sessions } = require('./models')
+Users.hasMany(Sessions, { foreignKey: 'userId' })
+Sessions.belongsTo(Users, { foreignKey: 'userId' })
+
 const db = require('./models')
 const cookieParser = require('cookie-parser')
 
@@ -32,9 +36,50 @@ app.use('/logout', require('./routes/Logout'))
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
 app.use(verifyJWT)
-app.get('/home', (req, res) => {
-	res.send('home')
+app.post('/game', async (req, res) => {
+
+	const { Attributes, List_Players, List_FinalScores } = req.body
+
+	Users.findOne({ where: { id: req.id }, include: Sessions }).then(async (user) => {
+
+		if(user.Sessions.length === 0) {
+
+			//add first session for user
+			Attributes.SessionName = 'session_0'
+			await Sessions.create({ Attributes, List_Players, List_FinalScores: JSON.stringify([List_FinalScores]), userId: req.id }).then(() => {
+				return res.sendStatus(201)
+			}).catch(() => {
+				return res.sendStatus(500)
+			})
+
+		}
+
+		for(let i = 0; user.Sessions.length >= i; i++) {
+			if(Attributes.SessionName === '' && !user.Sessions[i]) {
+			
+				//add new session with free session_index
+				Attributes.SessionName = `session_${i}`
+				await Sessions.create({ Attributes, List_Players, List_FinalScores: JSON.stringify([List_FinalScores]), userId: req.id }).then(() => {
+					return res.sendStatus(201)
+				}).catch(() => {
+					return res.sendStatus(500)
+				})
+
+			} else if(user.Sessions[i].Attributes.SessionName === data.Attributes.SessionName) {
+
+				//update session
+
+			}
+		}
+
+	}).catch(() => {
+		res.sendStatus(403)
+	})
+
+	return res.sendStatus(500)
+
 })
+
 
 
 

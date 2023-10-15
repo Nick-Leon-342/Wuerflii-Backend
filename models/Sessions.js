@@ -1,14 +1,10 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const Sessions = sequelize.define('Users', {
-        SessionName: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
+    const Sessions = sequelize.define('Sessions', {
 		Attributes: {
 			type: DataTypes.STRING,
-			allowNull: true
+			allowNull: false
 		},
         List_Players: {
             type: DataTypes.STRING,
