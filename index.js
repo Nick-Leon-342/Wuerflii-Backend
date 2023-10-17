@@ -65,7 +65,7 @@ app.post('/game', async (req, res) => {
 
 				//update session
 				const tmp = [...JSON.parse(currentSession.List_FinalScores)]
-				tmp.push(FinalScores)
+				tmp.unshift(FinalScores)
 				const list_updated = JSON.stringify(tmp)
 
 				await currentSession.update({
