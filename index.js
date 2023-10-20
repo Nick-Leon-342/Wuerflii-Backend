@@ -105,6 +105,28 @@ app.get('/selectsession', async (req, res) => {
 
 })
 
+app.delete('/selectsession', async (req, res) => {
+
+	const attributes = { 
+		Columns: req.query.Columns,
+		LastPlayed: req.query.LastPlayed,
+		CreatedDate: req.query.CreatedDate,
+		SessionName: req.query.SessionName
+	}
+
+	Sessions.destroy({
+		where: { 
+			userId: req.id,
+			Attributes: JSON.stringify(attributes)
+		}
+	}).then(() => {
+		res.sendStatus(204)
+	}).catch(() => {
+		res.sendStatus(500)
+	})
+
+})
+
 app.get('/sessionpreview', async (req, res) => {
 	
 	Users.findOne({ where: { id: req.id }, include: Sessions }).then((user) => {
