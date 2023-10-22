@@ -9,6 +9,7 @@ const { Users, Sessions } = require('./models')
 Users.hasMany(Sessions, { foreignKey: 'userId' })
 Sessions.belongsTo(Users, { foreignKey: 'userId' })
 
+const sendToken = require('./routes/SendToken')
 const db = require('./models')
 const cookieParser = require('cookie-parser')
 
@@ -35,6 +36,7 @@ app.use('/logout', require('./routes/Logout'))
 
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
+const bcrypt = require('bcrypt')
 app.use(verifyJWT)
 app.post('/game', async (req, res) => {
 
@@ -140,6 +142,27 @@ app.get('/sessionpreview', async (req, res) => {
 
 	}).catch(() => {
 		return res.sendStatus(403)
+	})
+
+})
+
+app.post('/changecredentials', async (req, res) => {
+
+	const { Name, Password } = req.body
+	const tmp = await Users.findOne({ where: { Name: Name } })
+	if(tmp) return res.sendStatus(409)
+
+	let hashedPassword
+	if(Password) hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
+
+	await Users.findOne({ where: { id: req.id }}).then(async (user) => {
+		await user.update({ Name, Password: hashedPassword }).then(() => {
+			sendToken(res, user)
+		}).catch(() => {
+			res.sendStatus(500)
+		})
+	}).catch(() => {
+		res.sendStatus(403)
 	})
 
 })

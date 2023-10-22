@@ -4,7 +4,7 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const router = express.Router()
 const { Users } = require('../models')
-const jwt = require('jsonwebtoken')
+const sendToken = require('./SendToken')
 
 
 
@@ -24,6 +24,7 @@ router.post('/login', async (req, res) => {
 	sendToken(res, user)
 
 })
+
 
 
 
@@ -58,37 +59,6 @@ router.post('/registration', async (req, res) => {
 	}
 
 })
-
-
-
-
-
-//__________________________________________________SendToken__________________________________________________
-
-async function sendToken(res, user) {
-
-	//create both token
-	const id = user.id
-	const accessToken = jwt.sign(
-		{ 'id': id },
-		process.env.ACCESS_TOKEN_SECRET,
-		{ expiresIn: '10s' }
-	)
-	const refreshToken = jwt.sign(
-		{ 'id': id },
-		process.env.REFRESH_TOKEN_SECRET,
-		{ expiresIn: '1d' }
-	)
-
-	//save in database
-	const updatedRefreshToken = { RefreshToken: refreshToken }
-	await Users.update(updatedRefreshToken, { where: { id: id } })
-	
-	//send refreshtoken as cookie and accesstoken as response in json
-	res.cookie('RefreshToken', refreshToken, { httpOnly: true, sameSite:'None', maxAge: 24 * 60 * 60 * 1000, secure: true })
-	res.json({ accessToken })
-
-}
 
 
 
