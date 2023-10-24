@@ -17,10 +17,11 @@ router.delete('/', async (req, res) => {
 	const refreshToken = cookies.RefreshToken
 
 	const user = await Users.findOne({ where: { RefreshToken: refreshToken } })
+	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
 
 	//there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
 	if(!user) {
-		res.clearCookie('RefreshToken', { httpOnly: true, sameSite:'None', maxAge: 24 * 60 * 60 * 1000, secure: true })
+		res.clearCookie('RefreshToken', { httpOnly: true, sameSite:'None', maxAge: maxAge, secure: process.env.SSL_OR_LOCALHOST || true })
 		return res.sendStatus(204)
 	}
 
@@ -28,7 +29,7 @@ router.delete('/', async (req, res) => {
 	const updatedRefreshToken = { RefreshToken: '' }
 	await Users.update(updatedRefreshToken, { where: { RefreshToken: refreshToken } })
 	
-	res.clearCookie('RefreshToken', { httpOnly: true, sameSite:'None', maxAge: 24 * 60 * 60 * 1000, secure: true })
+	res.clearCookie('RefreshToken', { httpOnly: true, sameSite:'None', maxAge: maxAge, secure: process.env.SSL_OR_LOCALHOST || true })
 	res.sendStatus(204)
 
 })

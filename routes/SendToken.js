@@ -12,12 +12,11 @@ module.exports = async function sendToken(res, user) {
 	const accessToken = jwt.sign(
 		{ 'id': id },
 		process.env.ACCESS_TOKEN_SECRET,
-		{ expiresIn: '10s' }
+		{ expiresIn: `${process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
 	)
 	const refreshToken = jwt.sign(
 		{ 'id': id },
-		process.env.REFRESH_TOKEN_SECRET,
-		{ expiresIn: '1d' }
+		process.env.REFRESH_TOKEN_SECRET
 	)
 
 	//save in database
@@ -25,7 +24,8 @@ module.exports = async function sendToken(res, user) {
 	await Users.update(updatedRefreshToken, { where: { id: id } })
 	
 	//send refreshtoken as cookie and accesstoken as response in json
-	res.cookie('RefreshToken', refreshToken, { httpOnly: true, sameSite:'None', maxAge: 24 * 60 * 60 * 1000, secure: true })
+	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
+	res.cookie('RefreshToken', refreshToken, { httpOnly: true, sameSite:'None', maxAge: maxAge, secure: process.env.SSL_OR_LOCALHOST || true })
 	res.json({ accessToken })
 
 }
