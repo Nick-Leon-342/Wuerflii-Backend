@@ -38,88 +38,90 @@ app.use('/logout', require('./routes/Logout'))
 const verifyJWT = require('./middleware/verifyJWT')
 const bcrypt = require('bcrypt')
 app.use(verifyJWT)
+
 app.post('/game', async (req, res) => {
 
-	const { Attributes, List_Players, FinalScores } = req.body
-	const sessionName = JSON.parse(Attributes).SessionName
+	const { id, Attributes, List_Players, FinalScores } = req.body
 
-	await Users.findOne({ where: { id: req.id }, include: Sessions }).then(async (user) => {
-		for(let i = 0; user.Sessions.length >= i; i++) {
-			const currentSession = user.Sessions[i]
-			if(sessionName === '' && !currentSession) {
+	if(id) {
 			
-				//add new session with free session_index
-				const a = JSON.parse(Attributes)
-				a.SessionName = `session_${i}`
-				await Sessions.create({ 
-					Attributes: JSON.stringify(a), 
-					List_Players, 
-					List_FinalScores: JSON.stringify([FinalScores]), 
-					userId: req.id 
-				}).then(() => {
-					return res.sendStatus(201)
-				}).catch(() => {
-					return res.sendStatus(500)
-				})
-				break
+		//____________________UpdateSession____________________
 
-			} else if(currentSession && JSON.parse(currentSession.Attributes).SessionName === sessionName) {
+		Sessions.findOne({ where: { userId: req.id, id: id } }).then((s) => {
 
-				//update session
-				const tmp = [...JSON.parse(currentSession.List_FinalScores)]
-				tmp.unshift(FinalScores)
-				const list_updated = JSON.stringify(tmp)
+			const tmp = [...JSON.parse(s.List_FinalScores)]
+			tmp.unshift(FinalScores)
+			const list_updated = JSON.stringify(tmp)
 
-				await currentSession.update({
-					Attributes,
-					List_Players,
-					List_FinalScores: list_updated
-				}).then(() => {
-					return res.sendStatus(200)
-				}).catch(() => {
-					return res.sendStatus(500)
-				})
-				break
+			s.update({
+				Attributes,
+				List_Players,
+				List_FinalScores: list_updated
+			}).then(() => {
+				return res.sendStatus(204)
+			}).catch(() => {
+				return res.sendStatus(500)
+			})
 
-			}
-		}
-	}).catch(() => {
-		return res.sendStatus(403)
-	})
+		}).catch(() => res.sendStatus(400))
+
+	} else {
+
+		//____________________AddNewSession____________________
+
+		Sessions.create({ 
+			Attributes,
+			List_Players, 
+			List_FinalScores: JSON.stringify([FinalScores]), 
+			userId: req.id 
+		}).then(() => {
+			return res.sendStatus(201)
+		}).catch(() => {
+			return res.sendStatus(500)
+		})
+
+	}
 
 })
 
 app.get('/selectsession', async (req, res) => {
 
-	const list_sessions = []
-
-	Users.findOne({ where: { id: req.id }, include: Sessions }).then((user) => {
+	Sessions.findAll({ where: { userId: req.id } }).then((list) => {
 		
-		if(!user.Sessions) return res.sendStatus(404)
-		for(const s of user.Sessions) {
-			list_sessions.push({ Attributes: s.Attributes, List_Players: s.List_Players })
-		}
-		return res.json(list_sessions)
+		return res.json(list)
 
 	}).catch(() => {
-		return res.sendStatus(403)
+		return res.sendStatus(500)
+	})
+
+})
+
+app.post('/selectsession', async (req, res) => {
+
+	const session = req.body
+
+	Sessions.findOne({ where: { userId: req.id, id: session.id }}).then(async (s) => {
+
+		s.update({ Attributes: JSON.stringify(session.Attributes), List_Players: JSON.stringify(session.List_Players) }).then(() => {
+			res.sendStatus(204)
+		}).catch((e) => {
+			console.log(e)
+			res.sendStatus(500)
+		})
+
+	}).catch((e) => {
+		console.log(e)
+		res.sendStatus(500)
 	})
 
 })
 
 app.delete('/selectsession', async (req, res) => {
 
-	const attributes = { 
-		Columns: req.query.Columns,
-		LastPlayed: req.query.LastPlayed,
-		CreatedDate: req.query.CreatedDate,
-		SessionName: req.query.SessionName
-	}
-
 	Sessions.destroy({
 		where: { 
 			userId: req.id,
-			Attributes: JSON.stringify(attributes)
+			id: req.query.id
 		}
 	}).then(() => {
 		res.sendStatus(204)
@@ -130,17 +132,15 @@ app.delete('/selectsession', async (req, res) => {
 })
 
 app.get('/sessionpreview', async (req, res) => {
-	
-	Users.findOne({ where: { id: req.id }, include: Sessions }).then((user) => {
 
-		const sessionName = req.query.SessionName
-		for(const s of user.Sessions) {
-			if(JSON.parse(s.Attributes).SessionName === sessionName) {
-				return res.json(s.List_FinalScores)
-			}
-		}
+	Sessions.findOne({ where: { id: req.query.id, userId: req.id }}).then((s) => {
 
-	}).catch(() => {
+		if(!s) return res.sendStatus(404)
+
+		return res.json(s.List_FinalScores)
+
+	}).catch((e) => {
+		console.log(e)
 		return res.sendStatus(403)
 	})
 
@@ -155,7 +155,7 @@ app.post('/changecredentials', async (req, res) => {
 	let hashedPassword
 	if(Password) hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
 
-	await Users.findOne({ where: { id: req.id }}).then(async (user) => {
+	Users.findOne({ where: { id: req.id }}).then(async (user) => {
 		await user.update({ Name, Password: hashedPassword }).then(() => {
 			sendToken(res, user)
 		}).catch(() => {
