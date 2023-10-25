@@ -20,7 +20,7 @@ router.delete('/', async (req, res) => {
 
 	//there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
 	if(!user) {
-		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite:'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
+		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
 		return res.sendStatus(204)
 	}
 
@@ -28,7 +28,7 @@ router.delete('/', async (req, res) => {
 	const updatedRefreshToken = { RefreshToken: '' }
 	await Users.update(updatedRefreshToken, { where: { RefreshToken: refreshToken } })
 	
-	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite:'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
+	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
 	res.sendStatus(204)
 
 })
