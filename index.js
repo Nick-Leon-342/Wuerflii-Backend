@@ -39,6 +39,18 @@ const verifyJWT = require('./middleware/verifyJWT')
 const bcrypt = require('bcrypt')
 app.use(verifyJWT)
 
+app.get('/creategame', (req, res) => {
+	res.sendStatus(200)
+})
+
+app.get('/enternames', (req, res) => {
+	res.sendStatus(200)
+})
+
+app.get('/game', (req, res) => {
+	res.sendStatus(200)
+})
+
 app.post('/game', async (req, res) => {
 
 	const { id, Attributes, List_Players, FinalScores } = req.body
@@ -82,6 +94,10 @@ app.post('/game', async (req, res) => {
 
 	}
 
+})
+
+app.get('/endscreen', (req, res) => {
+	res.sendStatus(200)
 })
 
 app.get('/selectsession', async (req, res) => {
