@@ -183,6 +183,19 @@ app.post('/changecredentials', async (req, res) => {
 
 })
 
+app.post('/updatelistplayers', async (req, res) => {
+
+	const { id, List_Players } = req.body
+	const userId = req.id
+
+	Sessions.update({ List_Players: List_Players }, { where: { id, userId }}).then((s) => {
+		res.sendStatus(204)
+	}).catch(() => {
+		res.sendStatus(500)
+	})
+
+})
+
 
 
 
