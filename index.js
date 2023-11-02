@@ -55,29 +55,28 @@ app.get('/game', (req, res) => {
 
 app.post('/game', async (req, res) => {
 
-	const { id, Attributes, List_Players, FinalScores } = req.body
+	const rb = req.body
+	const id = rb.id
+	const Attributes  = rb.Attributes
+	const List_Players = rb.List_Players
+	const fs = rb.FinalScores
 
 	if(id) {
 			
 		//____________________UpdateSession____________________
 
-		Sessions.findOne({ where: { userId: req.id, id: id } }).then((s) => {
+		Sessions.update({ Attributes, List_Players }, { where: { userId: req.id, id: id } }).then(() => {
 
-			const tmp = [...JSON.parse(s.List_FinalScores)]
-			tmp.unshift(FinalScores)
-			const list_updated = JSON.stringify(tmp)
-
-			s.update({
-				Attributes,
-				List_Players,
-				List_FinalScores: list_updated
-			}).then(() => {
-				return res.sendStatus(204)
-			}).catch(() => {
-				return res.sendStatus(500)
+			FinalScores.create({ userId: req.id, sessionId: id, ...fs }).then(() => {
+				res.sendStatus(204)
+			}).catch((err) => {
+				console.log(err)
+				res.sendStatus(500)
 			})
 
-		}).catch(() => res.sendStatus(400))
+		}).catch(() => 
+			res.sendStatus(400)
+		)
 
 	} else {
 
@@ -86,10 +85,16 @@ app.post('/game', async (req, res) => {
 		Sessions.create({ 
 			Attributes,
 			List_Players, 
-			List_FinalScores: JSON.stringify([FinalScores]), 
 			userId: req.id 
-		}).then(() => {
-			return res.sendStatus(201)
+		}).then((s) => {
+
+			FinalScores.create({ userId: req.id, sessionId: s.id, ...fs }).then(() => {
+				res.sendStatus(201)
+			}).catch((err) => {
+				console.log(err)
+				res.sendStatus(500)
+			})
+
 		}).catch(() => {
 			return res.sendStatus(500)
 		})
@@ -151,15 +156,25 @@ app.delete('/selectsession', async (req, res) => {
 
 app.get('/sessionpreview', async (req, res) => {
 
-	Sessions.findOne({ where: { id: req.query.id, userId: req.id }}).then((s) => {
+	FinalScores.findAll({ where: { sessionId: req.query.id, userId: req.id } }).then((list) => {
 
-		if(!s) return res.sendStatus(404)
+		if(!list) return res.sendStatus(404)
 
-		return res.json(s.List_FinalScores)
+		const tmp = []
+		for(const f of list) {
+			tmp.push({
+				Played: f.createdAt,
+				Columns: f.Columns,
+				Surrender: f.Surrender,
+				List_Winner: f.List_Winner,
+				PlayerScores: f.PlayerScores,
+			})
+		}
+		res.json(tmp)
 
-	}).catch((e) => {
-		console.log(e)
-		return res.sendStatus(403)
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
 	})
 
 })

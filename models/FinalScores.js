@@ -3,11 +3,7 @@
 module.exports = (sequelize, DataTypes) => {
     const FinalScores = sequelize.define('FinalScores', {
 		userId: {
-			type: DataTypes.TEXT,
-			allowNull: false,
-		},
-		Played: {
-			type: DataTypes.TEXT,
+			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
         Columns: {
@@ -23,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false,
 		},
 		PlayerScores: {
-			type: DataTypes.TEXT,
+			type: DataTypes.JSON,
 			allowNull: false,
 		},
     })

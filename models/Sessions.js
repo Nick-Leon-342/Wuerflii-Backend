@@ -10,10 +10,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.TEXT,
             allowNull: false,
         },
-		List_FinalScores: {
-			type: DataTypes.TEXT,
-			allowNull: true,
-		},
     })
 
     return Sessions
