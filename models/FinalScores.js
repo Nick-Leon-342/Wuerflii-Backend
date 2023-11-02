@@ -2,6 +2,10 @@
 
 module.exports = (sequelize, DataTypes) => {
     const FinalScores = sequelize.define('FinalScores', {
+		userId: {
+			type: DataTypes.TEXT,
+			allowNull: false,
+		},
 		Played: {
 			type: DataTypes.TEXT,
 			allowNull: false,

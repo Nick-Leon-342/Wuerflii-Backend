@@ -5,9 +5,11 @@ require('dotenv').config()
 const express = require('express')
 const app = express()
 
-const { Users, Sessions } = require('./models')
+const { Users, Sessions, FinalScores } = require('./models')
 Users.hasMany(Sessions, { foreignKey: 'userId' })
 Sessions.belongsTo(Users, { foreignKey: 'userId' })
+Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
+FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
 
 const sendToken = require('./routes/SendToken')
 const db = require('./models')
