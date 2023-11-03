@@ -2,12 +2,20 @@
 
 module.exports = (sequelize, DataTypes) => {
     const Sessions = sequelize.define('Sessions', {
-		Attributes: {
-			type: DataTypes.TEXT,
+		Columns: {
+			type: DataTypes.INTEGER,
 			allowNull: false
 		},
-        List_Players: {
-            type: DataTypes.TEXT,
+        InputType: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+        },
+        LastPlayed: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        CreatedDate: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
     })

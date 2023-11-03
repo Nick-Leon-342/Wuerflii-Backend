@@ -2,29 +2,35 @@
 
 require('dotenv').config()
 
-const express = require('express')
-const app = express()
-
-const { Users, Sessions, FinalScores } = require('./models')
-Users.hasMany(Sessions, { foreignKey: 'userId' })
-Sessions.belongsTo(Users, { foreignKey: 'userId' })
-Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
-FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
-
-const sendToken = require('./routes/SendToken')
-const db = require('./models')
-const cookieParser = require('cookie-parser')
-
-app.use(express.json())
-app.use(cookieParser())
-
-const allowedOrigins = require('./config/allowedOrigins')
-const cors = require('cors')
-const corsOptions = {
+const express 			= require('express')
+const app 				= express()
+const sendToken 		= require('./routes/SendToken')
+const db 				= require('./models')
+const cookieParser 		= require('cookie-parser')
+const allowedOrigins 	= require('./config/allowedOrigins')
+const cors 				= require('cors')
+const corsOptions 		= {
 	origin: allowedOrigins,
 	credentials: true
 }
+
+app.use(express.json())
+app.use(cookieParser())
 app.use(cors(corsOptions))
+
+
+
+
+
+const { Players, Users, Sessions, FinalScores } = require('./models')
+Users.hasMany(Sessions, { foreignKey: 'userId' })
+Sessions.belongsTo(Users, { foreignKey: 'userId' })
+
+Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
+FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
+
+Sessions.hasMany(Players, { foreignKey: 'sessionId' })
+Players.belongsTo(Sessions, { foreignKey: 'sessionId' })
 
 
 
