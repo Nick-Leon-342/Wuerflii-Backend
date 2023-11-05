@@ -112,17 +112,18 @@ app.post('/game', async (req, res) => {
 		Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
 
 			for(const p of rb.List_Players) {
-				await Players.create({ userId: req.id, sessionId: s.id, ...p }).catch((err) => {
-					console.log(err)
-					return res.sendStatus(500)
+				await Players.create({ 
+					userId: req.id, 
+					sessionId: s.id, 
+					Name: p.Name,
+					Alias: p.Alias,
+					Color: p.Color,
+					Wins: p.Wins,
 				})
 			}
 
 			FinalScores.create({ userId: req.id, sessionId: s.id, ...fs }).then(() => {
 				res.sendStatus(201)
-			}).catch((err) => {
-				console.log(err)
-				return res.sendStatus(500)
 			})
 
 		}).catch((err) => {
