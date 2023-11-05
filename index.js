@@ -2,29 +2,35 @@
 
 require('dotenv').config()
 
-const express = require('express')
-const app = express()
-
-const { Users, Sessions, FinalScores } = require('./models')
-Users.hasMany(Sessions, { foreignKey: 'userId' })
-Sessions.belongsTo(Users, { foreignKey: 'userId' })
-Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
-FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
-
-const sendToken = require('./routes/SendToken')
-const db = require('./models')
-const cookieParser = require('cookie-parser')
-
-app.use(express.json())
-app.use(cookieParser())
-
-const allowedOrigins = require('./config/allowedOrigins')
-const cors = require('cors')
-const corsOptions = {
+const express 			= require('express')
+const app 				= express()
+const sendToken 		= require('./routes/SendToken')
+const db 				= require('./models')
+const cookieParser 		= require('cookie-parser')
+const allowedOrigins 	= require('./config/allowedOrigins')
+const cors 				= require('cors')
+const corsOptions 		= {
 	origin: allowedOrigins,
 	credentials: true
 }
+
+app.use(express.json())
+app.use(cookieParser())
 app.use(cors(corsOptions))
+
+
+
+
+
+const { Players, Users, Sessions, FinalScores } = require('./models')
+Users.hasMany(Sessions, { foreignKey: 'userId' })
+Sessions.belongsTo(Users, { foreignKey: 'userId' })
+
+Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
+FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
+
+Sessions.hasMany(Players, { foreignKey: 'sessionId' })
+Players.belongsTo(Sessions, { foreignKey: 'sessionId' })
 
 
 
@@ -57,36 +63,60 @@ app.post('/game', async (req, res) => {
 
 	const rb = req.body
 	const id = rb.id
-	const Attributes  = rb.Attributes
-	const List_Players = rb.List_Players
 	const fs = rb.FinalScores
+	const Attributes = { 
+		SessionName: rb.SessionName,
+		InputType: rb.InputType,
+		LastPlayed: rb.LastPlayed,
+		List_PlayerOrder: rb.List_PlayerOrder,
+	}
 
 	if(id) {
 			
 		//____________________UpdateSession____________________
 
-		Sessions.update({ Attributes, List_Players }, { where: { userId: req.id, id: id } }).then(() => {
+		Sessions.update( Attributes, { where: { userId: req.id, id: id } }).then(async () => {
 
-			FinalScores.create({ userId: req.id, sessionId: id, ...fs }).then(() => {
+			for(const p of rb.List_Players) {
+				Players.update(
+					{ 
+						Name: p.Name,
+						Color: p.Color,
+						Wins: p.Wins,
+					}, { where: { id: p.id, userId: req.id, sessionId: id } }).catch((err) => {
+					console.log(err)
+					return res.sendStatus(400)
+				})
+			}
+
+			FinalScores.create({ 
+				userId: req.id, 
+				sessionId: id, 
+				...fs 
+			}).then(() => {
 				res.sendStatus(204)
 			}).catch((err) => {
 				console.log(err)
-				res.sendStatus(500)
+				res.sendStatus(400)
 			})
 
-		}).catch(() => 
-			res.sendStatus(400)
-		)
+		}).catch((err) => {
+			console.log(err)
+			res.sendStatus(500)
+		})
 
 	} else {
 
 		//____________________AddNewSession____________________
 
-		Sessions.create({ 
-			Attributes,
-			List_Players, 
-			userId: req.id 
-		}).then((s) => {
+		Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
+
+			for(const p of rb.List_Players) {
+				await Players.create({ userId: req.id, sessionId: s.id, ...p }).catch((err) => {
+					console.log(err)
+					return res.sendStatus(500)
+				})
+			}
 
 			FinalScores.create({ userId: req.id, sessionId: s.id, ...fs }).then(() => {
 				res.sendStatus(201)
@@ -95,8 +125,9 @@ app.post('/game', async (req, res) => {
 				res.sendStatus(500)
 			})
 
-		}).catch(() => {
-			return res.sendStatus(500)
+		}).catch((err) => {
+			console.log(err)
+			res.sendStatus(500)
 		})
 
 	}
@@ -109,48 +140,78 @@ app.get('/endscreen', (req, res) => {
 
 app.get('/selectsession', async (req, res) => {
 
-	Sessions.findAll({ where: { userId: req.id } }).then((list) => {
-		
-		return res.json(list)
+
+	Sessions.findAll({ where: { userId: req.id }, include: Players }).then((tmp) => {
+
+		const list = []
+
+		for(const e of tmp) {
+			const players = []
+			for(const p of e.Players) {
+				players.push({
+					id: p.id,
+					Name: p.Name,
+					Alias: p.Alias,
+					Color: p.Color,
+					Wins: p.Wins,
+				})
+			}
+			list.push({
+				id: e.id,
+				SessionName: e.SessionName,
+				Columns: e.Columns,
+				InputType: e.InputType,
+				LastPlayed: e.LastPlayed,
+				CreatedDate: e.CreatedDate,
+				List_PlayerOrder: e.List_PlayerOrder,
+				List_Players: players,
+			})
+		}
+
+		res.json(list)
 
 	}).catch(() => {
-		return res.sendStatus(500)
+		res.sendStatus(500)
 	})
 
 })
 
 app.post('/selectsession', async (req, res) => {
 
-	const session = req.body
+	const { id, Columns, List_Players } = req.body
 
-	Sessions.findOne({ where: { userId: req.id, id: session.id }}).then(async (s) => {
+	try {
 
-		s.update({ Attributes: JSON.stringify(session.Attributes), List_Players: JSON.stringify(session.List_Players) }).then(() => {
-			res.sendStatus(204)
-		}).catch((e) => {
-			console.log(e)
-			res.sendStatus(500)
-		})
+		await Sessions.update({ Columns }, { where: { userId: req.id, id: id } })
+		for(const p of List_Players) {
+			await Players.update({ Name: p.Name, Color: p.Color }, { where: { userId: req.id, sessionId: id, id: p.id } })
+		}
+		res.sendStatus(204)
 
-	}).catch((e) => {
-		console.log(e)
+	} catch(err) {
+
+		console.log(err)
 		res.sendStatus(500)
-	})
 
+	}
 })
 
 app.delete('/selectsession', async (req, res) => {
 
-	Sessions.destroy({
-		where: { 
-			userId: req.id,
-			id: req.query.id
-		}
-	}).then(() => {
+	const userId = req.id
+	const sessionId = req.query.id
+
+	try {
+
+		await Players.destroy({ where: { userId: userId, sessionId: sessionId } })
+		await FinalScores.destroy({ where: { userId: userId, sessionId: sessionId } })
+		await Sessions.destroy({ where: { userId: userId, id: sessionId } })
+
 		res.sendStatus(204)
-	}).catch(() => {
+
+	} catch {
 		res.sendStatus(500)
-	})
+	}
 
 })
 
@@ -163,7 +224,8 @@ app.get('/sessionpreview', async (req, res) => {
 		const tmp = []
 		for(const f of list) {
 			tmp.push({
-				Played: f.createdAt,
+				Start: f.Start,
+				End: f.End,
 				Columns: f.Columns,
 				Surrender: f.Surrender,
 				List_Winner: f.List_Winner,
