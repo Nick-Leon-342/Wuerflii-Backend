@@ -149,24 +149,9 @@ app.get('/selectsession', async (req, res) => {
 		for(const e of tmp) {
 			const players = []
 			for(const p of e.Players) {
-				players.push({
-					id: p.id,
-					Name: p.Name,
-					Alias: p.Alias,
-					Color: p.Color,
-					Wins: p.Wins,
-				})
+				players.push(getPlayerJSON(p))
 			}
-			list.push({
-				id: e.id,
-				SessionName: e.SessionName,
-				Columns: e.Columns,
-				InputType: e.InputType,
-				LastPlayed: e.LastPlayed,
-				CreatedDate: e.CreatedDate,
-				List_PlayerOrder: e.List_PlayerOrder,
-				List_Players: players,
-			})
+			list.push(getSessionJSON(e, players))
 		}
 
 		res.json(list)
@@ -176,6 +161,46 @@ app.get('/selectsession', async (req, res) => {
 	})
 
 })
+
+function getSessionJSON(s, list_players) {
+
+	return {
+		id: s.id,
+		SessionName: s.SessionName,
+		Columns: s.Columns,
+		InputType: s.InputType,
+		LastPlayed: s.LastPlayed,
+		CreatedDate: s.CreatedDate,
+		List_PlayerOrder: s.List_PlayerOrder,
+		List_Players: list_players,
+	}
+
+}
+
+function getPlayerJSON(p) {
+
+	return {
+		id: p.id,
+		Name: p.Name,
+		Alias: p.Alias,
+		Color: p.Color,
+		Wins: p.Wins,
+	}
+
+}
+
+function getFinalScoreJSON(f) {
+
+	return {
+		Start: f.Start,
+		End: f.End,
+		Columns: f.Columns,
+		Surrender: f.Surrender,
+		List_Winner: f.List_Winner,
+		PlayerScores: f.PlayerScores,
+	}
+
+}
 
 app.post('/selectsession', async (req, res) => {
 
@@ -218,27 +243,28 @@ app.delete('/selectsession', async (req, res) => {
 
 app.get('/sessionpreview', async (req, res) => {
 
-	FinalScores.findAll({ where: { sessionId: req.query.id, userId: req.id } }).then((list) => {
+	Sessions.findOne({ where: { id: req.query.id, userId: req.id }, include: [ Players, FinalScores ] }).then((s) => {
 
-		if(!list) return res.sendStatus(404)
-
-		const tmp = []
-		for(const f of list) {
-			tmp.push({
-				Start: f.Start,
-				End: f.End,
-				Columns: f.Columns,
-				Surrender: f.Surrender,
-				List_Winner: f.List_Winner,
-				PlayerScores: f.PlayerScores,
-			})
+		const players = []
+		for(const p of s.Players) {
+			players.push(getPlayerJSON(p))
 		}
-		res.json(tmp)
+
+		const session = getSessionJSON(s, players)
+
+		const finalScores = []
+		for(const f of s.FinalScores) {
+			finalScores.push(getFinalScoreJSON(f))
+		}
+
+		res.json({ Session: session, FinalScores: finalScores })
 
 	}).catch((err) => {
 		console.log(err)
-		res.sendStatus(500)
+		res.sendStatus(404)
 	})
+
+	
 
 })
 
