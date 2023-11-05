@@ -18,6 +18,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
+        SessionName: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        List_PlayerOrder: {
+            type: DataTypes.ARRAY(DataTypes.STRING),
+            allowNull: false,
+        },
     })
 
     return Sessions

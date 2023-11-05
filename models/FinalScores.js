@@ -6,6 +6,14 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
+		Start: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		End: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
         Columns: {
             type: DataTypes.INTEGER,
 			allowNull: false,
