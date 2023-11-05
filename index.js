@@ -97,7 +97,7 @@ app.post('/game', async (req, res) => {
 				res.sendStatus(204)
 			}).catch((err) => {
 				console.log(err)
-				res.sendStatus(400)
+				return res.sendStatus(400)
 			})
 
 		}).catch((err) => {
@@ -122,7 +122,7 @@ app.post('/game', async (req, res) => {
 				res.sendStatus(201)
 			}).catch((err) => {
 				console.log(err)
-				res.sendStatus(500)
+				return res.sendStatus(500)
 			})
 
 		}).catch((err) => {
