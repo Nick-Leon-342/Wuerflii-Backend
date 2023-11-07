@@ -55,14 +55,74 @@ app.get('/enternames', (req, res) => {
 	res.sendStatus(200)
 })
 
+app.post('/enternames', async (req, res) => {
+
+	const rb = req.body
+	const Attributes = { 
+		SessionName: rb.SessionName,
+		InputType: rb.InputType,
+		LastPlayed: rb.LastPlayed,
+		List_PlayerOrder: rb.List_PlayerOrder,
+	}
+
+
+	//____________________AddNewSession____________________
+
+	Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
+
+		for(const p of rb.List_Players) {
+			await Players.create({ 
+				userId: req.id, 
+				sessionId: s.id, 
+				Name: p.Name,
+				Alias: p.Alias,
+				Color: p.Color,
+				Wins: p.Wins,
+			})
+		}
+
+		res.json({ sessionid: s.id })
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
+	})
+
+})
+
 app.get('/game', (req, res) => {
-	res.sendStatus(200)
+
+	if(req.query.id) {
+
+		Sessions.findOne({ where: { id: req.query.id, userId: req.id }, include: Players }).then((s) => {
+	
+			const players = []
+			for(const p of s.Players) {
+				players.push(getPlayerJSON(p))
+			}
+	
+			const session = getSessionJSON(s, players)
+	
+			res.json(session)
+	
+		}).catch((err) => {
+			console.log(err)
+			res.sendStatus(404)
+		})
+
+	} else {
+
+		res.sendStatus(200)
+
+	}
+
 })
 
 app.post('/game', async (req, res) => {
 
 	const rb = req.body
 	const id = rb.id
+	if(!id) return res.sendStatus(400)
 	const fs = rb.FinalScores
 	const Attributes = { 
 		SessionName: rb.SessionName,
@@ -71,67 +131,37 @@ app.post('/game', async (req, res) => {
 		List_PlayerOrder: rb.List_PlayerOrder,
 	}
 
-	if(id) {
-			
-		//____________________UpdateSession____________________
+	//____________________UpdateSession____________________
 
-		Sessions.update( Attributes, { where: { userId: req.id, id: id } }).then(async () => {
+	Sessions.update( Attributes, { where: { userId: req.id, id: id } }).then(async () => {
 
-			for(const p of rb.List_Players) {
-				Players.update(
-					{ 
-						Name: p.Name,
-						Color: p.Color,
-						Wins: p.Wins,
-					}, { where: { id: p.id, userId: req.id, sessionId: id } }).catch((err) => {
-					console.log(err)
-					return res.sendStatus(400)
-				})
-			}
-
-			FinalScores.create({ 
-				userId: req.id, 
-				sessionId: id, 
-				...fs 
-			}).then(() => {
-				res.sendStatus(204)
-			}).catch((err) => {
+		for(const p of rb.List_Players) {
+			Players.update(
+				{ 
+					Name: p.Name,
+					Color: p.Color,
+					Wins: p.Wins,
+				}, { where: { id: p.id, userId: req.id, sessionId: id } }).catch((err) => {
 				console.log(err)
 				return res.sendStatus(400)
 			})
+		}
 
+		FinalScores.create({ 
+			userId: req.id, 
+			sessionId: id, 
+			...fs 
+		}).then(() => {
+			res.sendStatus(204)
 		}).catch((err) => {
 			console.log(err)
-			res.sendStatus(500)
+			return res.sendStatus(400)
 		})
 
-	} else {
-
-		//____________________AddNewSession____________________
-
-		Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
-
-			for(const p of rb.List_Players) {
-				await Players.create({ 
-					userId: req.id, 
-					sessionId: s.id, 
-					Name: p.Name,
-					Alias: p.Alias,
-					Color: p.Color,
-					Wins: p.Wins,
-				})
-			}
-
-			FinalScores.create({ userId: req.id, sessionId: s.id, ...fs }).then(() => {
-				res.sendStatus(201)
-			})
-
-		}).catch((err) => {
-			console.log(err)
-			res.sendStatus(500)
-		})
-
-	}
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
+	})
 
 })
 
@@ -263,8 +293,6 @@ app.get('/sessionpreview', async (req, res) => {
 		console.log(err)
 		res.sendStatus(404)
 	})
-
-	
 
 })
 
