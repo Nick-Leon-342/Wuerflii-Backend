@@ -70,6 +70,7 @@ app.post('/enternames', async (req, res) => {
 
 	Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
 
+		const list = []
 		for(const p of rb.List_Players) {
 			await Players.create({ 
 				userId: req.id, 
@@ -78,10 +79,12 @@ app.post('/enternames', async (req, res) => {
 				Alias: p.Alias,
 				Color: p.Color,
 				Wins: p.Wins,
+			}).then((p) => {
+				list.push(getPlayerJSON(p))
 			})
 		}
 
-		res.json({ sessionid: s.id })
+		res.json({ sessionid: s.id, List_Players: list })
 
 	}).catch((err) => {
 		console.log(err)
@@ -98,7 +101,7 @@ app.post('/game', async (req, res) => {
 
 	const rb = req.body
 	const id = rb.id
-	if(!id) return res.sendStatus(400)
+	if(!id) {return res.sendStatus(400)}
 	const fs = rb.FinalScores
 	const Attributes = { 
 		SessionName: rb.SessionName,
@@ -112,7 +115,7 @@ app.post('/game', async (req, res) => {
 	Sessions.update( Attributes, { where: { userId: req.id, id: id } }).then(async () => {
 
 		for(const p of rb.List_Players) {
-			Players.update(
+			await Players.update(
 				{ 
 					Name: p.Name,
 					Color: p.Color,
