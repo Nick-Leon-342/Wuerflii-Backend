@@ -91,9 +91,7 @@ app.post('/enternames', async (req, res) => {
 })
 
 app.get('/game', (req, res) => {
-
 	res.sendStatus(200)
-
 })
 
 app.post('/game', async (req, res) => {
@@ -144,7 +142,23 @@ app.post('/game', async (req, res) => {
 })
 
 app.get('/endscreen', (req, res) => {
-	res.sendStatus(200)
+
+	Sessions.findOne({ where: { id: req.query.id, userId: req.id }, include: Players }).then((s) => {
+
+		const players = []
+		for(const p of s.Players) {
+			players.push(getPlayerJSON(p))
+		}
+
+		const session = getSessionJSON(s, players)
+
+		res.json(session)
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(404)
+	})
+
 })
 
 app.get('/selectsession', async (req, res) => {
