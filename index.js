@@ -3,7 +3,11 @@
 require('dotenv').config()
 
 const express 			= require('express')
+const http				= require('http')
+const socketIO			= require('socket.io')
 const app 				= express()
+const httpServer		= http.createServer(app)
+const io				= socketIO(httpServer)
 const sendToken 		= require('./routes/SendToken')
 const db 				= require('./models')
 const cookieParser 		= require('cookie-parser')
@@ -324,6 +328,16 @@ app.post('/updatelistplayers', async (req, res) => {
 	})
 
 })
+
+
+
+
+
+// io.on('connection', (socket) => {
+
+
+
+// })
 
 
 
