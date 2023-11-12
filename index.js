@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
 	socket.on('UpdateGnadenwurf', (data) => {
 		console.log(data)
 
-		
+
 
 	})
 
@@ -128,6 +128,15 @@ app.post('/enternames', async (req, res) => {
 })
 
 app.get('/game', (req, res) => {
+
+	const sessionid = +req.query.sessionid
+	const joincode = +req.query.joincode
+	if(sessionid === 0 || joincode === 0) return res.sendStatus(400)
+
+
+
+	console.log(req.url, req.query.sessionid)
+
 	res.sendStatus(200)
 })
 
