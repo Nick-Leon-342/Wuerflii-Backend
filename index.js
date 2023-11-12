@@ -2,21 +2,22 @@
 
 require('dotenv').config()
 
-const express 			= require('express')
-const http				= require('http')
-const socketIO			= require('socket.io')
-const app 				= express()
-const httpServer		= http.createServer(app)
-const io				= socketIO(httpServer)
-const sendToken 		= require('./routes/SendToken')
-const db 				= require('./models')
-const cookieParser 		= require('cookie-parser')
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
 const corsOptions 		= {
 	origin: allowedOrigins,
 	credentials: true
 }
+
+const express 			= require('express')
+const http				= require('http')
+const app 				= express()
+const httpServer		= http.createServer(app)
+const io				= require('socket.io')(httpServer, { cors: corsOptions })
+const sendToken 		= require('./routes/SendToken')
+const db 				= require('./models')
+const cookieParser 		= require('cookie-parser')
+
 
 app.use(express.json())
 app.use(cookieParser())
@@ -26,7 +27,7 @@ app.use(cors(corsOptions))
 
 
 
-const { Players, Users, Sessions, FinalScores } = require('./models')
+const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable } = require('./models')
 Users.hasMany(Sessions, { foreignKey: 'userId' })
 Sessions.belongsTo(Users, { foreignKey: 'userId' })
 
@@ -35,6 +36,15 @@ FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
 
 Sessions.hasMany(Players, { foreignKey: 'sessionId' })
 Players.belongsTo(Sessions, { foreignKey: 'sessionId' })
+
+Sessions.hasMany(PlayerTable, { foreignKey: 'sessionId' })
+PlayerTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
+
+Sessions.hasMany(UpperTable, { foreignKey: 'sessionId' })
+UpperTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
+
+Sessions.hasMany(BottomTable, { foreignKey: 'sessionId' })
+BottomTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
 
 
 
@@ -45,6 +55,26 @@ Players.belongsTo(Sessions, { foreignKey: 'sessionId' })
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
+
+
+io.on('connection', (socket) => {
+
+	socket.on('Test', (data) => {
+		console.log(data)
+	})
+
+	socket.on('Finish', (data) => {
+		console.log(data)
+	})
+
+	socket.on('UpdateGnadenwurf', (data) => {
+		console.log(data)
+
+		
+
+	})
+
+})
 
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
@@ -333,12 +363,6 @@ app.post('/updatelistplayers', async (req, res) => {
 
 
 
-// io.on('connection', (socket) => {
-
-
-
-// })
-
 
 
 
@@ -352,5 +376,5 @@ app.all('*', (req, res) => {
 
 
 db.sequelize.sync().then(() => {
-    app.listen(process.env.PORT || 10001, () => { console.log('Listening') })
+    httpServer.listen(process.env.PORT || 10001, () => { console.log('Listening') })
 })
