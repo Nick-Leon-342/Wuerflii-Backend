@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
     const BottomTable = sequelize.define('BottomTable', {
-		userId: {
+		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
@@ -13,10 +13,6 @@ module.exports = (sequelize, DataTypes) => {
 		Column: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-		},
-		JoinCode: {
-			type: DataTypes.STRING,
-			allowNull: true,
 		},
 		0: {
 			type: DataTypes.INTEGER,

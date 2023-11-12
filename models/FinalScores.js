@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
     const FinalScores = sequelize.define('FinalScores', {
-		userId: {
+		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},

@@ -28,23 +28,23 @@ app.use(cors(corsOptions))
 
 
 const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable } = require('./models')
-Users.hasMany(Sessions, { foreignKey: 'userId' })
-Sessions.belongsTo(Users, { foreignKey: 'userId' })
+Users.hasMany(Sessions, { foreignKey: 'UserID' })
+Sessions.belongsTo(Users, { foreignKey: 'UserID' })
 
-Sessions.hasMany(FinalScores, { foreignKey: 'sessionId' })
-FinalScores.belongsTo(Sessions, { foreignKey: 'sessionId' })
+Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
+FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(Players, { foreignKey: 'sessionId' })
-Players.belongsTo(Sessions, { foreignKey: 'sessionId' })
+Sessions.hasMany(Players, { foreignKey: 'SessionID' })
+Players.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(PlayerTable, { foreignKey: 'sessionId' })
-PlayerTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
+Sessions.hasMany(PlayerTable, { foreignKey: 'SessionID' })
+PlayerTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(UpperTable, { foreignKey: 'sessionId' })
-UpperTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
+Sessions.hasMany(UpperTable, { foreignKey: 'SessionID' })
+UpperTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(BottomTable, { foreignKey: 'sessionId' })
-BottomTable.belongsTo(Sessions, { foreignKey: 'sessionId' })
+Sessions.hasMany(BottomTable, { foreignKey: 'SessionID' })
+BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
 
 
@@ -56,19 +56,15 @@ app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
 
-
+function getJoinCode(socket) {
+	return socket.handshake.auth.joincode
+}
 io.on('connection', (socket) => {
-
-	socket.on('Test', (data) => {
-		console.log(data)
-	})
-
-	socket.on('Finish', (data) => {
-		console.log(data)
-	})
+	console.log('Connected', socket.id)
 
 	socket.on('UpdateGnadenwurf', (data) => {
-		console.log(data)
+
+		console.log(getJoinCode(socket), data)
 
 
 
@@ -80,6 +76,14 @@ io.on('connection', (socket) => {
 const verifyJWT = require('./middleware/verifyJWT')
 const bcrypt = require('bcrypt')
 app.use(verifyJWT)
+
+function generateJoinCode() {
+	const length = 8;
+	const min = Math.pow(10, length - 1)
+	const max = Math.pow(10, length) - 1
+	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
+	return randomNumber
+}
 
 app.get('/creategame', (req, res) => {
 	res.sendStatus(200)
@@ -98,17 +102,18 @@ app.post('/enternames', async (req, res) => {
 		LastPlayed: rb.LastPlayed,
 		List_PlayerOrder: rb.List_PlayerOrder,
 	}
+	const joincode = generateJoinCode()
 
 
 	//____________________AddNewSession____________________
 
-	Sessions.create( { ...Attributes, CreatedDate: rb.CreatedDate, Columns: rb.Columns, userId: req.id } ).then(async (s) => {
+	Sessions.create( { ...Attributes, JoinCode: joincode, CreatedDate: rb.CreatedDate, Columns: rb.Columns, UserID: req.id } ).then(async (s) => {
 
 		const list = []
 		for(const p of rb.List_Players) {
 			await Players.create({ 
-				userId: req.id, 
-				sessionId: s.id, 
+				UserID: req.id, 
+				SessionID: s.id, 
 				Name: p.Name,
 				Alias: p.Alias,
 				Color: p.Color,
@@ -118,7 +123,9 @@ app.post('/enternames', async (req, res) => {
 			})
 		}
 
-		res.json({ sessionid: s.id, List_Players: list })
+		
+
+		res.json({ SessionID: s.id, JoinCode: joincode })
 
 	}).catch((err) => {
 		console.log(err)
@@ -129,15 +136,26 @@ app.post('/enternames', async (req, res) => {
 
 app.get('/game', (req, res) => {
 
-	const sessionid = +req.query.sessionid
-	const joincode = +req.query.joincode
-	if(sessionid === 0 || joincode === 0) return res.sendStatus(400)
+	const UserID = req.id
+	const SessionID = req.query.sessionid
+	// const joincode = +req.query.joincode
+	// if(SessionID === 0 || joincode === 0) return res.sendStatus(400)
+	if(!SessionID || SessionID === 'null') return res.sendStatus(400)
 
+	Sessions.findOne({ where: { id: +SessionID, UserID: UserID }, include: Players }).then((s) => {
 
+		const list_players = []
+		for(const p of s.Players) {
+			list_players.push(getPlayerJSON(p))
+		}
+		const session = getSessionJSON(s, list_players)
 
-	console.log(req.url, req.query.sessionid)
+		res.json(session)
 
-	res.sendStatus(200)
+	}).catch((err) => {
+		console.log(err)
+	})
+
 })
 
 app.post('/game', async (req, res) => {
@@ -155,7 +173,7 @@ app.post('/game', async (req, res) => {
 
 	//____________________UpdateSession____________________
 
-	Sessions.update( Attributes, { where: { userId: req.id, id: id } }).then(async () => {
+	Sessions.update( Attributes, { where: { UserID: req.id, id: id } }).then(async () => {
 
 		for(const p of rb.List_Players) {
 			await Players.update(
@@ -163,15 +181,15 @@ app.post('/game', async (req, res) => {
 					Name: p.Name,
 					Color: p.Color,
 					Wins: p.Wins,
-				}, { where: { id: p.id, userId: req.id, sessionId: id } }).catch((err) => {
+				}, { where: { id: p.id, UserID: req.id, SessionID: id } }).catch((err) => {
 				console.log(err)
 				return res.sendStatus(400)
 			})
 		}
 
 		FinalScores.create({ 
-			userId: req.id, 
-			sessionId: id, 
+			UserID: req.id, 
+			SessionID: id, 
 			...fs 
 		}).then(() => {
 			res.sendStatus(204)
@@ -189,7 +207,7 @@ app.post('/game', async (req, res) => {
 
 app.get('/endscreen', (req, res) => {
 
-	Sessions.findOne({ where: { id: req.query.id, userId: req.id }, include: Players }).then((s) => {
+	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: Players }).then((s) => {
 
 		const players = []
 		for(const p of s.Players) {
@@ -210,7 +228,7 @@ app.get('/endscreen', (req, res) => {
 app.get('/selectsession', async (req, res) => {
 
 
-	Sessions.findAll({ where: { userId: req.id }, include: Players }).then((tmp) => {
+	Sessions.findAll({ where: { UserID: req.id }, include: Players }).then((tmp) => {
 
 		const list = []
 
@@ -276,9 +294,9 @@ app.post('/selectsession', async (req, res) => {
 
 	try {
 
-		await Sessions.update({ Columns }, { where: { userId: req.id, id: id } })
+		await Sessions.update({ Columns }, { where: { UserID: req.id, id: id } })
 		for(const p of List_Players) {
-			await Players.update({ Name: p.Name, Color: p.Color }, { where: { userId: req.id, sessionId: id, id: p.id } })
+			await Players.update({ Name: p.Name, Color: p.Color }, { where: { UserID: req.id, SessionID: id, id: p.id } })
 		}
 		res.sendStatus(204)
 
@@ -292,14 +310,14 @@ app.post('/selectsession', async (req, res) => {
 
 app.delete('/selectsession', async (req, res) => {
 
-	const userId = req.id
-	const sessionId = req.query.id
+	const UserID = req.id
+	const SessionID = req.query.id
 
 	try {
 
-		await Players.destroy({ where: { userId: userId, sessionId: sessionId } })
-		await FinalScores.destroy({ where: { userId: userId, sessionId: sessionId } })
-		await Sessions.destroy({ where: { userId: userId, id: sessionId } })
+		await Players.destroy({ where: { UserID: UserID, SessionID: SessionID } })
+		await FinalScores.destroy({ where: { UserID: UserID, SessionID: SessionID } })
+		await Sessions.destroy({ where: { UserID: UserID, id: SessionID } })
 
 		res.sendStatus(204)
 
@@ -311,7 +329,7 @@ app.delete('/selectsession', async (req, res) => {
 
 app.get('/sessionpreview', async (req, res) => {
 
-	Sessions.findOne({ where: { id: req.query.id, userId: req.id }, include: [ Players, FinalScores ] }).then((s) => {
+	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: [ Players, FinalScores ] }).then((s) => {
 
 		const players = []
 		for(const p of s.Players) {
@@ -358,9 +376,9 @@ app.post('/changecredentials', async (req, res) => {
 app.post('/updatelistplayers', async (req, res) => {
 
 	const { id, List_Players } = req.body
-	const userId = req.id
+	const UserID = req.id
 
-	Sessions.update({ List_Players: List_Players }, { where: { id, userId }}).then((s) => {
+	Sessions.update({ List_Players: List_Players }, { where: { id, UserID }}).then((s) => {
 		res.sendStatus(204)
 	}).catch(() => {
 		res.sendStatus(500)

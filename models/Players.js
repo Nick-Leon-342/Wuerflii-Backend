@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
     const Players = sequelize.define('Players', {
-		userId: {
+		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},

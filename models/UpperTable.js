@@ -14,10 +14,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
-		JoinCode: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
 		0: {
 			type: DataTypes.INTEGER,
 			allowNull: true,
