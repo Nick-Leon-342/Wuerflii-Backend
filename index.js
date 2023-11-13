@@ -74,6 +74,18 @@ io.on('connection', (socket) => {
 
 	})
 
+	socket.on('UpdateUpperTableValue', (data) => {
+
+		console.log('Upper', getJoinCode(socket), data)
+
+	})
+
+	socket.on('UpdateBottomTableValue', (data) => {
+
+		console.log('Bottom', getJoinCode(socket), data)
+
+	})
+
 })
 
 //use middleware to auth user
