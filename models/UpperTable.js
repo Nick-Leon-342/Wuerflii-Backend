@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
     const UpperTable = sequelize.define('UpperTable', {
-		userId: {
+		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},

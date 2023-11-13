@@ -112,6 +112,7 @@ app.get('/enternames', (req, res) => {
 app.post('/enternames', async (req, res) => {
 
 	const rb = req.body
+	const array_columns = Array.from({ length: rb.Columns }, (_, index) => index)
 	const Attributes = { 
 		SessionName: rb.SessionName,
 		InputType: rb.InputType,
@@ -139,6 +140,13 @@ app.post('/enternames', async (req, res) => {
 			}).then((p) => {
 				list.push(getPlayerJSON(p))
 			})
+
+			for(const column of array_columns) {
+
+				UpperTable.create({ UserID: req.id, Alias: p.Alias, Column: column })
+				BottomTable.create({ UserID: req.id, Alias: p.Alias, Column: column })
+
+			}
 		}
 
 		await PlayerTable.create({ 
