@@ -66,7 +66,11 @@ io.on('connection', (socket) => {
 
 		console.log(getJoinCode(socket), data)
 
-
+		PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode: getJoinCode(socket) } }).then((e) => {
+			console.log(e)
+		}).catch((err) => {
+			console.log(err)
+		})
 
 	})
 
@@ -109,8 +113,10 @@ app.post('/enternames', async (req, res) => {
 
 	Sessions.create( { ...Attributes, JoinCode: joincode, CreatedDate: rb.CreatedDate, Columns: rb.Columns, UserID: req.id } ).then(async (s) => {
 
+		const gnadenwürfe = {}
 		const list = []
 		for(const p of rb.List_Players) {
+			gnadenwürfe[p.Alias] = false
 			await Players.create({ 
 				UserID: req.id, 
 				SessionID: s.id, 
@@ -123,7 +129,12 @@ app.post('/enternames', async (req, res) => {
 			})
 		}
 
-		
+		await PlayerTable.create({ 
+			UserID: req.id, 
+			JoinCode: joincode, 
+			Gnadenwürfe: gnadenwürfe,
+			SessionID: s.id,
+		})
 
 		res.json({ SessionID: s.id, JoinCode: joincode })
 
@@ -254,6 +265,7 @@ function getSessionJSON(s, list_players) {
 		id: s.id,
 		SessionName: s.SessionName,
 		Columns: s.Columns,
+		JoinCode: s.JoinCode,
 		InputType: s.InputType,
 		LastPlayed: s.LastPlayed,
 		CreatedDate: s.CreatedDate,
