@@ -265,7 +265,7 @@ app.post('/game', async (req, res) => {
 		for(const newP of List_Players) {
 			for(const p of s.Players) {
 				if(newP.id === p.id) {
-					p.update({
+					await p.update({
 						Name: newP.Name,
 						Color: newP.Color,
 						Wins: newP.Wins,
