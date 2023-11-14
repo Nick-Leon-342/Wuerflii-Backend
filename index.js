@@ -2,6 +2,8 @@
 
 require('dotenv').config()
 
+const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
+
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
 const corsOptions 		= {
@@ -27,12 +29,15 @@ app.use(cors(corsOptions))
 
 
 
-const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable } = require('./models')
+const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('./models')
 Users.hasMany(Sessions, { foreignKey: 'UserID' })
 Sessions.belongsTo(Users, { foreignKey: 'UserID' })
 
 Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
 FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
+
+FinalScores.hasOne(TableArchive, { foreignKey: 'FinalScoresID' })
+TableArchive.belongsTo(FinalScores, { foreignKey: 'FinalScoresID'})
 
 Sessions.hasMany(Players, { foreignKey: 'SessionID' })
 Players.belongsTo(Sessions, { foreignKey: 'SessionID' })
@@ -59,12 +64,11 @@ app.use('/logout', require('./routes/Logout'))
 function getJoinCode(socket) {
 	return socket.handshake.auth.joincode
 }
+
 io.on('connection', (socket) => {
 	console.log('Connected', socket.id)
 
 	socket.on('UpdateGnadenwurf', (data) => {
-
-		console.log(getJoinCode(socket), data)
 
 		PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode: getJoinCode(socket) } }).then((e) => {
 			console.log(e)
@@ -74,15 +78,22 @@ io.on('connection', (socket) => {
 
 	})
 
-	socket.on('UpdateUpperTableValue', (data) => {
+	socket.on('UpdateValue', (data) => {
 
-		console.log('Upper', getJoinCode(socket), data)
+		let value
+		if(data?.Value) {
+			value = +data?.Value
+		} else {
+			value = null
+		}
 
-	})
-
-	socket.on('UpdateBottomTableValue', (data) => {
-
-		console.log('Bottom', getJoinCode(socket), data)
+		const updateJSON = { [+data?.Row]: value }
+		const json = { JoinCode: getJoinCode(socket), Alias: data?.Alias, Column: +data?.Column }
+		if(data.UpperTable) {
+			UpperTable.update(updateJSON, { where: json })
+		} else {
+			BottomTable.update(updateJSON, { where: json })
+		}
 
 	})
 
@@ -112,7 +123,6 @@ app.get('/enternames', (req, res) => {
 app.post('/enternames', async (req, res) => {
 
 	const rb = req.body
-	const array_columns = Array.from({ length: rb.Columns }, (_, index) => index)
 	const Attributes = { 
 		SessionName: rb.SessionName,
 		InputType: rb.InputType,
@@ -126,10 +136,8 @@ app.post('/enternames', async (req, res) => {
 
 	Sessions.create( { ...Attributes, JoinCode: joincode, CreatedDate: rb.CreatedDate, Columns: rb.Columns, UserID: req.id } ).then(async (s) => {
 
-		const gnadenwürfe = {}
 		const list = []
 		for(const p of rb.List_Players) {
-			gnadenwürfe[p.Alias] = false
 			await Players.create({ 
 				UserID: req.id, 
 				SessionID: s.id, 
@@ -140,21 +148,9 @@ app.post('/enternames', async (req, res) => {
 			}).then((p) => {
 				list.push(getPlayerJSON(p))
 			})
-
-			for(const column of array_columns) {
-
-				UpperTable.create({ UserID: req.id, Alias: p.Alias, Column: column })
-				BottomTable.create({ UserID: req.id, Alias: p.Alias, Column: column })
-
-			}
 		}
 
-		await PlayerTable.create({ 
-			UserID: req.id, 
-			JoinCode: joincode, 
-			Gnadenwürfe: gnadenwürfe,
-			SessionID: s.id,
-		})
+		await createNewGame(req.id, rb.List_Players, s.id, rb.Columns, joincode)
 
 		res.json({ SessionID: s.id, JoinCode: joincode })
 
@@ -165,15 +161,67 @@ app.post('/enternames', async (req, res) => {
 
 })
 
+async function createNewGame(UserID, List_Players, SessionID, Columns, JoinCode) {
+
+	const gnadenwürfe = {}
+	const array_columns = Array.from({ length: Columns }, (_, index) => index)
+
+	for(const p of List_Players) {
+		gnadenwürfe[p.Alias] = false
+
+		for(const column of array_columns) {
+
+			const json = { UserID: UserID, Alias: p.Alias, Column: column, JoinCode: JoinCode, SessionID: SessionID }
+			UpperTable.create(json)
+			BottomTable.create(json)
+
+		}
+
+	}
+
+	await PlayerTable.create({ 
+		UserID: UserID,
+		JoinCode: JoinCode, 
+		Gnadenwürfe: gnadenwürfe,
+		SessionID: SessionID,
+	})
+
+}
+
+async function destroyGame(SessionID, UserID) {
+
+	try {
+
+		const json = { JoinCode: null }
+		await Sessions.update(json, { where: { UserID: UserID, id: SessionID } })
+
+		const findJSON = { UserID: UserID, SessionID: SessionID }
+		await PlayerTable.destroy({ where: findJSON })
+		await UpperTable.destroy({ where: findJSON })
+		await BottomTable.destroy({ where: findJSON })
+
+		return 204
+
+	} catch (err) {
+		console.log(err)
+		return 500
+	}
+
+}
+
 app.get('/game', (req, res) => {
 
 	const UserID = req.id
 	const SessionID = req.query.sessionid
-	// const joincode = +req.query.joincode
-	// if(SessionID === 0 || joincode === 0) return res.sendStatus(400)
 	if(!SessionID || SessionID === 'null') return res.sendStatus(400)
 
-	Sessions.findOne({ where: { id: +SessionID, UserID: UserID }, include: Players }).then((s) => {
+	Sessions.findOne({ where: { id: +SessionID, UserID: UserID }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+
+		const tableColumns = []
+		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
+		for(const bt of s.BottomTables) {	tableColumns.push(getBottomTableJSON(bt))	}
+
+		const gnadenwürfe = getPlayerTableJSON(s.PlayerTables[0])
 
 		const list_players = []
 		for(const p of s.Players) {
@@ -181,7 +229,11 @@ app.get('/game', (req, res) => {
 		}
 		const session = getSessionJSON(s, list_players)
 
-		res.json(session)
+		res.json({
+			Session: session,
+			Gnadenwürfe: gnadenwürfe,
+			TableColumns: tableColumns,
+		})
 
 	}).catch((err) => {
 		console.log(err)
@@ -192,9 +244,12 @@ app.get('/game', (req, res) => {
 app.post('/game', async (req, res) => {
 
 	const rb = req.body
-	const id = rb.id
-	if(!id) {return res.sendStatus(400)}
+	const sessionid = rb.id
+	const userid = req.id
+	const joincode = rb.JoinCode
+	if(!sessionid || !joincode) {return res.sendStatus(400)}
 	const fs = rb.FinalScores
+	const List_Players = rb.List_Players
 	const Attributes = { 
 		SessionName: rb.SessionName,
 		InputType: rb.InputType,
@@ -204,35 +259,58 @@ app.post('/game', async (req, res) => {
 
 	//____________________UpdateSession____________________
 
-	Sessions.update( Attributes, { where: { UserID: req.id, id: id } }).then(async () => {
+	Sessions.findOne({ where: { id: sessionid, UserID: userid }, include: [ Players, UpperTable, BottomTable ] }).then(async (s) => {
 
-		for(const p of rb.List_Players) {
-			await Players.update(
-				{ 
-					Name: p.Name,
-					Color: p.Color,
-					Wins: p.Wins,
-				}, { where: { id: p.id, UserID: req.id, SessionID: id } }).catch((err) => {
-				console.log(err)
-				return res.sendStatus(400)
-			})
+		s.update(Attributes)
+		for(const newP of List_Players) {
+			for(const p of s.Players) {
+				if(newP.id === p.id) {
+					p.update({
+						Name: newP.Name,
+						Color: newP.Color,
+						Wins: newP.Wins,
+					})
+					break
+				}
+			}
 		}
 
+		const tableColumns = []
+		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
+		for(const bt of s.BottomTables) {	tableColumns.push(getBottomTableJSON(bt))	}
+
 		FinalScores.create({ 
-			UserID: req.id, 
-			SessionID: id, 
+			UserID: userid, 
+			SessionID: sessionid, 
 			...fs 
-		}).then(() => {
+		}).then(async (f) => {
+
+			await TableArchive.create({ UserID: userid, SessionID: sessionid, Table: tableColumns, FinalScoresID: f.id })
+			destroyGame(sessionid, userid)
 			res.sendStatus(204)
+
 		}).catch((err) => {
 			console.log(err)
 			return res.sendStatus(400)
 		})
 
+
 	}).catch((err) => {
 		console.log(err)
 		res.sendStatus(500)
 	})
+
+})
+
+app.delete('/game', async (req, res) => {
+
+	const sessionid = req.query.SessionID
+	const userid = req.id
+
+	destroyGame(sessionid, userid)
+
+	const status = await destroyGame(sessionid, userid)
+	res.sendStatus(status)
 
 })
 
@@ -278,47 +356,6 @@ app.get('/selectsession', async (req, res) => {
 	})
 
 })
-
-function getSessionJSON(s, list_players) {
-
-	return {
-		id: s.id,
-		SessionName: s.SessionName,
-		Columns: s.Columns,
-		JoinCode: s.JoinCode,
-		InputType: s.InputType,
-		LastPlayed: s.LastPlayed,
-		CreatedDate: s.CreatedDate,
-		List_PlayerOrder: s.List_PlayerOrder,
-		List_Players: list_players,
-	}
-
-}
-
-function getPlayerJSON(p) {
-
-	return {
-		id: p.id,
-		Name: p.Name,
-		Alias: p.Alias,
-		Color: p.Color,
-		Wins: p.Wins,
-	}
-
-}
-
-function getFinalScoreJSON(f) {
-
-	return {
-		Start: f.Start,
-		End: f.End,
-		Columns: f.Columns,
-		Surrender: f.Surrender,
-		List_Winner: f.List_Winner,
-		PlayerScores: f.PlayerScores,
-	}
-
-}
 
 app.post('/selectsession', async (req, res) => {
 
@@ -380,6 +417,26 @@ app.get('/sessionpreview', async (req, res) => {
 	}).catch((err) => {
 		console.log(err)
 		res.sendStatus(404)
+	})
+
+})
+
+app.post('/sessionpreview', async (req, res) => {
+
+	const joincode = generateJoinCode()
+	const sessionid = req.body.SessionID
+	
+	Sessions.findOne({ where: { id: sessionid, UserID: req.id }, include: Players }).then(async (s) => {
+
+		await s.update({ JoinCode: joincode })
+
+		await createNewGame(req.id, s.Players, sessionid, s.Columns, joincode)
+
+		res.json({ JoinCode: joincode })
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
 	})
 
 })

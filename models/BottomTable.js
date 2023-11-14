@@ -6,6 +6,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
+		JoinCode: {
+			type: DataTypes.INTEGER,
+			allowNull: true,
+		},
 		Alias: {
 			type: DataTypes.STRING,
 			allowNull: false,
