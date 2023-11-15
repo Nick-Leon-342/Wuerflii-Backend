@@ -429,7 +429,12 @@ app.delete('/selectsession', async (req, res) => {
 
 app.get('/sessionpreview', async (req, res) => {
 
-	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: [ Players, FinalScores ] }).then((s) => {
+	const SessionID = req.query.id
+	if(!SessionID || !+SessionID) return res.sendStatus(400)
+
+	Sessions.findOne({ where: { id: SessionID, UserID: req.id }, include: [ Players, FinalScores ] }).then((s) => {
+
+		if(!s) return res.sendStatus(404)
 
 		const players = []
 		for(const p of s.Players) {
@@ -447,7 +452,7 @@ app.get('/sessionpreview', async (req, res) => {
 
 	}).catch((err) => {
 		console.log(err)
-		res.sendStatus(404)
+		res.sendStatus(500)
 	})
 
 })
