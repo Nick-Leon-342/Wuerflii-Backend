@@ -359,7 +359,14 @@ app.delete('/game', async (req, res) => {
 
 app.get('/endscreen', (req, res) => {
 
-	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: Players }).then((s) => {
+	const UserID = req.id
+	const SessionID = req.query.SessionID
+
+	if(!SessionID || !+SessionID) return res.sendStatus(400)
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
+
+		if(!s) return res.sendStatus(404)
 
 		const players = []
 		for(const p of s.Players) {
@@ -468,10 +475,10 @@ app.post('/sessionpreview', async (req, res) => {
 	
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
 
+		if(!s) return res.sendStatus(404)
+
 		await s.update({ JoinCode: joincode })
-
 		await createNewGame(new Date(), UserID, s.Players, SessionID, s.Columns, joincode)
-
 		res.json({ JoinCode: joincode })
 
 	}).catch((err) => {
