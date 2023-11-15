@@ -404,26 +404,6 @@ app.get('/selectsession', async (req, res) => {
 
 })
 
-app.post('/selectsession', async (req, res) => {
-
-	const { id, Columns, List_Players } = req.body
-
-	try {
-
-		await Sessions.update({ Columns }, { where: { UserID: req.id, id: id } })
-		for(const p of List_Players) {
-			await Players.update({ Name: p.Name, Color: p.Color }, { where: { UserID: req.id, SessionID: id, id: p.id } })
-		}
-		res.sendStatus(204)
-
-	} catch(err) {
-
-		console.log(err)
-		res.sendStatus(500)
-
-	}
-})
-
 app.delete('/selectsession', async (req, res) => {
 
 	const UserID = req.id
@@ -518,18 +498,20 @@ app.post('/changecredentials', async (req, res) => {
 
 })
 
-app.post('/updatelistplayers', async (req, res) => {
+app.post('/updatesession', (req, res) => {
 
-	const { id, List_Players } = req.body
+	const { id, Columns, List_Players } = req.body
 	const UserID = req.id
 
 	if(!List_Players) return res.sendStatus(400)
 
 	const List_PlayerOrder = List_Players.map((p) => p.Alias)
+	const updatedSession = { List_PlayerOrder }
+	if(Columns) updatedSession['Columns'] = +Columns
 
 	Sessions.findOne({ where: { id, UserID }, include: Players }).then(async (s) => {
 
-		await s.update({ List_PlayerOrder })
+		await s.update(updatedSession)
 
 		for(const tmp of List_Players) {
 			for(const p of s.Players) {
