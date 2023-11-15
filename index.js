@@ -55,11 +55,7 @@ BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
 
 
-//____________________Routers____________________
-
-app.use('/auth', require('./routes/Auth'))
-app.use('/refreshtoken', require('./routes/RefreshToken'))
-app.use('/logout', require('./routes/Logout'))
+// __________________________________________________Socket.io__________________________________________________
 
 function getJoinCode(socket) {
 	return socket.handshake.auth.joincode
@@ -70,9 +66,7 @@ io.on('connection', (socket) => {
 
 	socket.on('UpdateGnadenwurf', (data) => {
 
-		PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode: getJoinCode(socket) } }).then((e) => {
-			console.log(e)
-		}).catch((err) => {
+		PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode: getJoinCode(socket) } }).catch((err) => {
 			console.log(err)
 		})
 
@@ -99,69 +93,30 @@ io.on('connection', (socket) => {
 
 })
 
+
+
+
+
+// __________________________________________________Routers__________________________________________________
+
+app.use('/auth', require('./routes/Auth'))
+app.use('/refreshtoken', require('./routes/RefreshToken'))
+app.use('/logout', require('./routes/Logout'))
+
+
+
+
+
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
 const bcrypt = require('bcrypt')
 app.use(verifyJWT)
 
-function generateJoinCode() {
-	const length = 8;
-	const min = Math.pow(10, length - 1)
-	const max = Math.pow(10, length) - 1
-	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
-	return randomNumber
-}
-
-app.get('/creategame', (req, res) => {
-	res.sendStatus(200)
-})
-
-app.get('/enternames', (req, res) => {
-	res.sendStatus(200)
-})
-
-app.post('/enternames', async (req, res) => {
-
-	const rb = req.body
-	const Attributes = { 
-		SessionName: rb.SessionName,
-		InputType: rb.InputType,
-		LastPlayed: rb.LastPlayed,
-		List_PlayerOrder: rb.List_PlayerOrder,
-	}
-	const joincode = generateJoinCode()
 
 
-	//____________________AddNewSession____________________
 
-	Sessions.create( { ...Attributes, JoinCode: joincode, CreatedDate: rb.CreatedDate, Columns: rb.Columns, UserID: req.id } ).then(async (s) => {
 
-		const list = []
-		for(const p of rb.List_Players) {
-			await Players.create({ 
-				UserID: req.id, 
-				SessionID: s.id, 
-				Name: p.Name,
-				Alias: p.Alias,
-				Color: p.Color,
-				Wins: p.Wins,
-			}).then((p) => {
-				list.push(getPlayerJSON(p))
-			})
-		}
-
-		await createNewGame(req.id, rb.List_Players, s.id, rb.Columns, joincode)
-
-		res.json({ SessionID: s.id, JoinCode: joincode })
-
-	}).catch((err) => {
-		console.log(err)
-		res.sendStatus(500)
-	})
-
-})
-
-async function createNewGame(UserID, List_Players, SessionID, Columns, JoinCode) {
+async function createNewGame(date, UserID, List_Players, SessionID, Columns, JoinCode) {
 
 	const gnadenwürfe = {}
 	const array_columns = Array.from({ length: Columns }, (_, index) => index)
@@ -180,10 +135,11 @@ async function createNewGame(UserID, List_Players, SessionID, Columns, JoinCode)
 	}
 
 	await PlayerTable.create({ 
-		UserID: UserID,
+		UserID: UserID, 
 		JoinCode: JoinCode, 
-		Gnadenwürfe: gnadenwürfe,
-		SessionID: SessionID,
+		Start: date, 
+		Gnadenwürfe: gnadenwürfe, 
+		SessionID: SessionID, 
 	})
 
 }
@@ -208,6 +164,80 @@ async function destroyGame(SessionID, UserID) {
 	}
 
 }
+
+function generateJoinCode() {
+	const length = 8;
+	const min = Math.pow(10, length - 1)
+	const max = Math.pow(10, length) - 1
+	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
+	return randomNumber
+}
+
+
+
+
+
+app.get('/creategame', (req, res) => {
+	res.sendStatus(200)
+})
+
+
+
+
+
+app.get('/enternames', (req, res) => {
+	res.sendStatus(200)
+})
+
+app.post('/enternames', async (req, res) => {
+
+	const rb = req.body
+	const date = new Date()
+	const joincode = generateJoinCode()
+	const userid = req.id
+
+
+	//____________________AddNewSession____________________
+
+	Sessions.create({
+		UserID: userid, 
+		JoinCode: joincode,
+		SessionName: rb.SessionName,
+		InputType: rb.InputType,
+		Columns: rb.Columns, 
+		CreatedDate: date,
+		LastPlayed: date, 
+		List_PlayerOrder: rb.List_PlayerOrder,
+	}).then(async (s) => {
+
+		const list = []
+		for(const p of rb.List_Players) {
+			await Players.create({ 
+				UserID: userid, 
+				SessionID: s.id, 
+				Name: p.Name,
+				Alias: p.Alias,
+				Color: p.Color,
+				Wins: p.Wins,
+			}).then((p) => {
+				list.push(getPlayerJSON(p))
+			})
+		}
+
+		await createNewGame(date, userid, rb.List_Players, s.id, rb.Columns, joincode)
+
+		res.json({ SessionID: s.id, JoinCode: joincode })
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
+	})
+
+})
+
+
+
+
 
 app.get('/game', (req, res) => {
 
@@ -249,17 +279,24 @@ app.post('/game', async (req, res) => {
 	const joincode = rb.JoinCode
 	if(!sessionid || !joincode) {return res.sendStatus(400)}
 	const fs = rb.FinalScores
+	const finalScores = {
+		Columns: fs.Columns,
+		Surrender: fs.Surrender,
+		List_Winner: fs.List_Winner,
+		PlayerScores: fs.PlayerScores,
+	}
 	const List_Players = rb.List_Players
+	const date = new Date()
 	const Attributes = { 
 		SessionName: rb.SessionName,
 		InputType: rb.InputType,
-		LastPlayed: rb.LastPlayed,
+		LastPlayed: date,
 		List_PlayerOrder: rb.List_PlayerOrder,
 	}
 
 	//____________________UpdateSession____________________
 
-	Sessions.findOne({ where: { id: sessionid, UserID: userid }, include: [ Players, UpperTable, BottomTable ] }).then(async (s) => {
+	Sessions.findOne({ where: { id: sessionid, UserID: userid }, include: [ Players, UpperTable, BottomTable, PlayerTable ] }).then(async (s) => {
 
 		s.update(Attributes)
 		for(const newP of List_Players) {
@@ -282,7 +319,9 @@ app.post('/game', async (req, res) => {
 		FinalScores.create({ 
 			UserID: userid, 
 			SessionID: sessionid, 
-			...fs 
+			...finalScores, 
+			Start: s.PlayerTables[0].Start, 
+			End: date,
 		}).then(async (f) => {
 
 			await TableArchive.create({ UserID: userid, SessionID: sessionid, Table: tableColumns, FinalScoresID: f.id })
@@ -314,6 +353,10 @@ app.delete('/game', async (req, res) => {
 
 })
 
+
+
+
+
 app.get('/endscreen', (req, res) => {
 
 	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: Players }).then((s) => {
@@ -333,6 +376,10 @@ app.get('/endscreen', (req, res) => {
 	})
 
 })
+
+
+
+
 
 app.get('/selectsession', async (req, res) => {
 
@@ -396,6 +443,10 @@ app.delete('/selectsession', async (req, res) => {
 
 })
 
+
+
+
+
 app.get('/sessionpreview', async (req, res) => {
 
 	Sessions.findOne({ where: { id: req.query.id, UserID: req.id }, include: [ Players, FinalScores ] }).then((s) => {
@@ -423,14 +474,15 @@ app.get('/sessionpreview', async (req, res) => {
 
 app.post('/sessionpreview', async (req, res) => {
 
+	const userid = req.id
 	const joincode = generateJoinCode()
 	const sessionid = req.body.SessionID
 	
-	Sessions.findOne({ where: { id: sessionid, UserID: req.id }, include: Players }).then(async (s) => {
+	Sessions.findOne({ where: { id: sessionid, UserID: userid }, include: Players }).then(async (s) => {
 
 		await s.update({ JoinCode: joincode })
 
-		await createNewGame(req.id, s.Players, sessionid, s.Columns, joincode)
+		await createNewGame(new Date(), userid, s.Players, sessionid, s.Columns, joincode)
 
 		res.json({ JoinCode: joincode })
 
@@ -440,6 +492,10 @@ app.post('/sessionpreview', async (req, res) => {
 	})
 
 })
+
+
+
+
 
 app.post('/changecredentials', async (req, res) => {
 
@@ -467,9 +523,32 @@ app.post('/updatelistplayers', async (req, res) => {
 	const { id, List_Players } = req.body
 	const UserID = req.id
 
-	Sessions.update({ List_Players: List_Players }, { where: { id, UserID }}).then((s) => {
+	if(!List_Players) return res.sendStatus(400)
+
+	const List_PlayerOrder = List_Players.map((p) => p.Alias)
+
+	Sessions.findOne({ where: { id, UserID }, include: Players }).then(async (s) => {
+
+		await s.update({ List_PlayerOrder })
+
+		for(const tmp of List_Players) {
+			for(const p of s.Players) {
+				if(tmp.Alias === p.Alias) {
+
+					await p.update({
+						Name: tmp.Name,
+						Color: tmp.Color,
+					})
+					break
+
+				}
+			}
+		}
+
 		res.sendStatus(204)
-	}).catch(() => {
+
+	}).catch((err) => {
+		console.log(err)
 		res.sendStatus(500)
 	})
 
@@ -479,14 +558,11 @@ app.post('/updatelistplayers', async (req, res) => {
 
 
 
-
-
-
-
 //handling page not found (404)
 app.all('*', (req, res) => {
 	res.sendStatus(404)
 })
+
 
 
 

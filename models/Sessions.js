@@ -15,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         LastPlayed: {
-            type: DataTypes.STRING,
+            type: DataTypes.DATE,
             allowNull: false,
         },
         CreatedDate: {
-            type: DataTypes.STRING,
+            type: DataTypes.DATE,
             allowNull: false,
         },
         SessionName: {

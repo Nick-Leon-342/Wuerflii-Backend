@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: true,
 		},
+		Start: {
+			type: DataTypes.DATE,
+			allowNull: false,
+		},
 		Gnadenwürfe: {
 			type: DataTypes.JSON,
 			allowNull: false,

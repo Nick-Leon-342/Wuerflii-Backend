@@ -6,10 +6,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
-        JoinCode: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
         Name: {
             type: DataTypes.STRING,
 			allowNull: false,
