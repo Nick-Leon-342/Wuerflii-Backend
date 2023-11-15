@@ -459,15 +459,17 @@ app.get('/sessionpreview', async (req, res) => {
 
 app.post('/sessionpreview', async (req, res) => {
 
-	const userid = req.id
+	const UserID = req.id
 	const joincode = generateJoinCode()
-	const sessionid = req.body.SessionID
+	const SessionID = req.body.SessionID
+
+	if(!SessionID || !+SessionID) return res.sendStatus(400)
 	
-	Sessions.findOne({ where: { id: sessionid, UserID: userid }, include: Players }).then(async (s) => {
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
 
 		await s.update({ JoinCode: joincode })
 
-		await createNewGame(new Date(), userid, s.Players, sessionid, s.Columns, joincode)
+		await createNewGame(new Date(), UserID, s.Players, SessionID, s.Columns, joincode)
 
 		res.json({ JoinCode: joincode })
 
