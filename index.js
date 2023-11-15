@@ -383,12 +383,11 @@ app.get('/endscreen', (req, res) => {
 
 app.get('/selectsession', async (req, res) => {
 
-
-	Sessions.findAll({ where: { UserID: req.id }, include: Players }).then((tmp) => {
+	Sessions.findAll({ where: { UserID: req.id }, include: Players }).then((s) => {
 
 		const list = []
 
-		for(const e of tmp) {
+		for(const e of s) {
 			const players = []
 			for(const p of e.Players) {
 				players.push(getPlayerJSON(p))
@@ -408,12 +407,14 @@ app.delete('/selectsession', async (req, res) => {
 
 	const UserID = req.id
 	const SessionID = req.query.id
+	
+	if(!SessionID || !+SessionID) return res.sendStatus(400)
 
 	try {
 
-		await Players.destroy({ where: { UserID: UserID, SessionID: SessionID } })
-		await FinalScores.destroy({ where: { UserID: UserID, SessionID: SessionID } })
-		await Sessions.destroy({ where: { UserID: UserID, id: SessionID } })
+		await Players.destroy({ where: { UserID, SessionID } })
+		await FinalScores.destroy({ where: { UserID, SessionID } })
+		await Sessions.destroy({ where: { UserID, id: SessionID } })
 
 		res.sendStatus(204)
 
