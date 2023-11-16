@@ -11,6 +11,7 @@ const corsOptions 		= {
 	credentials: true
 }
 
+const { v4 }			= require('uuid')
 const express 			= require('express')
 const http				= require('http')
 const app 				= express()
@@ -191,40 +192,52 @@ app.get('/enternames', (req, res) => {
 
 app.post('/enternames', async (req, res) => {
 
-	const rb = req.body
 	const date = new Date()
 	const joincode = generateJoinCode()
-	const userid = req.id
+	const UserID = req.id
+	const { SessionName, InputType, Columns, List_Players } = req.body
 
+	//TODO Check all data for validity
+	if(!SessionName || !InputType || !Columns || !List_Players) return res.sendStatus(400)
+
+	const List_PlayerOrder = []
+	const list = []
+	for(const p of List_Players) {
+
+		//TODO Check if name is valid
+		if(!p.Name || !p.Color) return res.sendStatus(400)
+
+		const Alias = v4()
+		List_PlayerOrder.push(Alias)
+		list.push({ 
+			UserID: UserID, 
+			Alias,
+			Name: p.Name,
+			Color: p.Color,
+			Wins: 0,
+		})
+
+	}
+	
 
 	//____________________AddNewSession____________________
 
 	Sessions.create({
-		UserID: userid, 
+		UserID: UserID, 
 		JoinCode: joincode,
-		SessionName: rb.SessionName,
-		InputType: rb.InputType,
-		Columns: rb.Columns, 
 		CreatedDate: date,
 		LastPlayed: date, 
-		List_PlayerOrder: rb.List_PlayerOrder,
+		SessionName,
+		InputType,
+		Columns, 
+		List_PlayerOrder,
 	}).then(async (s) => {
 
-		const list = []
-		for(const p of rb.List_Players) {
-			await Players.create({ 
-				UserID: userid, 
-				SessionID: s.id, 
-				Name: p.Name,
-				Alias: p.Alias,
-				Color: p.Color,
-				Wins: p.Wins,
-			}).then((p) => {
-				list.push(getPlayerJSON(p))
-			})
+		for(const p of list) {
+			await Players.create({ ...p, SessionID: s.id })
 		}
 
-		await createNewGame(date, userid, rb.List_Players, s.id, rb.Columns, joincode)
+		await createNewGame(date, UserID, list, s.id, Columns, joincode)
 
 		res.json({ SessionID: s.id, JoinCode: joincode })
 
