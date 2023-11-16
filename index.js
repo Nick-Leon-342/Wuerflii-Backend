@@ -68,13 +68,32 @@ function isString(v) {	return typeof v === 'string'	}
 function isBoolean(v) {	return typeof v === 'boolean'	}
 
 io.on('connection', (socket) => {
-	console.log('Connected', socket.id)
 
-	socket.on('UpdateGnadenwurf', (data) => {
+	socket.on('JoinSession', () => {
+		
+		const JoinCode = getJoinCode(socket)
+		if(isInt(JoinCode)) socket.join(JoinCode)
+		console.log(socket.id, JoinCode)
 
-		PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode: getJoinCode(socket) } }).catch((err) => {
+	})
+
+	socket.on('UpdateGnadenwurf', async (data) => {
+
+		const JoinCode = getJoinCode(socket)
+
+		let Response = 'Error'
+
+		if(data.Valid) 
+		await PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode } }).then((l) => {
+			if(l[0] !== 0) Response = data
+		}).catch((err) => {
 			console.log(err)
 		})
+
+		console.log(JoinCode, socket.to(JoinCode))
+		// socket.to(JoinCode).broadcast.emit('UpdateGnadenwurf', { Response })
+		socket.to(JoinCode).emit('UpdateGnadenwurf', { Response })
+		// socket.broadcast.emit('UpdateGnadenwurf', { Response })
 
 	})
 
@@ -109,6 +128,8 @@ io.on('connection', (socket) => {
 					if(l[0] !== 0) {
 						Response = res
 					}
+				}).then((err) => {
+					console.log(err)
 				})
 
 			} else {
@@ -118,13 +139,15 @@ io.on('connection', (socket) => {
 					if(l[0] !== 0) {
 						Response = res
 					}
+				}).then((err) => {
+					console.log(err)
 				})
 
 			}
 			
 		}
 
-		socket.emit('UpdateValueResponse', { Response })
+		socket.to(JoinCode).emit('UpdateValueResponse', { Response })
 
 	})
 
@@ -139,6 +162,39 @@ io.on('connection', (socket) => {
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
+
+app.get('/joingame', (req, res) => {
+
+	const JoinCode = +req.query.joincode
+
+	if(!isInt(+JoinCode)) return res.sendStatus(400)
+
+	Sessions.findOne({ where: { JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+
+		const tableColumns = []
+		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
+		for(const bt of s.BottomTables) {	tableColumns.push(getBottomTableJSON(bt))	}
+
+		const gnadenwürfe = getPlayerTableJSON(s.PlayerTables[0])
+
+		const list_players = []
+		for(const p of s.Players) {
+			list_players.push(getPlayerJSON(p))
+		}
+		const session = getSessionJSON(s, list_players)
+
+		res.json({
+			Session: session,
+			Gnadenwürfe: gnadenwürfe,
+			TableColumns: tableColumns,
+		})
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
+	})
+
+})
 
 
 
@@ -197,7 +253,7 @@ async function destroyGame(SessionID, UserID) {
 
 	} catch (err) {
 		console.log(err)
-		return 500
+		throw new Error
 	}
 
 }
@@ -291,10 +347,10 @@ app.post('/enternames', async (req, res) => {
 app.get('/game', (req, res) => {
 
 	const UserID = req.id
-	const SessionID = req.query.sessionid
-	if(!SessionID || SessionID === 'null') return res.sendStatus(400)
+	const SessionID = +req.query.sessionid
+	if(!isInt(SessionID)) return res.sendStatus(400)
 
-	Sessions.findOne({ where: { id: +SessionID, UserID: UserID }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+	Sessions.findOne({ where: { id: SessionID, UserID: UserID }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
 
 		const tableColumns = []
 		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
@@ -316,6 +372,7 @@ app.get('/game', (req, res) => {
 
 	}).catch((err) => {
 		console.log(err)
+		res.sendStatus(500)
 	})
 
 })
@@ -518,9 +575,10 @@ app.post('/sessionpreview', async (req, res) => {
 
 	const UserID = req.id
 	const joincode = generateJoinCode()
-	const SessionID = req.body.SessionID
+	const SessionID = +req.body.SessionID
 
-	if(!SessionID || !+SessionID) return res.sendStatus(400)
+	if(!isInt(SessionID)) return res.sendStatus(400)
+	await destroyGame(SessionID, UserID)
 	
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
 
