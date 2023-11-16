@@ -3,6 +3,7 @@
 require('dotenv').config()
 
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
+const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
@@ -62,6 +63,10 @@ function getJoinCode(socket) {
 	return socket.handshake.auth.joincode
 }
 
+function isInt(v) {		return typeof v === 'number'	}
+function isString(v) {	return typeof v === 'string'	}
+function isBoolean(v) {	return typeof v === 'boolean'	}
+
 io.on('connection', (socket) => {
 	console.log('Connected', socket.id)
 
@@ -73,22 +78,53 @@ io.on('connection', (socket) => {
 
 	})
 
-	socket.on('UpdateValue', (data) => {
+	socket.on('UpdateValue', async (data) => {
 
-		let value
-		if(data?.Value) {
-			value = +data?.Value
-		} else {
-			value = null
+		const JoinCode = getJoinCode(socket)
+		const Alias = data.Alias
+		const Column = data.Column
+		const Row = data.Row
+		const isUpperTable = data.UpperTable
+		
+		let Response = 'Error'
+		
+		if(isInt(JoinCode) && isString(Alias) && isInt(Column) && isInt(Row) && isBoolean(isUpperTable)) {
+
+			let value
+			if(+data.Value) {
+				value = +data.Value
+			} else {
+				value = null
+			}
+
+			const updateJSON = { [Row]: value }
+			const json = { JoinCode, Alias, Column }
+
+			const res = { Alias, Column, Row, Value: value, UpperTable: isUpperTable }
+
+			if(isUpperTable) {
+
+				if(possibleEntries_upperTable[Row].includes(value) || value === null)
+				await UpperTable.update(updateJSON, { where: json }).then((l) => {
+					if(l[0] !== 0) {
+						Response = res
+					}
+				})
+
+			} else {
+				
+				if(possibleEntries_bottomTable[Row].includes(value) || value === null)
+				await BottomTable.update(updateJSON, { where: json }).then((l) =>{
+					if(l[0] !== 0) {
+						Response = res
+					}
+				})
+
+			}
+			
 		}
 
-		const updateJSON = { [+data?.Row]: value }
-		const json = { JoinCode: getJoinCode(socket), Alias: data?.Alias, Column: +data?.Column }
-		if(data.UpperTable) {
-			UpperTable.update(updateJSON, { where: json })
-		} else {
-			BottomTable.update(updateJSON, { where: json })
-		}
+		socket.emit('UpdateValueResponse', { Response })
 
 	})
 
