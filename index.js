@@ -71,31 +71,32 @@ io.on('connection', (socket) => {
 
 	socket.on('JoinSession', () => {
 		
-		const JoinCode = getJoinCode(socket)
+		const JoinCode = +getJoinCode(socket)
 		if(isInt(JoinCode)) socket.join(JoinCode)
-		console.log(socket.id, JoinCode)
+		console.log('Connect', JoinCode)
 
 	})
+
+
 
 	socket.on('UpdateGnadenwurf', async (data) => {
 
 		const JoinCode = getJoinCode(socket)
 
-		let Response = 'Error'
+		let Data = 'Error'
 
 		if(data.Valid) 
 		await PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode } }).then((l) => {
-			if(l[0] !== 0) Response = data
+			if(l[0] !== 0) Data = data
 		}).catch((err) => {
 			console.log(err)
 		})
 
-		console.log(JoinCode, socket.to(JoinCode))
-		// socket.to(JoinCode).broadcast.emit('UpdateGnadenwurf', { Response })
-		socket.to(JoinCode).emit('UpdateGnadenwurf', { Response })
-		// socket.broadcast.emit('UpdateGnadenwurf', { Response })
+		socket.to(JoinCode).emit('UpdateGnadenwurf', { Data })
 
 	})
+
+
 
 	socket.on('UpdateValue', async (data) => {
 
@@ -105,7 +106,7 @@ io.on('connection', (socket) => {
 		const Row = data.Row
 		const isUpperTable = data.UpperTable
 		
-		let Response = 'Error'
+		let Data = 'Error'
 		
 		if(isInt(JoinCode) && isString(Alias) && isInt(Column) && isInt(Row) && isBoolean(isUpperTable)) {
 
@@ -119,14 +120,14 @@ io.on('connection', (socket) => {
 			const updateJSON = { [Row]: value }
 			const json = { JoinCode, Alias, Column }
 
-			const res = { Alias, Column, Row, Value: value, UpperTable: isUpperTable }
+			const d = { Alias, Column, Row, Value: value, UpperTable: isUpperTable }
 
 			if(isUpperTable) {
 
 				if(possibleEntries_upperTable[Row].includes(value) || value === null)
 				await UpperTable.update(updateJSON, { where: json }).then((l) => {
 					if(l[0] !== 0) {
-						Response = res
+						Data = d
 					}
 				}).then((err) => {
 					console.log(err)
@@ -137,7 +138,7 @@ io.on('connection', (socket) => {
 				if(possibleEntries_bottomTable[Row].includes(value) || value === null)
 				await BottomTable.update(updateJSON, { where: json }).then((l) =>{
 					if(l[0] !== 0) {
-						Response = res
+						Data = d
 					}
 				}).then((err) => {
 					console.log(err)
@@ -147,7 +148,7 @@ io.on('connection', (socket) => {
 			
 		}
 
-		socket.to(JoinCode).emit('UpdateValueResponse', { Response })
+		socket.to(JoinCode).emit('UpdateValueResponse', { Data })
 
 	})
 
@@ -167,9 +168,11 @@ app.get('/joingame', (req, res) => {
 
 	const JoinCode = +req.query.joincode
 
-	if(!isInt(+JoinCode)) return res.sendStatus(400)
+	if(!JoinCode) return res.sendStatus(400)
 
 	Sessions.findOne({ where: { JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+
+		if(!s) return res.sendStatus(404)
 
 		const tableColumns = []
 		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
@@ -348,9 +351,12 @@ app.get('/game', (req, res) => {
 
 	const UserID = req.id
 	const SessionID = +req.query.sessionid
-	if(!isInt(SessionID)) return res.sendStatus(400)
+	const JoinCode = +req.query.joincode
+	if(!SessionID || !JoinCode) return res.sendStatus(400)
 
-	Sessions.findOne({ where: { id: SessionID, UserID: UserID }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+	Sessions.findOne({ where: { id: SessionID, UserID, JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+
+		if(!s) return res.sendStatus(404)
 
 		const tableColumns = []
 		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
