@@ -293,7 +293,8 @@ app.post('/enternames', async (req, res) => {
 	const date = new Date()
 	const joincode = generateJoinCode()
 	const UserID = req.id
-	const { SessionName, Columns, List_Players } = req.body
+	const { SessionName, List_Players } = req.body
+	const Columns = +req.body.Columns
 
 	if(!isString(SessionName) || !isInt(Columns) || !isArray(List_Players)) return res.sendStatus(400)
 
