@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
         },
         InputType: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.STRING,
             allowNull: false,
         },
         LastPlayed: {
