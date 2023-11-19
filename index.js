@@ -200,6 +200,23 @@ app.get('/joingame', (req, res) => {
 
 })
 
+app.post('/joingame', async (req, res) => {
+
+	const JoinCode = req.body.JoinCode
+	if(!isInt(JoinCode) || 10000000 > JoinCode || 99999999 < JoinCode) return res.sendStatus(400)
+	
+	Sessions.findOne({ where: { JoinCode }}).then((s) => {
+
+		if(!s) return res.sendStatus(404)
+		res.sendStatus(200)
+
+	}).catch((err) => {
+		console.log(err)
+		res.sendStatus(500)
+	})
+
+})
+
 
 
 
