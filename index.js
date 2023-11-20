@@ -112,8 +112,8 @@ io.on('connection', (socket) => {
 		if(isInt(JoinCode) && isString(Alias) && isInt(Column) && isInt(Row) && isBoolean(isUpperTable)) {
 
 			let value
-			if(+data.Value) {
-				value = +data.Value
+			if(isInt(data.Value)) {
+				value = data.Value
 			} else {
 				value = null
 			}
@@ -123,9 +123,10 @@ io.on('connection', (socket) => {
 
 			const d = { Alias, Column, Row, Value: value, UpperTable: isUpperTable }
 
+			//TODO if value isn't correct reply with something like socket.emit('UpdateValueResponse-Error', d)
 			if(isUpperTable) {
 
-				if(possibleEntries_upperTable[Row].includes(value) || value === null)
+				if(!possibleEntries_upperTable[Row].includes(value) && value !== null) return 
 				await UpperTable.update(updateJSON, { where: json }).then((l) => {
 					if(l[0] !== 0) {
 						Data = d
@@ -136,7 +137,7 @@ io.on('connection', (socket) => {
 
 			} else {
 				
-				if(possibleEntries_bottomTable[Row].includes(value) || value === null)
+				if(!possibleEntries_bottomTable[Row].includes(value) && value !== null) return 
 				await BottomTable.update(updateJSON, { where: json }).then((l) =>{
 					if(l[0] !== 0) {
 						Data = d
