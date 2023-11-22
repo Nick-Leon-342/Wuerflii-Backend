@@ -531,7 +531,7 @@ app.get('/endscreen', (req, res) => {
 
 	}).catch((err) => {
 		console.log(err)
-		res.sendStatus(404)
+		res.sendStatus(500)
 	})
 
 })
@@ -635,7 +635,7 @@ app.post('/sessionpreview', async (req, res) => {
 
 	if(!SessionID) return res.sendStatus(400)
 
-	await destroyGame(SessionID, UserID)
+	if(await destroyGame(SessionID, UserID) === 500) return res.sendStatus(500)
 	
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
 
