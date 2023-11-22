@@ -80,6 +80,28 @@ io.on('connection', (socket) => {
 
 
 
+	socket.on('RefreshGame',  () => {
+
+		const JoinCode = +getJoinCode(socket)
+		if(!isInt(JoinCode)) return
+
+		socket.to(JoinCode).emit('RefreshGame', '')
+
+	})
+
+
+
+	socket.on('EndGame', () => {
+
+		const JoinCode = +getJoinCode(socket)
+		if(!isInt(JoinCode)) return
+
+		socket.to(JoinCode).emit('EndGame', '')
+
+	})
+
+
+
 	socket.on('UpdateGnadenwurf', async (data) => {
 
 		const JoinCode = +getJoinCode(socket)
