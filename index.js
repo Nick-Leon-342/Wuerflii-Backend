@@ -113,7 +113,7 @@ io.on('connection', (socket) => {
 		await PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode } }).then((l) => {
 			if(l[0] !== 0) Data = data
 		}).catch((err) => {
-			console.log(err)
+			console.log('SOCKETIO UpdateGnadenwurf', err)
 		})
 
 		socket.to(JoinCode).emit('UpdateGnadenwurf', { Data })
@@ -155,7 +155,7 @@ io.on('connection', (socket) => {
 						Data = d
 					}
 				}).then((err) => {
-					console.log(err)
+					console.log('SOCKETIO UpdateValue-UpperTable', err)
 				})
 
 			} else {
@@ -166,7 +166,7 @@ io.on('connection', (socket) => {
 						Data = d
 					}
 				}).then((err) => {
-					console.log(err)
+					console.log('SOCKETIO UpdateValue-BottomTable', err)
 				})
 
 			}
@@ -218,7 +218,7 @@ app.get('/joingame', (req, res) => {
 		})
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('GET /JoinGame', err)
 		res.sendStatus(500)
 	})
 
@@ -235,7 +235,7 @@ app.post('/joingame', async (req, res) => {
 		res.sendStatus(200)
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('POST /JoinGame', err)
 		res.sendStatus(500)
 	})
 
@@ -278,6 +278,8 @@ async function createNewGame(date, UserID, List_Players, SessionID, Columns, Joi
 		Start: date, 
 		Gnadenwürfe: gnadenwürfe, 
 		SessionID: SessionID, 
+	}).catch((err) => {
+		console.log('FUNCTION createNewGame', err)
 	})
 
 }
@@ -297,7 +299,7 @@ async function destroyGame(SessionID, UserID) {
 		return 204
 
 	} catch (err) {
-		console.log(err)
+		console.log('FUNCTION destroyGame', err)
 		return 500
 	}
 
@@ -378,7 +380,7 @@ app.post('/enternames', async (req, res) => {
 		res.json({ SessionID: s.id, JoinCode: joincode })
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('POST /EnterNames', err)
 		res.sendStatus(500)
 	})
 
@@ -418,7 +420,7 @@ app.get('/game', (req, res) => {
 		})
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('GET /Game', err)
 		res.sendStatus(500)
 	})
 
@@ -488,7 +490,7 @@ app.post('/game', async (req, res) => {
 
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('POST /Game', err)
 		res.sendStatus(500)
 	})
 
@@ -501,7 +503,7 @@ app.delete('/game', async (req, res) => {
 
 	if(!SessionID) return res.sendStatus(400)
 
-	const status = await destroyGame(SessionID, UserID)
+	const status = await destroyGame(SessionID, UserID).catch((err) => {console.log('DELETE /Game', err)})
 	res.sendStatus(status)
 
 })
@@ -531,7 +533,7 @@ app.get('/endscreen', (req, res) => {
 		res.json(session)
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('GET /EndScreen', err)
 		res.sendStatus(500)
 	})
 
@@ -557,7 +559,8 @@ app.get('/selectsession', async (req, res) => {
 
 		res.json(list)
 
-	}).catch(() => {
+	}).catch((err) => {
+		console.log('GET /SelectSession', err)
 		res.sendStatus(500)
 	})
 
@@ -587,7 +590,8 @@ app.delete('/selectsession', async (req, res) => {
 
 		res.sendStatus(204)
 
-	} catch {
+	} catch(err) {
+		console.log('DELETE /SelectSession', err)
 		res.sendStatus(500)
 	}
 
@@ -622,7 +626,7 @@ app.get('/sessionpreview', async (req, res) => {
 		res.json({ Session, FinalScores: finalScores })
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('GET /SessionPreview', err)
 		res.sendStatus(500)
 	})
 
@@ -647,7 +651,7 @@ app.post('/sessionpreview', async (req, res) => {
 		res.json({ JoinCode })
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('POST /SessionPreview', err)
 		res.sendStatus(500)
 	})
 
@@ -694,7 +698,8 @@ app.post('/changecredentials', async (req, res) => {
 			res.sendStatus(500)
 		})
 
-	}).catch(() => {
+	}).catch((err) => {
+		console.log('POST /ChangeCredentials', err)
 		res.sendStatus(403)
 	})
 
@@ -735,7 +740,7 @@ app.post('/updatesession', (req, res) => {
 		res.sendStatus(204)
 
 	}).catch((err) => {
-		console.log(err)
+		console.log('POST /UpdateSession', err)
 		res.sendStatus(500)
 	})
 

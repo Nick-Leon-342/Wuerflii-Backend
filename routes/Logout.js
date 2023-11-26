@@ -24,9 +24,12 @@ router.delete('/', async (req, res) => {
 		return res.sendStatus(204)
 	}
 
-	//delete RefreshToken from user
+	//delete RefreshToken
 	const updatedRefreshToken = { RefreshToken: '' }
-	await Users.update(updatedRefreshToken, { where: { RefreshToken: refreshToken } })
+	await Users.update(updatedRefreshToken, { where: { RefreshToken: refreshToken } }).catch((err) => {
+		console.log('DELETE /Logout', err)
+		return res.sendStatus(500)
+	})
 	
 	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
 	res.sendStatus(204)

@@ -21,7 +21,10 @@ module.exports = async function sendToken(res, user) {
 
 	//save in database
 	const updatedRefreshToken = { RefreshToken: refreshToken }
-	await Users.update( updatedRefreshToken, { where: { id: id } })
+	await Users.update( updatedRefreshToken, { where: { id: id } }).catch((err) => {
+		console.log('FUNCTION SendToken', err)
+		return res.sendStatus(500)
+	})
 	
 	//send refreshtoken as cookie and accesstoken as response in json
 	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000

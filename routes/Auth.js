@@ -17,10 +17,12 @@ router.post('/login', async (req, res) => {
 
     const { Name, Password } = req.body
 	if (!Name || !Password) return res.sendStatus(400)
-	const user = await Users.findOne({ where: { Name: Name } })
+	const user = await Users.findOne({ where: { Name: Name } }).catch((err) => {
+		console.log('POST /Login', err)
+		return res.sendStatus(500)
+	})
 
-	if(!user || !await bcrypt.compare(Password, user.Password)) 
-		return res.status(401).send('Wrong credentials!')
+	if(!user || !await bcrypt.compare(Password, user.Password)) return res.status(401).send('Wrong credentials!')
 
 	sendToken(res, user)
 
@@ -49,13 +51,17 @@ router.post('/registration', async (req, res) => {
 				Password: hashedPassword
 			})
 
-			const user = await Users.findOne({ where: { Name: Name, Password: hashedPassword } })
+			const user = await Users.findOne({ where: { Name: Name, Password: hashedPassword } }).catch((err) => {
+				console.log('POST /Registration', err)
+				return res.sendStatus(500)
+			})
 
 			sendToken(res, user)
 			
 		})
 
-	} catch {
+	} catch (err) {
+		console.log('POST /Registration', err)
 		res.sendStatus(500)
 	}
 
