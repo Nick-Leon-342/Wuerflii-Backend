@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt')
 const router = express.Router()
 const { Users } = require('../models')
 const sendToken = require('./SendToken')
+const { NAME_REGEX, PASSWORD_REGEX } = require('../utils')
 
 
 
@@ -36,7 +37,7 @@ router.post('/registration', async (req, res) => {
 	try {
 
 		const { Name, Password } = req.body
-		if (!Name || !Password) return res.sendStatus(401)
+		if (!Name || !NAME_REGEX.test(Name) || !Password || !PASSWORD_REGEX.test(Password)) return res.sendStatus(400)
 
 		const tmp = await Users.findOne({ where: { Name: Name } })
 		if(tmp) return res.sendStatus(409)

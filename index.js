@@ -4,6 +4,7 @@ require('dotenv').config()
 
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
+const { NAME_REGEX, PASSWORD_REGEX } = require('./utils')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
@@ -661,19 +662,38 @@ app.post('/changecredentials', async (req, res) => {
 	const UserID = req.id
 	const { Name, Password } = req.body
 
-	//TODO Check credentials 
-	const tmp = await Users.findOne({ where: { Name } })
-	if(tmp) return res.sendStatus(409)
+	if(!Name && !Password) return res.sendStatus(400)
 
-	let hashedPassword
-	if(Password) hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
+	const updateJSON = {}
+	if(Name) {
+
+		if(!NAME_REGEX.test(Name)) return res.sendStatus(400)
+
+		const tmp = await Users.findOne({ where: { Name } })
+		if(tmp) return res.sendStatus(409)
+
+		updateJSON['Name'] = Name
+
+	} 
+	
+	if(Password) {
+
+		if(!PASSWORD_REGEX.test(Password)) return res.sendStatus(400)
+
+		const hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
+
+		updateJSON['Password'] = hashedPassword
+
+	}
 
 	Users.findOne({ where: { id: UserID }}).then(async (user) => {
-		await user.update({ Name, Password: hashedPassword }).then(() => {
+
+		await user.update(updateJSON).then(() => {
 			sendToken(res, user)
 		}).catch(() => {
 			res.sendStatus(500)
 		})
+
 	}).catch(() => {
 		res.sendStatus(403)
 	})
