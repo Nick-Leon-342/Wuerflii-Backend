@@ -75,7 +75,6 @@ io.on('connection', (socket) => {
 		
 		const JoinCode = +getJoinCode(socket)
 		if(isInt(JoinCode)) socket.join(JoinCode)
-		console.log('Connect', JoinCode)
 
 	})
 
@@ -113,7 +112,7 @@ io.on('connection', (socket) => {
 		await PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode } }).then((l) => {
 			if(l[0] !== 0) Data = data
 		}).catch((err) => {
-			console.log('SOCKETIO UpdateGnadenwurf', err)
+			return console.log('SOCKETIO UpdateGnadenwurf', err)
 		})
 
 		socket.to(JoinCode).emit('UpdateGnadenwurf', { Data })
@@ -155,7 +154,7 @@ io.on('connection', (socket) => {
 						Data = d
 					}
 				}).then((err) => {
-					console.log('SOCKETIO UpdateValue-UpperTable', err)
+					return console.log('SOCKETIO UpdateValue-UpperTable', err)
 				})
 
 			} else {
@@ -166,7 +165,7 @@ io.on('connection', (socket) => {
 						Data = d
 					}
 				}).then((err) => {
-					console.log('SOCKETIO UpdateValue-BottomTable', err)
+					return console.log('SOCKETIO UpdateValue-BottomTable', err)
 				})
 
 			}
