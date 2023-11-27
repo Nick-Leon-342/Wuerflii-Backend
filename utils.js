@@ -3,8 +3,14 @@
 const id_upperTable		= 'upperTable'
 const id_bottomTable	= 'bottomTable'
 
-const NAME_REGEX = /^[A-z][A-z0-9-_]{3,49}$/
-const PASSWORD_REGEX = /^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{8,128}$/
+const name_min = process.env.USERNAME_MIN_CHARACTER		|| 3
+const name_max = process.env.USERNAME_MAX_CHARACTER		|| 63
+
+const password_min = process.env.PASSWORD_MIN_CHARACTER || 8
+const password_max = process.env.PASSWORD_MAX_CHARACTER || 128
+
+const NAME_REGEX = new RegExp(`^[A-z][A-z0-9-_]{${name_min - 1},${name_max - 1}}$`)
+const PASSWORD_REGEX = new RegExp(`^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{${password_min},${password_max}}$`)
 
 
 module.exports = {
