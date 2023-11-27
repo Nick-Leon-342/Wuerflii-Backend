@@ -4,7 +4,7 @@ require('dotenv').config()
 
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
-const { NAME_REGEX, PASSWORD_REGEX } = require('./utils')
+const { NAME_REGEX, PASSWORD_REGEX, MAX_PLAYERS, MAX_COLUMNS } = require('./utils')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
@@ -264,8 +264,8 @@ async function createNewGame(date, UserID, List_Players, SessionID, Columns, Joi
 		for(const column of array_columns) {
 
 			const json = { UserID: UserID, Alias: p.Alias, Column: column, JoinCode: JoinCode, SessionID: SessionID }
-			UpperTable.create(json)
-			BottomTable.create(json)
+			UpperTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - UpperTable', err)})
+			BottomTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - BottomTable', err)})
 
 		}
 
@@ -277,9 +277,7 @@ async function createNewGame(date, UserID, List_Players, SessionID, Columns, Joi
 		Start: date, 
 		Gnadenwürfe: gnadenwürfe, 
 		SessionID: SessionID, 
-	}).catch((err) => {
-		console.log('FUNCTION createNewGame', err)
-	})
+	}).catch((err) => {console.log('FUNCTION createNewGame - PlayerTable', err)})
 
 }
 
@@ -288,12 +286,12 @@ async function destroyGame(SessionID, UserID) {
 	try {
 
 		const json = { JoinCode: null }
-		await Sessions.update(json, { where: { UserID, id: SessionID } })
+		await Sessions.update(json, { where: { UserID, id: SessionID } }).catch((err) => {console.log('FUNCTION destroyGame - Sessions', err)})
 
 		const findJSON = { UserID, SessionID }
-		await PlayerTable.destroy({ where: findJSON })
-		await UpperTable.destroy({ where: findJSON })
-		await BottomTable.destroy({ where: findJSON })
+		await PlayerTable.destroy({ where: findJSON }).catch((err) => {console.log('FUNCTION destroyGame - PlayerTable', err)})
+		await UpperTable.destroy({ where: findJSON }).catch((err) => {console.log('FUNCTION destroyGame - UpperTable', err)})
+		await BottomTable.destroy({ where: findJSON }).catch((err) => {console.log('FUNCTION destroyGame - BottomTable', err)})
 
 		return 204
 
@@ -306,9 +304,8 @@ async function destroyGame(SessionID, UserID) {
 
 function generateJoinCode() {
 
-	const length = 8
-	const min = Math.pow(10, length - 1)
-	const max = Math.pow(10, length) - 1
+	const min = 10000000
+	const max = 99999999
 	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
 	return randomNumber
 
