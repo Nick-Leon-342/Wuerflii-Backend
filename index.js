@@ -3,6 +3,7 @@
 require('dotenv').config()
 
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
+const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
 const { NAME_REGEX, PASSWORD_REGEX, MAX_PLAYERS, MAX_COLUMNS } = require('./utils')
 
@@ -63,11 +64,6 @@ BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 function getJoinCode(socket) {
 	return socket.handshake.auth.joincode
 }
-
-function isInt(v) {		return typeof v === 'number'	}
-function isArray(v) {	return Array.isArray(v)			}
-function isString(v) {	return typeof v === 'string'	}
-function isBoolean(v) {	return typeof v === 'boolean'	}
 
 io.on('connection', (socket) => {
 
@@ -153,7 +149,7 @@ io.on('connection', (socket) => {
 					if(l[0] !== 0) {
 						Data = d
 					}
-				}).then((err) => {
+				}).catch((err) => {
 					return console.log('SOCKETIO UpdateValue-UpperTable', err)
 				})
 
@@ -164,7 +160,7 @@ io.on('connection', (socket) => {
 					if(l[0] !== 0) {
 						Data = d
 					}
-				}).then((err) => {
+				}).catch((err) => {
 					return console.log('SOCKETIO UpdateValue-BottomTable', err)
 				})
 
@@ -387,7 +383,7 @@ app.post('/enternames', async (req, res) => {
 
 
 app.get('/game', (req, res) => {
-
+	
 	const UserID = req.id
 	const SessionID = +req.query.sessionid
 	const JoinCode = +req.query.joincode
@@ -423,65 +419,120 @@ app.get('/game', (req, res) => {
 })
 
 app.post('/game', async (req, res) => {
-
+	
 	const rb = req.body
 	const UserID = req.id
-	const SessionID = rb.id
+	const SessionID = rb.SessionID
 	const JoinCode = rb.JoinCode
+	const date = new Date()
 	
 	if(!SessionID || !JoinCode) {return res.sendStatus(400)}
 
-	const fs = rb.FinalScores
-	const finalScores = {
-		Columns: fs.Columns,
-		Surrender: fs.Surrender,
-		List_Winner: fs.List_Winner,
-		PlayerScores: fs.PlayerScores,
-	}
-	const List_Players = rb.List_Players
-	const date = new Date()
-	const Attributes = { 
-		SessionName: rb.SessionName,
-		InputType: rb.InputType,
-		LastPlayed: date,
-		List_PlayerOrder: rb.List_PlayerOrder,
-	}
-
-	//____________________UpdateSession____________________
-
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players, UpperTable, BottomTable, PlayerTable ] }).then(async (s) => {
 
-		await s.update(Attributes)
+		if(!s) return res.sendStatus(404)
+		
+		const tableColumns = []
+		const PlayerScores = {}
+		for(const p of s.Players) {
+			PlayerScores[p.Alias] = 0
+		}
 
-		for(const newP of List_Players) {
-			for(const p of s.Players) {
-				if(newP.id === p.id) {
-					await p.update({
-						Name: newP.Name,
-						Color: newP.Color,
-						Wins: newP.Wins,
-					})
-					break
-				}
+		const calcUp = calculateScores(true, s.UpperTables, PlayerScores, tableColumns, rb.WinnerAlias)
+		const calcBo = calculateScores(false, s.BottomTables, PlayerScores, tableColumns, rb.WinnerAlias)
+		if(calcUp || calcBo) return res.sendStatus(406)
+
+		const List_Winner = []
+		const List_WinnerNames = []
+		let highestScore = 0
+		
+		
+		if(
+			!rb.List_PlayerOrder || 
+			rb.List_PlayerOrder.length !== s.Players.length ||
+			!rb.List_Players ||
+			rb.List_Players.length !== s.Players.length ||
+			( rb.InputType !== 'select' && rb.InputType !== 'typeselect' && rb.InputType !== 'type' )
+		) return res.sendStatus(400)
+		
+		for(const p of s.Players) {
+			if(!rb.List_PlayerOrder.includes(p.Alias) || !rb.List_Players.some(item => item.id === p.id)) return res.sendStatus(400)
+
+			const currentScore = PlayerScores[p.Alias]
+			if(highestScore < currentScore) {
+				List_Winner.length = 0
+				List_Winner.push(p.Alias)
+				highestScore = currentScore
+			} else if(highestScore === currentScore) {
+				List_Winner.push(p.Alias)
 			}
 		}
 
-		const tableColumns = []
-		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
-		for(const bt of s.BottomTables) {	tableColumns.push(getBottomTableJSON(bt))	}
+		if(rb.WinnerAlias) {
+			List_Winner.length = 0
+			List_Winner.push(rb.WinnerAlias)
+		}
+		
+		for(const p of rb.List_Players) {
+			if(!isString(p.Name) || !isColor(p.Color)) return res.sendStatus(400)
+		}
+	
+		if(!isString(rb.SessionName)) return res.sendStatus(400)
+ 		await s.update({ 
+			SessionName: rb.SessionName,
+			InputType: rb.InputType,
+			LastPlayed: date,
+			List_PlayerOrder: rb.List_PlayerOrder,
+		}).catch((err) => {
+			console.log('POST /Game - Update Session', err)
+			return res.sendStatus(500)
+		})
 
+		for(const newP of rb.List_Players) {
+			for(const p of s.Players) {
+				if(newP.id === p.id) {
+
+					const tmp_json = {
+						Name: newP.Name,
+						Color: newP.Color,
+					}
+
+					if(List_Winner.includes(p.Alias)) {
+						tmp_json.Wins = p.Wins + 1
+						List_WinnerNames.push(newP.Name)
+					}
+
+					await p.update(tmp_json).catch((err) => {
+						console.log('POST /Game - Update Player', err)
+						return res.sendStatus(500)
+					})
+					break
+
+				}
+			}
+		}
+		
 		FinalScores.create({ 
 			UserID, 
 			SessionID, 
-			...finalScores, 
+			Columns: s.Columns, 
+			Surrender: Boolean(rb.WinnerAlias), 
+			List_Winner, 
+			PlayerScores, 
 			Start: s.PlayerTables[0].Start, 
 			End: date,
 		}).then(async (f) => {
 
-			await TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id })
+			await TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).catch((err) => {
+				console.log('POST /Game - Create TableArchive', err)
+				return res.sendStatus(500)
+			})
 			destroyGame(SessionID, UserID)
-			res.sendStatus(204)
+			res.json({ List_WinnerNames })
 
+		}).catch((err) => {
+			console.log('POST /Game - Create FinalScore', err)
+			return res.sendStatus(500)
 		})
 
 
@@ -491,6 +542,28 @@ app.post('/game', async (req, res) => {
 	})
 
 })
+
+function calculateScores(isUpperTable, tables, PlayerScores, tableColumns, surrender) {
+	
+	const max = isUpperTable ? 6 : 7
+	
+	for(const t of tables) { 
+	
+		let tmp = 0
+		for(let i = 0; max > i; i++) {
+			if(t[i] === null && !surrender) return true
+			tmp += t[i]
+		}
+		if(isUpperTable && tmp >= 63) tmp += 35
+
+		PlayerScores[t.Alias] = PlayerScores[t.Alias] + tmp
+		tableColumns.push(getUpperTableJSON(t))
+	
+	}
+	
+	return false
+
+}
 
 app.delete('/game', async (req, res) => {
 
