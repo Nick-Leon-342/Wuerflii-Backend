@@ -14,6 +14,7 @@ function getSessionJSON(s, list_players) {
 		Columns: s.Columns,
 		JoinCode: s.JoinCode,
 		InputType: s.InputType,
+		ShowScores: s.ShowScores,
 		LastPlayed: s.LastPlayed,
 		CreatedDate: s.CreatedDate,
 		List_PlayerOrder: s.List_PlayerOrder,

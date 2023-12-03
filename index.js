@@ -331,7 +331,7 @@ app.post('/enternames', async (req, res) => {
 	const { SessionName, List_Players } = req.body
 	const Columns = +req.body.Columns
 
-	if(!isString(SessionName) || !isInt(Columns) || !isArray(List_Players)) return res.sendStatus(400)
+	if(!isString(SessionName) || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS || !isArray(List_Players)) return res.sendStatus(400)
 
 	const List_PlayerOrder = []
 	const list = []
@@ -361,6 +361,7 @@ app.post('/enternames', async (req, res) => {
 		CreatedDate: date,
 		LastPlayed: date, 
 		InputType: 'type',
+		ShowScores: true, 
 		SessionName,
 		Columns, 
 		List_PlayerOrder,
@@ -426,7 +427,7 @@ app.post('/game', async (req, res) => {
 	const JoinCode = rb.JoinCode
 	const date = new Date()
 	
-	if(!SessionID || !JoinCode) {return res.sendStatus(400)}
+	if(!SessionID || !JoinCode || !isBoolean(rb.ShowScores)) {return res.sendStatus(400)}
 
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players, UpperTable, BottomTable, PlayerTable ] }).then(async (s) => {
 
@@ -482,6 +483,7 @@ app.post('/game', async (req, res) => {
 			SessionName: rb.SessionName,
 			InputType: rb.InputType,
 			LastPlayed: date,
+			ShowScores: rb.ShowScores, 
 			List_PlayerOrder: rb.List_PlayerOrder,
 		}).catch((err) => {
 			console.log('POST /Game - Update Session', err)
@@ -528,7 +530,7 @@ app.post('/game', async (req, res) => {
 				return res.sendStatus(500)
 			})
 			destroyGame(SessionID, UserID)
-			res.json({ List_WinnerNames })
+			res.json({ List_WinnerNames, PlayerScores })
 
 		}).catch((err) => {
 			console.log('POST /Game - Create FinalScore', err)
@@ -630,6 +632,27 @@ app.get('/selectsession', async (req, res) => {
 
 	}).catch((err) => {
 		console.log('GET /SelectSession', err)
+		res.sendStatus(500)
+	})
+
+})
+
+app.post('/selectsession', async (req, res) => {
+
+	const UserID = req.id
+	const SessionID = req.body.SessionID
+
+	if(!isInt(SessionID)) return res.sendStatus(400)
+
+	PlayerTable.findOne({ where: { SessionID, UserID } }).then((p) => {
+
+		const json = { Exists: Boolean(p) }
+		if(p) json.JoinCode = p.JoinCode
+
+		res.json(json)
+
+	}).catch((err) => {
+		console.log('POST /SelectSession', err)
 		res.sendStatus(500)
 	})
 
@@ -779,12 +802,15 @@ app.post('/updatesession', (req, res) => {
 	const { id, Columns, List_Players } = req.body
 	const UserID = req.id
 
-	//TODO Check validity of columns(if sent) and list_players
+	//TODO Check validity of list_players
 	if(!List_Players) return res.sendStatus(400)
 
 	const List_PlayerOrder = List_Players.map((p) => p.Alias)
 	const updatedSession = { List_PlayerOrder }
-	if(Columns) updatedSession['Columns'] = +Columns
+	if(Columns) {
+		if(Columns < 1 || Columns > MAX_COLUMNS) return res.sendStatus(400)
+		updatedSession['Columns'] = +Columns
+	}
 
 	Sessions.findOne({ where: { id, UserID }, include: Players }).then(async (s) => {
 
