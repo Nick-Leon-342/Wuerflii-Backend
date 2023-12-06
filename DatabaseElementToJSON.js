@@ -38,6 +38,7 @@ function getPlayerJSON(p) {
 function getFinalScoreJSON(f) {
 
 	return {
+		id: f.id, 
 		Start: f.Start,
 		End: f.End,
 		Columns: f.Columns,
@@ -85,6 +86,14 @@ function getBottomTableJSON(bt) {
 
 }
 
+function getTableJSON(t) {
+
+	return {
+		Table: t.Table
+	}
+
+}
+
 
 
 
@@ -95,5 +104,6 @@ module.exports = {
 	getFinalScoreJSON,
 	getPlayerTableJSON,
 	getUpperTableJSON,
-	getBottomTableJSON
+	getBottomTableJSON, 
+	getTableJSON, 
 }

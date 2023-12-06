@@ -2,7 +2,7 @@
 
 require('dotenv').config()
 
-const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON } = require('./DatabaseElementToJSON')
+const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON, getTableJSON } = require('./DatabaseElementToJSON')
 const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
 const { NAME_REGEX, PASSWORD_REGEX, MAX_PLAYERS, MAX_COLUMNS } = require('./utils')
@@ -559,7 +559,11 @@ function calculateScores(isUpperTable, tables, PlayerScores, tableColumns, surre
 		if(isUpperTable && tmp >= 63) tmp += 35
 
 		PlayerScores[t.Alias] = PlayerScores[t.Alias] + tmp
-		tableColumns.push(getUpperTableJSON(t))
+		if(isUpperTable) {
+			tableColumns.push(getUpperTableJSON(t))
+		} else {
+			tableColumns.push(getBottomTableJSON(t))
+		}
 	
 	}
 	
@@ -744,6 +748,45 @@ app.post('/sessionpreview', async (req, res) => {
 
 	}).catch((err) => {
 		console.log('POST /SessionPreview', err)
+		res.sendStatus(500)
+	})
+
+})
+
+
+
+
+
+app.get('/sessionpreview-table', async (req, res) => {
+
+	const UserID = req.id
+	const SessionID = +req.query.SessionID
+	const FinalScoreID = +req.query.FinalScoreID
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
+
+		if(!s) return res.sendStatus(404)
+
+		FinalScores.findOne({ where: { id: FinalScoreID, UserID, SessionID }, include: TableArchive }).then((f) => {
+
+			if(!f) return res.sendStatus(404)
+
+			const json = { 
+				List_PlayerOrder: s.List_PlayerOrder, 
+				List_Players: s.Players.map((p) => getPlayerJSON(p)), 
+				FinalScores: getFinalScoreJSON(f), 
+				...getTableJSON(f.TableArchive)
+			}
+
+			res.json(json)
+
+		}).catch((err) => {
+			console.log('GET /SessionAnalytics-Table - FinalScores', err)
+			res.sendStatus(500)
+		})
+
+	}).catch((err) => {
+		console.log('GET /SessionAnalytics-Table - Sessions', err)
 		res.sendStatus(500)
 	})
 
