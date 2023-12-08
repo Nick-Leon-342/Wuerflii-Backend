@@ -769,7 +769,7 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 		FinalScores.findOne({ where: { id: FinalScoreID, UserID, SessionID }, include: TableArchive }).then((f) => {
 
-			if(!f) return res.sendStatus(404)
+			if(!f || !f.TableArchive) return res.sendStatus(404)
 
 			const json = { 
 				List_PlayerOrder: s.List_PlayerOrder, 
@@ -781,12 +781,12 @@ app.get('/sessionpreview-table', async (req, res) => {
 			res.json(json)
 
 		}).catch((err) => {
-			console.log('GET /SessionAnalytics-Table - FinalScores', err)
+			console.log('GET /SessionPreview-Table - FinalScores', err)
 			res.sendStatus(500)
 		})
 
 	}).catch((err) => {
-		console.log('GET /SessionAnalytics-Table - Sessions', err)
+		console.log('GET /SessionAPreview-Table - Sessions', err)
 		res.sendStatus(500)
 	})
 
