@@ -72,6 +72,8 @@ io.on('connection', (socket) => {
 		const JoinCode = +getJoinCode(socket)
 		if(isInt(JoinCode)) socket.join(JoinCode)
 
+		socket.emit('SuccessfullyJoinedSession', {})
+
 	})
 
 
@@ -117,7 +119,7 @@ io.on('connection', (socket) => {
 
 
 
-	socket.on('UpdateValue', async (data) => {
+	socket.on('UpdateValue', async ( data, callback ) => {
 
 		const JoinCode = +getJoinCode(socket)
 		const Alias = data.Alias
@@ -168,7 +170,10 @@ io.on('connection', (socket) => {
 			
 		}
 
-		socket.to(JoinCode).emit('UpdateValueResponse', { Data })
+		// socket.emit('UpdateValueResponse-Success', { ...data })
+		// socket.to(JoinCode).emit('UpdateValueResponse', { Data })
+		console.log(typeof callback)
+		callback('Test')
 
 	})
 
