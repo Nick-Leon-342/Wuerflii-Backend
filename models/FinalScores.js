@@ -6,6 +6,14 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
+		ScoresBefore: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresAfter: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
 		Start: {
 			type: DataTypes.DATE,
 			allowNull: false,
