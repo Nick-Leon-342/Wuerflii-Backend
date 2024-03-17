@@ -12,7 +12,7 @@ const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../
 
 router.get('', (req, res) => {
 	
-	const UserID = req.id
+	const { UserID } = req
 	const SessionID = +req.query.sessionid
 	const JoinCode = +req.query.joincode
 	if(!SessionID || !JoinCode) return res.sendStatus(400)
@@ -49,7 +49,7 @@ router.get('', (req, res) => {
 router.post('', async (req, res) => {
 	
 	const rb = req.body
-	const UserID = req.id
+	const { UserID } = req
 	const SessionID = rb.SessionID
 	const JoinCode = rb.JoinCode
 	const date = new Date()
@@ -200,7 +200,7 @@ function calculateScores(isUpperTable, tables, PlayerScores, tableColumns, surre
 
 router.delete('', async (req, res) => {
 
-	const UserID = req.id
+	const { UserID } = req
 	const SessionID = +req.query.SessionID
 
 	if(!SessionID) return res.sendStatus(400)

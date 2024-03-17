@@ -427,7 +427,9 @@ app.get('/endscreen', (req, res) => {
 
 app.get('/selectsession', async (req, res) => {
 
-	Sessions.findAll({ where: { UserID: req.id }, include: Players }).then((s) => {
+	const { UserID } = req
+
+	Sessions.findAll({ where: { UserID }, include: Players }).then((s) => {
 
 		const list = []
 
@@ -442,7 +444,7 @@ app.get('/selectsession', async (req, res) => {
 		res.json(list)
 
 	}).catch((err) => {
-		console.log('GET /SelectSession', err)
+		console.log('GET /selectSession', err)
 		res.sendStatus(500)
 	})
 
@@ -463,7 +465,7 @@ app.post('/selectsession', async (req, res) => {
 		res.json(json)
 
 	}).catch((err) => {
-		console.log('POST /SelectSession', err)
+		console.log('POST /selectSession', err)
 		res.sendStatus(500)
 	})
 
@@ -494,7 +496,7 @@ app.delete('/selectsession', async (req, res) => {
 		res.sendStatus(204)
 
 	} catch(err) {
-		console.log('DELETE /SelectSession', err)
+		console.log('DELETE /selectSession', err)
 		res.sendStatus(500)
 	}
 
@@ -603,54 +605,11 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 
 
-app.post('/changecredentials', async (req, res) => {
-
-	const { UserID } = req
-	const { Name, Password } = req.body
-
-	if(!Name && !Password) return res.sendStatus(400)
-
-	const updateJSON = {}
-	if(Name) {
-
-		if(!NAME_REGEX.test(Name)) return res.sendStatus(400)
-
-		const tmp = await Users.findOne({ where: { Name } })
-		if(tmp) return res.sendStatus(409)
-
-		updateJSON['Name'] = Name
-
-	} 
-	
-	if(Password) {
-
-		if(!PASSWORD_REGEX.test(Password)) return res.sendStatus(400)
-
-		const hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
-
-		updateJSON['Password'] = hashedPassword
-
-	}
-
-	Users.findOne({ where: { id: UserID }}).then(async (user) => {
-
-		await user.update(updateJSON).then(() => {
-			sendToken(res, user)
-		}).catch(() => {
-			res.sendStatus(500)
-		})
-
-	}).catch((err) => {
-		console.log('POST /ChangeCredentials', err)
-		res.sendStatus(403)
-	})
-
-})
 
 app.post('/updatesession', (req, res) => {
 
-	const { id, Columns, List_Players } = req.body
 	const { UserID } = req
+	const { id, Columns, List_Players } = req.body
 
 	//TODO Check validity of list_players
 	if(!List_Players) return res.sendStatus(400)
@@ -685,7 +644,7 @@ app.post('/updatesession', (req, res) => {
 		res.sendStatus(204)
 
 	}).catch((err) => {
-		console.log('POST /UpdateSession', err)
+		console.log('POST /updateSession', err)
 		res.sendStatus(500)
 	})
 

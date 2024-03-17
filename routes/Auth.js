@@ -29,6 +29,51 @@ console.log('Test')
 })
 
 
+router.patch('/login', async (req, res) => {
+
+	const { UserID } = req
+	const { Name, Password } = req.body
+
+	if(!Name && !Password) return res.sendStatus(400)
+
+	const updateJSON = {}
+	if(Name) {
+
+		if(!NAME_REGEX.test(Name)) return res.sendStatus(400)
+
+		const tmp = await Users.findOne({ where: { Name } })
+		if(tmp) return res.sendStatus(409)
+
+		updateJSON['Name'] = Name
+
+	} 
+	
+	if(Password) {
+
+		if(!PASSWORD_REGEX.test(Password)) return res.sendStatus(400)
+
+		const hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
+
+		updateJSON['Password'] = hashedPassword
+
+	}
+
+	Users.findOne({ where: { id: UserID }}).then(async (user) => {
+
+		await user.update(updateJSON).then(() => {
+			sendToken(res, user)
+		}).catch(() => {
+			res.sendStatus(500)
+		})
+
+	}).catch((err) => {
+		console.log('PATCH /login', err)
+		res.sendStatus(403)
+	})
+
+})
+
+
 
 
 
