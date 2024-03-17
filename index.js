@@ -59,6 +59,130 @@ BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
 
 
+// __________________________________________________Socket.io__________________________________________________
+
+function getJoinCode(socket) {
+	return socket.handshake.auth.joincode
+}
+
+io.on('connection', (socket) => {
+
+	socket.on('JoinSession', () => {
+		
+		const JoinCode = +getJoinCode(socket)
+		if(isInt(JoinCode)) socket.join(JoinCode)
+
+		socket.emit('SuccessfullyJoinedSession', {})
+
+	})
+
+
+
+	socket.on('RefreshGame',  () => {
+
+		const JoinCode = +getJoinCode(socket)
+		if(!isInt(JoinCode)) return
+
+		socket.to(JoinCode).emit('RefreshGame', '')
+
+	})
+
+
+
+	socket.on('EndGame', () => {
+
+		const JoinCode = +getJoinCode(socket)
+		if(!isInt(JoinCode)) return
+
+		socket.to(JoinCode).emit('EndGame', '')
+
+	})
+
+
+
+	socket.on('UpdateGnadenwurf', async (data) => {
+
+		const JoinCode = +getJoinCode(socket)
+
+		let Data = 'Error'
+
+		if(data.Valid) 
+		await PlayerTable.update({ Gnadenwürfe: data }, { where: { JoinCode } }).then((l) => {
+			if(l[0] !== 0) Data = data
+		}).catch((err) => {
+			return console.log('SOCKETIO UpdateGnadenwurf', err)
+		})
+
+		socket.to(JoinCode).emit('UpdateGnadenwurf', { Data })
+
+	})
+
+
+
+	socket.on('UpdateValue', async ( data, callback ) => {
+
+		const JoinCode = +getJoinCode(socket)
+		const Alias = data.Alias
+		const Column = data.Column
+		const Row = data.Row
+		const isUpperTable = data.UpperTable
+		
+		let Data = 'Error'
+		
+		if(isInt(JoinCode) && isString(Alias) && isInt(Column) && isInt(Row) && isBoolean(isUpperTable)) {
+
+			let value
+			if(isInt(data.Value)) {
+				value = data.Value
+			} else {
+				value = null
+			}
+
+			const updateJSON = { [Row]: value }
+			const json = { JoinCode, Alias, Column }
+
+			const d = { Alias, Column, Row, Value: value, UpperTable: isUpperTable }
+
+			//TODO if value isn't correct reply with something like socket.emit('UpdateValueResponse-Error', d)
+			if(isUpperTable) {
+
+				if(!possibleEntries_upperTable[Row].includes(value) && value !== null) return 
+				await UpperTable.update(updateJSON, { where: json }).then((l) => {
+					if(l[0] !== 0) {
+						Data = d
+					}
+				}).catch((err) => {
+					return console.log('SOCKETIO UpdateValue-UpperTable', err)
+				})
+
+			} else {
+				
+				if(!possibleEntries_bottomTable[Row].includes(value) && value !== null) return 
+				await BottomTable.update(updateJSON, { where: json }).then((l) =>{
+					if(l[0] !== 0) {
+						Data = d
+					}
+				}).catch((err) => {
+					return console.log('SOCKETIO UpdateValue-BottomTable', err)
+				})
+
+			}
+			
+		}
+
+		// socket.emit('UpdateValueResponse-Success', { ...data })
+		// socket.to(JoinCode).emit('UpdateValueResponse', { Data })
+		console.log(typeof callback)
+		callback('Test')
+
+	})
+
+})
+
+
+
+
+
 // __________________________________________________Routers__________________________________________________
 
 app.use('/auth', require('./routes/Auth'))
