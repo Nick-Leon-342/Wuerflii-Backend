@@ -6,6 +6,7 @@ const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTa
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON, getTableJSON } = require('../DatabaseElementToJSON')
 const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../PossibleEntries')
+const { destroyGame } = require('../DestroyGame')
 
 
 
@@ -48,43 +49,48 @@ router.get('', (req, res) => {
 
 router.post('', async (req, res) => {
 	
-	const rb = req.body
 	const { UserID } = req
-	const SessionID = rb.SessionID
-	const JoinCode = rb.JoinCode
 	const date = new Date()
+
+	const { SessionID, JoinCode, WinnerAlias, List_PlayerOrder, List_Players } = req.body
+
 	
-	if(!SessionID || !JoinCode || !isBoolean(rb.ShowScores)) {return res.sendStatus(400)}
+	if(!SessionID || !JoinCode || !List_PlayerOrder || !List_Players) return res.sendStatus(400)
+
+
 
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players, UpperTable, BottomTable, PlayerTable ] }).then(async (s) => {
 
 		if(!s) return res.sendStatus(404)
-		
+
+		//Check if received lists have same players as stored in database
+		if(List_PlayerOrder.length !== s.Players.length || List_Players.length !== s.Players.length) return res.sendStatus(400)
+		for(const p of s.Players) {if(!List_PlayerOrder.includes(p.Alias) || !List_Players.some(item => item.id === p.id)) return res.sendStatus(400)}
+
+
+
 		const tableColumns = []
+
+		const scoresBefore = {}
+		const scoresAfter = {}
 		const PlayerScores = {}
+
 		for(const p of s.Players) {
 			PlayerScores[p.Alias] = 0
+			scoresBefore[p.Alias] = p.Wins
+			scoresAfter[p.Alias] = p.Wins
 		}
 
-		const calcUp = calculateScores(true, s.UpperTables, PlayerScores, tableColumns, rb.WinnerAlias)
-		const calcBo = calculateScores(false, s.BottomTables, PlayerScores, tableColumns, rb.WinnerAlias)
-		if(calcUp || calcBo) return res.sendStatus(406)
+		const calcUp = calculateScores(true, s.UpperTables, PlayerScores, tableColumns, WinnerAlias)
+		const calcBo = calculateScores(false, s.BottomTables, PlayerScores, tableColumns, WinnerAlias)
+		if(calcUp || calcBo) return res.sendStatus(409)
+
 
 		const List_Winner = []
 		const List_WinnerNames = []
 		let highestScore = 0
-		
-		
-		if(
-			!rb.List_PlayerOrder || 
-			rb.List_PlayerOrder.length !== s.Players.length ||
-			!rb.List_Players ||
-			rb.List_Players.length !== s.Players.length ||
-			( rb.InputType !== 'select' && rb.InputType !== 'typeselect' && rb.InputType !== 'type' )
-		) return res.sendStatus(400)
-		
+
 		for(const p of s.Players) {
-			if(!rb.List_PlayerOrder.includes(p.Alias) || !rb.List_Players.some(item => item.id === p.id)) return res.sendStatus(400)
 
 			const currentScore = PlayerScores[p.Alias]
 			if(highestScore < currentScore) {
@@ -94,58 +100,62 @@ router.post('', async (req, res) => {
 			} else if(highestScore === currentScore) {
 				List_Winner.push(p.Alias)
 			}
+
 		}
 
-		if(rb.WinnerAlias) {
+		if(WinnerAlias) {
 			List_Winner.length = 0
-			List_Winner.push(rb.WinnerAlias)
-		}
-		
-		for(const p of rb.List_Players) {
-			if(!isString(p.Name) || !isColor(p.Color)) return res.sendStatus(400)
+			List_Winner.push(WinnerAlias)
 		}
 	
-		if(!isString(rb.SessionName)) return res.sendStatus(400)
+
+
+
+
  		await s.update({ 
-			SessionName: rb.SessionName,
-			InputType: rb.InputType,
 			LastPlayed: date,
-			ShowScores: rb.ShowScores, 
-			List_PlayerOrder: rb.List_PlayerOrder,
+			List_PlayerOrder: List_PlayerOrder,
 		}).catch((err) => {
-			console.log('POST /Game - Update Session', err)
+			console.log('POST /game update session', err)
 			return res.sendStatus(500)
 		})
 
-		for(const newP of rb.List_Players) {
-			for(const p of s.Players) {
-				if(newP.id === p.id) {
 
-					const tmp_json = {
-						Name: newP.Name,
-						Color: newP.Color,
-					}
 
-					if(List_Winner.includes(p.Alias)) {
-						tmp_json.Wins = p.Wins + 1
-						List_WinnerNames.push(newP.Name)
-					}
 
-					await p.update(tmp_json).catch((err) => {
-						console.log('POST /Game - Update Player', err)
+
+		for(const newP of List_Players) {for(const p of s.Players) {
+			if(newP.id === p.id) {
+
+				if(List_Winner.includes(p.Alias)) {
+					
+					scoresAfter[p.Alias] = p.Wins + 1
+					List_WinnerNames.push(p.Name)
+					
+					await p.update({ Wins: p.Wins + 1 }).catch((err) => {
+						console.log('POST /game update player', err)
 						return res.sendStatus(500)
 					})
-					break
 
 				}
+
+				break
+
 			}
-		}
+		}}
 		
+
+
+
+
+
 		FinalScores.create({ 
 			UserID, 
+			ScoresBefore: scoresBefore, 
+			ScoresAfter: scoresAfter, 
 			SessionID, 
 			Columns: s.Columns, 
-			Surrender: Boolean(rb.WinnerAlias), 
+			Surrender: Boolean(WinnerAlias), 
 			List_Winner, 
 			PlayerScores, 
 			Start: s.PlayerTables[0].Start, 
@@ -153,20 +163,20 @@ router.post('', async (req, res) => {
 		}).then(async (f) => {
 
 			await TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).catch((err) => {
-				console.log('POST /Game - Create TableArchive', err)
+				console.log('POST /game create tablearchive', err)
 				return res.sendStatus(500)
 			})
 			destroyGame(SessionID, UserID)
 			res.json({ List_WinnerNames, PlayerScores })
 
 		}).catch((err) => {
-			console.log('POST /Game - Create FinalScore', err)
+			console.log('POST /game create finalscore', err)
 			return res.sendStatus(500)
 		})
 
 
 	}).catch((err) => {
-		console.log('POST /Game', err)
+		console.log('POST /game find session', err)
 		res.sendStatus(500)
 	})
 
