@@ -236,14 +236,14 @@ router.post('/entry', async (req, res) => {
 
 		if(!possibleEntries_upperTable[Row].includes(value) && value !== null) return res.sendStatus(409)
 
-		await UpperTable.update(updateJSON, { where: json }).then((element) => {
+		await UpperTable.update(updateJSON, { where: json }).then((l) => {
 
-			if(!element) return res.sendStatus(404)
+			if(l[0] === 0) return res.sendStatus(404)
 			
 			res.sendStatus(204)
 			
 		}).catch((err) => {
-			console.log('POST /entry isUpperTable = true', err)
+			console.log('POST /game/entry isUpperTable = true', err)
 			res.sendStatus(500)
 		})
 
@@ -251,18 +251,38 @@ router.post('/entry', async (req, res) => {
 		
 		if(!possibleEntries_bottomTable[Row].includes(value) && value !== null) return res.sendStatus(409)
 
-		await BottomTable.update(updateJSON, { where: json }).then((element) => {
+		await BottomTable.update(updateJSON, { where: json }).then((l) => {
 
-			if(!element) return res.sendStatus(404)
+			if(l[0] === 0) return res.sendStatus(404)
 			
 			res.sendStatus(204)
 			
 		}).catch((err) => {
-			console.log('POST /entry isUpperTable = false', err)
+			console.log('POST /game/entry isUpperTable = false', err)
 			res.sendStatus(500)
 		})
 
 	}
+
+})
+
+router.post('/gnadenwurf', async (req, res) => {
+
+	const { UserID } = req
+	const { JoinCode, Gnadenwürfe } = req.body
+	
+	if(!isInt(JoinCode) || typeof Gnadenwürfe !== 'object') return res.sendStatus(400)
+	
+	PlayerTable.update({ Gnadenwürfe }, { where: { UserID, JoinCode } }).then((l) => {
+		
+		if(l[0] === 0) return res.sendStatus(404)
+
+		res.sendStatus(204)
+
+	}).catch((err) => {
+		console.log('POST /game/gnadenwurf', err)
+		res.sendStatus(500)
+	})
 
 })
 
