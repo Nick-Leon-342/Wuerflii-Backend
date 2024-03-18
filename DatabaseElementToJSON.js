@@ -41,6 +41,8 @@ function getFinalScoreJSON(f) {
 		id: f.id, 
 		Start: f.Start,
 		End: f.End,
+		ScoresBefore: f.ScoresBefore, 
+		ScoresAfter: f.ScoresAfter, 
 		Columns: f.Columns,
 		Surrender: f.Surrender,
 		List_Winner: f.List_Winner,

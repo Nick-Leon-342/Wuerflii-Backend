@@ -22,7 +22,7 @@ module.exports = async function sendToken(res, user) {
 	//save in database
 	const updatedRefreshToken = { RefreshToken: refreshToken }
 	await Users.update( updatedRefreshToken, { where: { id: id } }).catch((err) => {
-		console.log('FUNCTION SendToken', err)
+		console.log('FUNCTION sendtoken', err)
 		return res.sendStatus(500)
 	})
 	

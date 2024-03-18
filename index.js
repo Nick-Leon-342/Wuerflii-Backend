@@ -20,8 +20,6 @@ const express 			= require('express')
 const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
-const io				= require('socket.io')(httpServer, { cors: corsOptions })
-const sendToken 		= require('./routes/SendToken')
 const db 				= require('./models')
 const cookieParser 		= require('cookie-parser')
 

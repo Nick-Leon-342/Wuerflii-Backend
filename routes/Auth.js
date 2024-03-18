@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
 	})
 
 	if(!user || !await bcrypt.compare(Password, user.Password)) return res.status(401).send('Wrong credentials!')
-console.log('Test')
+	
 	sendToken(res, user)
 
 })
