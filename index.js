@@ -256,7 +256,7 @@ app.use('/game', require('./routes/Game'))
 app.get('/endscreen', (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.SessionID
+	const SessionID = +req.query.sessionid
 
 	if(!SessionID) return res.sendStatus(400)
 
@@ -274,7 +274,7 @@ app.get('/endscreen', (req, res) => {
 		res.json(session)
 
 	}).catch((err) => {
-		console.log('GET /EndScreen', err)
+		console.log('GET /endscreen', err)
 		res.sendStatus(500)
 	})
 
