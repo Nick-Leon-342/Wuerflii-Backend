@@ -4,8 +4,6 @@ require('dotenv').config()
 
 const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON, getTableJSON } = require('./DatabaseElementToJSON')
 const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
-const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
-const { NAME_REGEX, PASSWORD_REGEX, MAX_PLAYERS, MAX_COLUMNS } = require('./utils')
 const { destroyGame } = require('./DestroyGame')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
@@ -174,15 +172,12 @@ function generateJoinCode() {
 
 
 app.get('/creategame', (req, res) => {
-	res.sendStatus(200)
-})
 
+	res.json({
+		MAX_PLAYERS: process.env.MAX_PLAYERS || 16,
+		MAX_COLUMNS: process.env.MAX_COLUMNS || 10
+	})
 
-
-
-
-app.get('/enternames', (req, res) => {
-	res.sendStatus(200)
 })
 
 app.post('/enternames', async (req, res) => {
@@ -193,7 +188,7 @@ app.post('/enternames', async (req, res) => {
 	const { SessionName, List_Players } = req.body
 	const Columns = +req.body.Columns
 
-	if(!isString(SessionName) || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS || !isArray(List_Players)) return res.sendStatus(400)
+	if(!isString(SessionName) || !isInt(Columns) || Columns < 1 || Columns > ( process.env.MAX_COLUMNS || 16) || !isArray(List_Players)) return res.sendStatus(400)
 
 	const List_PlayerOrder = []
 	const list = []
@@ -476,7 +471,7 @@ app.post('/updatesession', (req, res) => {
 	const List_PlayerOrder = List_Players.map((p) => p.Alias)
 	const updatedSession = { List_PlayerOrder }
 	if(Columns) {
-		if(Columns < 1 || Columns > MAX_COLUMNS) return res.sendStatus(400)
+		if(Columns < 1 || Columns > ( process.env.MAX_COLUMNS || 16 )) return res.sendStatus(400)
 		updatedSession['Columns'] = +Columns
 	}
 

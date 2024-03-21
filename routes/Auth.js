@@ -5,7 +5,52 @@ const bcrypt = require('bcrypt')
 const router = express.Router()
 const { Users } = require('../models')
 const sendToken = require('./SendToken')
-const { NAME_REGEX, PASSWORD_REGEX } = require('../utils')
+
+const {
+	NAME_MIN_CHARACTER, 
+	NAME_MAX_CHARACTER, 
+	
+	NAME_REGEX, 
+	NAME_REGEX_MINMAX, 
+	NAME_REGEX_LETTERFIRST, 
+	NAME_REGEX_ALLOWEDCHARS, 
+
+
+	PASSWORD_MIN_CHARACTER, 
+	PASSWORD_MAX_CHARACTER, 
+
+	PASSWORD_REGEX, 
+	PASSWORD_REGEX_MINMAX, 
+	PASSWORD_REGEX_ALLOWEDCHARS, 
+	PASSWORD_REGEX_ALLOWEDSYMBOLS, 
+} = require('../Regex')
+
+
+
+
+
+router.get('/regex', async (req, res) => {
+
+	res.json({
+		NAME_MIN_CHARACTER, 
+		NAME_MAX_CHARACTER, 
+		
+		NAME_REGEX, 
+		NAME_REGEX_MINMAX, 
+		NAME_REGEX_LETTERFIRST, 
+		NAME_REGEX_ALLOWEDCHARS, 
+	
+	
+		PASSWORD_MIN_CHARACTER, 
+		PASSWORD_MAX_CHARACTER, 
+	
+		PASSWORD_REGEX, 
+		PASSWORD_REGEX_MINMAX, 
+		PASSWORD_REGEX_ALLOWEDCHARS, 
+		PASSWORD_REGEX_ALLOWEDSYMBOLS, 
+	})
+
+})
 
 
 
