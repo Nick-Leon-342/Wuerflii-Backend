@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 			const accessToken = jwt.sign(
 				{ 'id': decoded.id },
 				process.env.ACCESS_TOKEN_SECRET,
-				{ expiresIn: '10s' }
+				{ expiresIn: `${process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
 			)
 			res.json({ accessToken })
 		}
