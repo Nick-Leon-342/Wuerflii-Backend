@@ -6,14 +6,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 		},
-		ScoresBefore: {
-			type: DataTypes.JSON, 
-			allowNull: false
-		},
-		ScoresAfter: {
-			type: DataTypes.JSON, 
-			allowNull: false
-		},
 		Start: {
 			type: DataTypes.DATE,
 			allowNull: false,
@@ -37,6 +29,40 @@ module.exports = (sequelize, DataTypes) => {
 		PlayerScores: {
 			type: DataTypes.JSON,
 			allowNull: false,
+		},
+
+
+		ScoresBefore: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresAfter: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresBefore_Year: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresAfter_Year: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresBefore_Month: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresAfter_Month: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresBefore_SinceCustomDate: {
+			type: DataTypes.JSON, 
+			allowNull: false
+		},
+		ScoresAfter_SinceCustomDate: {
+			type: DataTypes.JSON, 
+			allowNull: false
 		},
     })
 

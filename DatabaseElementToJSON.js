@@ -41,12 +41,19 @@ function getFinalScoreJSON(f) {
 		id: f.id, 
 		Start: f.Start,
 		End: f.End,
-		ScoresBefore: f.ScoresBefore, 
-		ScoresAfter: f.ScoresAfter, 
 		Columns: f.Columns,
 		Surrender: f.Surrender,
 		List_Winner: f.List_Winner,
 		PlayerScores: f.PlayerScores,
+		
+		ScoresBefore: f.ScoresBefore, 
+		ScoresAfter: f.ScoresAfter, 
+		ScoresBefore_Year: f.ScoresBefore_Year, 
+		ScoresAfter_Year: f.ScoresAfter_Year, 
+		ScoresBefore_Month: f.ScoresBefore_Month, 
+		ScoresAfter_Month: f.ScoresAfter_Month, 
+		ScoresBefore_SinceCustomDate: f.ScoresBefore_SinceCustomDate, 
+		ScoresAfter_SinceCustomDate: f.ScoresAfter_SinceCustomDate, 
 	}
 
 }
