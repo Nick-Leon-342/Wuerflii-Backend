@@ -96,12 +96,12 @@ router.post('', async (req, res) => {
 
 		if(!fs) {
 
-			scoresBefore = tmp
-			scoresAfter = tmp
-			scoresBefore_Month = tmp
-			scoresAfter_Month = tmp
-			scoresBefore_Year = tmp
-			scoresAfter_Year = tmp
+			scoresBefore = {...tmp}
+			scoresAfter = {...tmp}
+			scoresBefore_Month = {...tmp}
+			scoresAfter_Month = {...tmp}
+			scoresBefore_Year = {...tmp}
+			scoresAfter_Year = {...tmp}
 
 		} else {
 
@@ -112,16 +112,16 @@ router.post('', async (req, res) => {
 				scoresBefore_Month = fs.ScoresAfter_Month
 				scoresAfter_Month = fs.ScoresAfter_Month
 			} else {
-				scoresBefore_Month = tmp
-				scoresAfter_Month = tmp
+				scoresBefore_Month = {...tmp}
+				scoresAfter_Month = {...tmp}
 			}
 
 			if(new Date(fs.End).getFullYear() === date.getFullYear()) {
 				scoresBefore_Year = fs.ScoresAfter_Year
 				scoresAfter_Year = fs.ScoresAfter_Year
 			} else {
-				scoresBefore_Year = tmp
-				scoresAfter_Year = tmp
+				scoresBefore_Year = {...tmp}
+				scoresAfter_Year = {...tmp}
 			}
 
 			if(fs.ScoresAfter_SinceCustomDate) {
@@ -187,10 +187,9 @@ router.post('', async (req, res) => {
 
 
 		// Add +1 win for every winner of game
-
 		for(const p of s.Players) {
 			if(List_Winner.includes(p.Alias)) {
-					
+
 				scoresAfter[p.Alias] = scoresBefore[p.Alias] + 1
 				scoresAfter_Month[p.Alias] = scoresAfter_Month[p.Alias] + 1
 				scoresAfter_Year[p.Alias] = scoresAfter_Year[p.Alias] + 1 
@@ -203,9 +202,6 @@ router.post('', async (req, res) => {
 
 			}
 		}
-		
-
-
 
 
 
@@ -234,7 +230,7 @@ router.post('', async (req, res) => {
 			TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).then(() => {
 				
 				destroyGame(SessionID, UserID)
-				res.json({ List_WinnerNames, PlayerScores })
+				res.sendStatus(204)
 
 			}).catch((err) => {
 				console.log('POST /game create tablearchive', err)
