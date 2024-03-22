@@ -58,11 +58,11 @@ module.exports = (sequelize, DataTypes) => {
 		},
 		ScoresBefore_SinceCustomDate: {
 			type: DataTypes.JSON, 
-			allowNull: false
+			allowNull: true
 		},
 		ScoresAfter_SinceCustomDate: {
 			type: DataTypes.JSON, 
-			allowNull: false
+			allowNull: true
 		},
     })
 

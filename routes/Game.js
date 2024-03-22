@@ -67,24 +67,86 @@ router.post('', async (req, res) => {
 		if(List_PlayerOrder.length !== s.Players.length || List_Players.length !== s.Players.length) return res.sendStatus(400)
 		for(const p of s.Players) {if(!List_PlayerOrder.includes(p.Alias) || !List_Players.some(item => item.id === p.id)) return res.sendStatus(400)}
 
+		
 
+		// Read scoresBefore or initialize them
+		let scoresBefore
+		let scoresAfter
+		let scoresBefore_Month
+		let scoresAfter_Month
+		let scoresBefore_Year
+		let scoresAfter_Year
+		let scoresBefore_SinceCustomDate
+		let scoresAfter_SinceCustomDate
+
+		const fs = await FinalScores.findOne({
+			where: {
+				SessionID,
+				UserID,
+			},
+			order: [['createdAt', 'DESC']],
+		}).catch((err) => {
+			console.log('POST /game findOne FinalScores', err)
+			return res.sendStatus(500)
+		})
+
+		
+		const tmp = {}
+		for(const p of s.Players) {tmp[p.Alias] = 0}
+
+		if(!fs) {
+
+			scoresBefore = tmp
+			scoresAfter = tmp
+			scoresBefore_Month = tmp
+			scoresAfter_Month = tmp
+			scoresBefore_Year = tmp
+			scoresAfter_Year = tmp
+
+		} else {
+
+			scoresBefore = fs.ScoresAfter
+			scoresAfter = fs.ScoresAfter
+
+			if(new Date(fs.End).getFullYear() === date.getFullYear() && new Date(fs.End).getMonth() === date.getMonth()) {
+				scoresBefore_Month = fs.ScoresAfter_Month
+				scoresAfter_Month = fs.ScoresAfter_Month
+			} else {
+				scoresBefore_Month = tmp
+				scoresAfter_Month = tmp
+			}
+
+			if(new Date(fs.End).getFullYear() === date.getFullYear()) {
+				scoresBefore_Year = fs.ScoresAfter_Year
+				scoresAfter_Year = fs.ScoresAfter_Year
+			} else {
+				scoresBefore_Year = tmp
+				scoresAfter_Year = tmp
+			}
+
+			if(fs.ScoresAfter_SinceCustomDate) {
+				scoresBefore_SinceCustomDate = fs.ScoresAfter_SinceCustomDate
+				scoresAfter_SinceCustomDate = fs.ScoresAfter_SinceCustomDate
+			}
+
+		}
+
+
+
+		// Calculate scores of current game
 
 		const tableColumns = []
-
-		const scoresBefore = {}
-		const scoresAfter = {}
 		const PlayerScores = {}
 
-		for(const p of s.Players) {
-			PlayerScores[p.Alias] = 0
-			scoresBefore[p.Alias] = p.Wins
-			scoresAfter[p.Alias] = p.Wins
-		}
+		for(const p of s.Players) {PlayerScores[p.Alias] = 0}
 
 		const calcUp = calculateScores(true, s.UpperTables, PlayerScores, tableColumns, WinnerAlias)
 		const calcBo = calculateScores(false, s.BottomTables, PlayerScores, tableColumns, WinnerAlias)
 		if(calcUp || calcBo) return res.sendStatus(409)
 
+
+
+		// Find winner
 
 		const List_Winner = []
 		const List_WinnerNames = []
@@ -103,6 +165,8 @@ router.post('', async (req, res) => {
 
 		}
 
+		// If surrendered, initialize winner
+
 		if(WinnerAlias) {
 			List_Winner.length = 0
 			List_Winner.push(WinnerAlias)
@@ -110,7 +174,7 @@ router.post('', async (req, res) => {
 	
 
 
-
+		// Update Session
 
  		await s.update({ 
 			LastPlayed: date,
@@ -122,27 +186,23 @@ router.post('', async (req, res) => {
 
 
 
+		// Add +1 win for every winner of game
 
-
-		for(const newP of List_Players) {for(const p of s.Players) {
-			if(newP.id === p.id) {
-
-				if(List_Winner.includes(p.Alias)) {
+		for(const p of s.Players) {
+			if(List_Winner.includes(p.Alias)) {
 					
-					scoresAfter[p.Alias] = p.Wins + 1
-					List_WinnerNames.push(p.Name)
-					
-					await p.update({ Wins: p.Wins + 1 }).catch((err) => {
-						console.log('POST /game update player', err)
-						return res.sendStatus(500)
-					})
+				scoresAfter[p.Alias] = scoresBefore[p.Alias] + 1
+				scoresAfter_Month[p.Alias] = scoresAfter_Month[p.Alias] + 1
+				scoresAfter_Year[p.Alias] = scoresAfter_Year[p.Alias] + 1 
 
+				if(scoresAfter_SinceCustomDate) {
+					scoresAfter_SinceCustomDate[p.Alias] = scoresAfter_SinceCustomDate[p.Alias] + 1
 				}
 
-				break
+				List_WinnerNames.push(p.Name)
 
 			}
-		}}
+		}
 		
 
 
@@ -150,9 +210,8 @@ router.post('', async (req, res) => {
 
 
 		FinalScores.create({ 
+
 			UserID, 
-			ScoresBefore: scoresBefore, 
-			ScoresAfter: scoresAfter, 
 			SessionID, 
 			Columns: s.Columns, 
 			Surrender: Boolean(WinnerAlias), 
@@ -160,20 +219,32 @@ router.post('', async (req, res) => {
 			PlayerScores, 
 			Start: s.PlayerTables[0].Start, 
 			End: date,
+			
+			ScoresBefore: scoresBefore, 
+			ScoresAfter: scoresAfter, 
+			ScoresBefore_Month: scoresBefore_Month, 
+			ScoresAfter_Month: scoresAfter_Month, 
+			ScoresBefore_Year: scoresBefore_Year, 
+			ScoresAfter_Year: scoresAfter_Year, 
+			ScoresBefore_SinceCustomDate: scoresBefore_SinceCustomDate, 
+			ScoresAfter_SinceCustomDate: scoresAfter_SinceCustomDate, 
+
 		}).then(async (f) => {
 
-			await TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).catch((err) => {
+			TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).then(() => {
+				
+				destroyGame(SessionID, UserID)
+				res.json({ List_WinnerNames, PlayerScores })
+
+			}).catch((err) => {
 				console.log('POST /game create tablearchive', err)
 				return res.sendStatus(500)
 			})
-			destroyGame(SessionID, UserID)
-			res.json({ List_WinnerNames, PlayerScores })
 
 		}).catch((err) => {
 			console.log('POST /game create finalscore', err)
 			return res.sendStatus(500)
 		})
-
 
 	}).catch((err) => {
 		console.log('POST /game find session', err)
