@@ -365,7 +365,6 @@ router.post('/create', async (req, res) => {
 		CreatedDate: date,
 		LastPlayed: date, 
 		InputType: 'type',
-		ShowScores: true, 
 		SessionName,
 		Columns, 
 		List_PlayerOrder,

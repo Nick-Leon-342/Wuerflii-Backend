@@ -14,10 +14,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-		ShowScores: {
-			type: DataTypes.BOOLEAN, 
-			allowNull: false, 
-		}, 
         LastPlayed: {
             type: DataTypes.DATE,
             allowNull: false,

@@ -435,24 +435,32 @@ app.post('/updatesession', (req, res) => {
 		}
 
 
-		await s.update(updatedSession)
+		s.update(updatedSession).then(async (s) => {
 
-		for(const tmp of List_Players) {
-			for(const p of s.Players) {
-				if(tmp.Alias === p.Alias) {
 
-					await p.update({
-						Name: tmp.Name,
-						Color: tmp.Color,
-					})
-					break
-
+			if(s[0] === 0) return res.sendStatus(404)
+			
+			for(const tmp of List_Players) {
+				for(const p of s.Players) {
+					if(tmp.Alias === p.Alias) {
+	
+						await p.update({
+							Name: tmp.Name,
+							Color: tmp.Color,
+						})
+						break
+	
+					}
 				}
 			}
-		}
+	
+			res.sendStatus(204)
 
-		res.sendStatus(204)
 
+		}).catch((err) => {
+			console.log('POST /updatesession update session', err)
+			res.sendStatus(500)
+		})
 
 	}).catch((err) => {
 		console.log('POST /updatesession', err)
