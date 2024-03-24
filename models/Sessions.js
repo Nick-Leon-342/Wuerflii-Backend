@@ -30,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
         },
+        CustomDate: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
     })
 
     return Sessions

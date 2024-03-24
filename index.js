@@ -137,6 +137,8 @@ app.post('/joingame', async (req, res) => {
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
 const bcrypt = require('bcrypt')
+const { isDate } = require('util/types')
+const { DATE } = require('sequelize')
 app.use(verifyJWT)
 
 
@@ -386,6 +388,71 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 	}).catch((err) => {
 		console.log('GET /sessionpreview-table findone sessions', err)
+		res.sendStatus(500)
+	})
+
+})
+
+
+
+
+app.post('/customdate', async (req, res) => {
+
+	const { UserID } = req
+	const { SessionID, CustomDate } = req.body
+
+	if(!SessionID || !isInt(SessionID) || !CustomDate || !isDate(new Date(CustomDate))) return res.sendStatus(500)
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ FinalScores, Players ] }).then((session) => {
+
+		if(!session === 0) return res.sendStatus(404)
+
+		session.update({ CustomDate: new Date(CustomDate) }).then(async () => {
+			
+			let scoresBefore = {}
+			let scoresAfter = {}
+
+			for(const p of session.Players) {scoresAfter[p.Alias] = 0}
+
+
+			// Get finalScores later than customdate
+			const list_finalscores = []
+			for(const f of session.FinalScores) {
+				if(new Date(f.End) >= new Date(CustomDate)) {
+					list_finalscores.push(f)
+				}
+			}
+			list_finalscores.sort((a, b) => new Date(a.End) - new Date(b.End))
+
+
+			// Initialize ScoresAfter/ScoresBefore for correct finalScores
+			for(const f of list_finalscores) {
+
+				scoresBefore = { ...scoresAfter }
+
+				// Add wins to scoresAfter
+				for(const playerAlias of f.List_Winner) {
+					scoresAfter[playerAlias] = scoresAfter[playerAlias] + 1
+				}
+
+				// Update finalScore
+				await f.update({ ScoresBefore_SinceCustomDate: scoresBefore, ScoresAfter_SinceCustomDate: scoresAfter }).catch((err) => {
+					console.log('POST /customdate update finalscore', err)
+					return res.sendStatus(500)
+				})
+
+			}
+			
+			res.sendStatus(204)
+			
+
+		}).catch((err) => {
+			console.log('POST /customdate session update', err)
+			res.sendStatus(500)
+		})
+
+	}).catch((err) => {
+		console.log('POST /customdate', err)
 		res.sendStatus(500)
 	})
 

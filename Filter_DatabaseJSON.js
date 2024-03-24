@@ -16,6 +16,7 @@ function filter_session(s) {
 		InputType: s.InputType,
 		ShowScores: s.ShowScores,
 		LastPlayed: s.LastPlayed,
+		CustomDate: s.CustomDate,
 		CreatedDate: s.CreatedDate,
 		List_PlayerOrder: s.List_PlayerOrder,
 	}
