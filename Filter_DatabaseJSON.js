@@ -6,7 +6,7 @@ const { id_upperTable, id_bottomTable } = require('./utils')
 
 
 
-function getSessionJSON(s, list_players) {
+function filter_session(s) {
 
 	return {
 		id: s.id,
@@ -18,12 +18,11 @@ function getSessionJSON(s, list_players) {
 		LastPlayed: s.LastPlayed,
 		CreatedDate: s.CreatedDate,
 		List_PlayerOrder: s.List_PlayerOrder,
-		List_Players: list_players,
 	}
 
 }
 
-function getPlayerJSON(p) {
+function filter_player(p) {
 
 	return {
 		id: p.id,
@@ -35,7 +34,7 @@ function getPlayerJSON(p) {
 
 }
 
-function getFinalScoreJSON(f) {
+function filter_finalscore(f) {
 
 	return {
 		id: f.id, 
@@ -58,11 +57,13 @@ function getFinalScoreJSON(f) {
 
 }
 
-function getPlayerTableJSON(pt) {
+function filter_playertable(pt) {
+
 	return pt.Gnadenwürfe
+
 }
 
-function getUpperTableJSON(ut) {
+function filter_uppertable(ut) {
 
 	return {
 		Alias: ut.Alias,
@@ -78,7 +79,7 @@ function getUpperTableJSON(ut) {
 
 }
 
-function getBottomTableJSON(bt) {
+function filter_bottomtable(bt) {
 
 	return {
 		Alias: bt.Alias,
@@ -95,10 +96,10 @@ function getBottomTableJSON(bt) {
 
 }
 
-function getTableJSON(t) {
+function filter_tablearchive(ta) {
 
 	return {
-		Table: t.Table
+		Table: ta.Table
 	}
 
 }
@@ -108,11 +109,11 @@ function getTableJSON(t) {
 
 
 module.exports = {
-	getSessionJSON,
-	getPlayerJSON,
-	getFinalScoreJSON,
-	getPlayerTableJSON,
-	getUpperTableJSON,
-	getBottomTableJSON, 
-	getTableJSON, 
+	filter_session,
+	filter_player,
+	filter_finalscore,
+	filter_playertable,
+	filter_uppertable,
+	filter_bottomtable, 
+	filter_tablearchive, 
 }

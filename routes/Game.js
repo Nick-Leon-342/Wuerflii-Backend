@@ -3,10 +3,26 @@
 const express = require('express')
 const router = express.Router()
 const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../models')
-const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON, getTableJSON } = require('../DatabaseElementToJSON')
 const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../PossibleEntries')
 const { destroyGame } = require('../DestroyGame')
+const { v4 }			= require('uuid')
+
+const {
+	createNewGame, 
+	generateJoinCode
+} = require('../CreateNewGame')
+
+const { 
+	filter_session,
+	filter_player,
+	filter_finalscore,
+	filter_playertable,
+	filter_uppertable,
+	filter_bottomtable, 
+	filter_tablearchive 
+} = require('../Filter_DatabaseJSON')
+
 
 
 
@@ -14,34 +30,36 @@ const { destroyGame } = require('../DestroyGame')
 router.get('', (req, res) => {
 	
 	const { UserID } = req
-	const SessionID = +req.query.sessionid
+	const SessionID = +req.query.session_id
 	const JoinCode = +req.query.joincode
+	
 	if(!SessionID || !JoinCode) return res.sendStatus(400)
 
 	Sessions.findOne({ where: { id: SessionID, UserID, JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
 
+
 		if(!s) return res.sendStatus(404)
 
-		const TableColumns = []
-		for(const ut of s.UpperTables) {	TableColumns.push(getUpperTableJSON(ut))	}
-		for(const bt of s.BottomTables) {	TableColumns.push(getBottomTableJSON(bt))	}
-
-		const Gnadenwürfe = getPlayerTableJSON(s.PlayerTables[0])
+		const list_columns = []
+		for(const ut of s.UpperTables) {	list_columns.push(filter_uppertable(ut))	}
+		for(const bt of s.BottomTables) {	list_columns.push(filter_bottomtable(bt))	}
 
 		const list_players = []
-		for(const p of s.Players) {
-			list_players.push(getPlayerJSON(p))
-		}
-		const Session = getSessionJSON(s, list_players)
+		for(const p of s.Players) {list_players.push(filter_player(p))}
+		
+		const session = filter_session(s)
+		const gnadenwürfe = filter_playertable(s.PlayerTables[0])
 
 		res.json({
-			Session,
-			Gnadenwürfe,
-			TableColumns,
+			Session: session,
+			List_Players: list_players, 
+			Gnadenwürfe: gnadenwürfe,
+			List_Columns: list_columns,
 		})
 
+
 	}).catch((err) => {
-		console.log('GET /Game', err)
+		console.log('GET /game', err)
 		res.sendStatus(500)
 	})
 
@@ -53,10 +71,8 @@ router.post('', async (req, res) => {
 	const date = new Date()
 
 	const { SessionID, JoinCode, WinnerAlias, List_PlayerOrder, List_Players } = req.body
-
 	
 	if(!SessionID || !JoinCode || !List_PlayerOrder || !List_Players) return res.sendStatus(400)
-
 
 
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players, UpperTable, BottomTable, PlayerTable ] }).then(async (s) => {
@@ -86,7 +102,7 @@ router.post('', async (req, res) => {
 			},
 			order: [['createdAt', 'DESC']],
 		}).catch((err) => {
-			console.log('POST /game findOne FinalScores', err)
+			console.log('POST /game findone finalscores', err)
 			return res.sendStatus(500)
 		})
 
@@ -229,8 +245,10 @@ router.post('', async (req, res) => {
 
 			TableArchive.create({ UserID, SessionID, Table: tableColumns, FinalScoresID: f.id }).then(() => {
 				
+				
 				destroyGame(SessionID, UserID)
-				res.sendStatus(204)
+				res.json({ FinalScoreID: f.id })
+
 
 			}).catch((err) => {
 				console.log('POST /game create tablearchive', err)
@@ -264,9 +282,9 @@ function calculateScores(isUpperTable, tables, PlayerScores, tableColumns, surre
 
 		PlayerScores[t.Alias] = PlayerScores[t.Alias] + tmp
 		if(isUpperTable) {
-			tableColumns.push(getUpperTableJSON(t))
+			tableColumns.push(filter_uppertable(t))
 		} else {
-			tableColumns.push(getBottomTableJSON(t))
+			tableColumns.push(filter_bottomtable(t))
 		}
 	
 	}
@@ -278,11 +296,11 @@ function calculateScores(isUpperTable, tables, PlayerScores, tableColumns, surre
 router.delete('', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.SessionID
+	const SessionID = +req.query.session_id
 
 	if(!SessionID) return res.sendStatus(400)
 
-	const status = await destroyGame(SessionID, UserID).catch((err) => {console.log('DELETE /Game', err)})
+	const status = await destroyGame(SessionID, UserID).catch((err) => {console.log('DELETE /game', err)})
 	res.sendStatus(status)
 
 })
@@ -292,6 +310,91 @@ router.delete('', async (req, res) => {
 
 
 
+
+
+
+
+
+// __________________________________________________ Create __________________________________________________
+
+router.get('/create', (req, res) => {
+
+	res.json({
+		MAX_PLAYERS: process.env.MAX_PLAYERS || 16,
+		MAX_COLUMNS: process.env.MAX_COLUMNS || 10
+	})
+
+})
+
+router.post('/create', async (req, res) => {
+
+	const date = new Date()
+	const joincode = generateJoinCode()
+	const { UserID } = req
+	const { SessionName, Columns, List_Players } = req.body
+
+	if(
+		!SessionName || !isString(SessionName) || 
+		!Columns || !isInt(Columns) || Columns < 1 || Columns > ( process.env.MAX_COLUMNS || 16) || 
+		!List_Players || !isArray(List_Players)
+	) return res.sendStatus(400)
+
+	const List_PlayerOrder = []
+	const list = []
+	for(const p of List_Players) {
+
+		if(!p.Name || !isString(p.Name) || !p.Color || !isColor(p.Color)) return res.sendStatus(400)
+
+		const Alias = v4()
+		List_PlayerOrder.push(Alias)
+		list.push({ 
+			UserID, 
+			Alias,
+			Name: p.Name,
+			Color: p.Color,
+		})
+
+	}
+	
+
+	// ____________________ Create session ____________________
+
+	Sessions.create({
+		UserID: UserID, 
+		JoinCode: joincode,
+		CreatedDate: date,
+		LastPlayed: date, 
+		InputType: 'type',
+		ShowScores: true, 
+		SessionName,
+		Columns, 
+		List_PlayerOrder,
+	}).then(async (s) => {
+
+
+		for(const p of list) {await Players.create({ ...p, SessionID: s.id })}
+		await createNewGame(date, UserID, list, s.id, Columns, joincode)
+
+		res.json({ SessionID: s.id, JoinCode: joincode })
+
+
+	}).catch((err) => {
+		console.log('POST /game/create', err)
+		res.sendStatus(500)
+	})
+
+})
+
+
+
+
+
+
+
+
+
+
+// __________________________________________________ Gameplay __________________________________________________
 
 router.post('/entry', async (req, res) => {
 
@@ -313,7 +416,7 @@ router.post('/entry', async (req, res) => {
 
 		if(!possibleEntries_upperTable[Row].includes(value) && value !== null) return res.sendStatus(409)
 
-		await UpperTable.update(updateJSON, { where: json }).then((l) => {
+		UpperTable.update(updateJSON, { where: json }).then((l) => {
 
 			if(l[0] === 0) return res.sendStatus(404)
 			
@@ -328,7 +431,7 @@ router.post('/entry', async (req, res) => {
 		
 		if(!possibleEntries_bottomTable[Row].includes(value) && value !== null) return res.sendStatus(409)
 
-		await BottomTable.update(updateJSON, { where: json }).then((l) => {
+		BottomTable.update(updateJSON, { where: json }).then((l) => {
 
 			if(l[0] === 0) return res.sendStatus(404)
 			
@@ -362,9 +465,6 @@ router.post('/gnadenwurf', async (req, res) => {
 	})
 
 })
-
-
-
 
 
 
