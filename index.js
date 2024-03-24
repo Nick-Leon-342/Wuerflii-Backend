@@ -355,8 +355,11 @@ app.post('/sessionpreview', async (req, res) => {
 app.get('/sessionpreview-table', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.SessionID
-	const FinalScoreID = +req.query.FinalScoreID
+	const SessionID = +req.query.session_id
+	const FinalScoreID = +req.query.finalscore_id
+
+	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
+
 
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
 
@@ -382,7 +385,7 @@ app.get('/sessionpreview-table', async (req, res) => {
 		})
 
 	}).catch((err) => {
-		console.log('GET /sessionApreview-table findone sessions', err)
+		console.log('GET /sessionpreview-table findone sessions', err)
 		res.sendStatus(500)
 	})
 
