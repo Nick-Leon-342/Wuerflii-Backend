@@ -396,6 +396,32 @@ router.post('/create', async (req, res) => {
 
 // __________________________________________________ Gameplay __________________________________________________
 
+router.post('/inputtype', async (req, res) => {
+
+	const { UserID } = req
+	const { SessionID, InputType } = req.body
+
+	if(
+		!SessionID || !isInt(SessionID) || 
+		!InputType || !isString(InputType) ||
+		!(InputType === 'select' || InputType === 'typeselect' || InputType === 'type')
+	) return res.sendStatus(400)
+
+	Sessions.update({ InputType }, { where: { id: SessionID, UserID } }).then((s) => {
+
+
+		if(s[0] === 0) return res.sendStatus(404)
+
+		res.sendStatus(204)
+
+
+	}).catch((err) => {
+		console.log('POST /game/inputtype', err)
+		res.sendStatus(500)
+	})
+
+})
+
 router.post('/entry', async (req, res) => {
 
 	const { UserID } = req
