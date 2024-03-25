@@ -19,6 +19,7 @@ const {
 
 const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
 const { destroyGame } = require('./DestroyGame')
+const { isDate } = require('util/types')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
@@ -74,6 +75,7 @@ BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
+
 
 
 
@@ -136,9 +138,6 @@ app.post('/joingame', async (req, res) => {
 
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
-const bcrypt = require('bcrypt')
-const { isDate } = require('util/types')
-const { DATE } = require('sequelize')
 app.use(verifyJWT)
 
 
@@ -146,8 +145,6 @@ app.use(verifyJWT)
 
 
 app.use('/game', require('./routes/Game'))
-
-
 
 
 
@@ -166,8 +163,6 @@ app.get('/endscreen', (req, res) => {
 
 		FinalScores.findOne({ where: { id: FinalScoreID, SessionID, UserID } }).then((f) => {
 
-
-			// return console.log(list_players, f)
 
 			if(list_players.length === 0 || !f) return res.sendStatus(404)
 
@@ -232,7 +227,7 @@ app.get('/selectsession', async (req, res) => {
 app.post('/selectsession', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = req.body.SessionID
+	const { SessionID } = req.body
 
 	if(!isInt(SessionID)) return res.sendStatus(400)
 
@@ -396,6 +391,7 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 
 
+
 app.post('/customdate', async (req, res) => {
 
 	const { UserID } = req
@@ -457,7 +453,6 @@ app.post('/customdate', async (req, res) => {
 	})
 
 })
-
 
 
 
