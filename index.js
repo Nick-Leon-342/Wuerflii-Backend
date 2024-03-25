@@ -2,11 +2,24 @@
 
 require('dotenv').config()
 
-const { getSessionJSON, getPlayerJSON, getFinalScoreJSON, getPlayerTableJSON, getUpperTableJSON, getBottomTableJSON, getTableJSON } = require('./DatabaseElementToJSON')
+const {
+	createNewGame, 
+	generateJoinCode
+} = require('./CreateNewGame')
+
+const { 
+	filter_session,
+	filter_player,
+	filter_finalscore,
+	filter_playertable,
+	filter_uppertable,
+	filter_bottomtable, 
+	filter_tablearchive 
+} = require('./Filter_DatabaseJSON')
+
 const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
-const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('./PossibleEntries')
-const { NAME_REGEX, PASSWORD_REGEX, MAX_PLAYERS, MAX_COLUMNS } = require('./utils')
 const { destroyGame } = require('./DestroyGame')
+const { isDate } = require('util/types')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
@@ -15,7 +28,6 @@ const corsOptions 		= {
 	credentials: true
 }
 
-const { v4 }			= require('uuid')
 const express 			= require('express')
 const http				= require('http')
 const app 				= express()
@@ -63,6 +75,7 @@ BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
+
 
 
 
@@ -125,121 +138,7 @@ app.post('/joingame', async (req, res) => {
 
 //use middleware to auth user
 const verifyJWT = require('./middleware/verifyJWT')
-const bcrypt = require('bcrypt')
 app.use(verifyJWT)
-
-
-
-
-
-async function createNewGame(date, UserID, List_Players, SessionID, Columns, JoinCode) {
-
-	const gnadenwürfe = {}
-	const array_columns = Array.from({ length: Columns }, (_, index) => index)
-
-	for(const p of List_Players) {
-		gnadenwürfe[p.Alias] = false
-
-		for(const column of array_columns) {
-
-			const json = { UserID: UserID, Alias: p.Alias, Column: column, JoinCode: JoinCode, SessionID: SessionID }
-			UpperTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - UpperTable', err)})
-			BottomTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - BottomTable', err)})
-
-		}
-
-	}
-
-	await PlayerTable.create({ 
-		UserID: UserID, 
-		JoinCode: JoinCode, 
-		Start: date, 
-		Gnadenwürfe: gnadenwürfe, 
-		SessionID: SessionID, 
-	}).catch((err) => {console.log('FUNCTION createNewGame - PlayerTable', err)})
-
-}
-
-function generateJoinCode() {
-
-	const min = 10000000
-	const max = 99999999
-	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
-	return randomNumber
-
-}
-
-
-
-
-
-app.get('/creategame', (req, res) => {
-	res.sendStatus(200)
-})
-
-
-
-
-
-app.get('/enternames', (req, res) => {
-	res.sendStatus(200)
-})
-
-app.post('/enternames', async (req, res) => {
-
-	const date = new Date()
-	const joincode = generateJoinCode()
-	const { UserID } = req
-	const { SessionName, List_Players } = req.body
-	const Columns = +req.body.Columns
-
-	if(!isString(SessionName) || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS || !isArray(List_Players)) return res.sendStatus(400)
-
-	const List_PlayerOrder = []
-	const list = []
-	for(const p of List_Players) {
-
-		//TODO Check if name is valid
-		if(!p.Name || !p.Color) return res.sendStatus(400)
-
-		const Alias = v4()
-		List_PlayerOrder.push(Alias)
-		list.push({ 
-			UserID, 
-			Alias,
-			Name: p.Name,
-			Color: p.Color,
-			Wins: 0,
-		})
-
-	}
-	
-
-	//____________________AddNewSession____________________
-
-	Sessions.create({
-		UserID: UserID, 
-		JoinCode: joincode,
-		CreatedDate: date,
-		LastPlayed: date, 
-		InputType: 'type',
-		ShowScores: true, 
-		SessionName,
-		Columns, 
-		List_PlayerOrder,
-	}).then(async (s) => {
-
-		for(const p of list) {await Players.create({ ...p, SessionID: s.id })}
-		await createNewGame(date, UserID, list, s.id, Columns, joincode)
-
-		res.json({ SessionID: s.id, JoinCode: joincode })
-
-	}).catch((err) => {
-		console.log('POST /EnterNames', err)
-		res.sendStatus(500)
-	})
-
-})
 
 
 
@@ -251,27 +150,37 @@ app.use('/game', require('./routes/Game'))
 
 
 
-
-
 app.get('/endscreen', (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.sessionid
+	const SessionID = +req.query.session_id
+	const FinalScoreID = +req.query.finalscore_id
 
-	if(!SessionID) return res.sendStatus(400)
+	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
 
-	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
 
-		if(!s) return res.sendStatus(404)
+	Players.findAll({ where: { SessionID, UserID } }).then((list_players) => {
 
-		const players = []
-		for(const p of s.Players) {
-			players.push(getPlayerJSON(p))
-		}
+		FinalScores.findOne({ where: { id: FinalScoreID, SessionID, UserID } }).then((f) => {
 
-		const session = getSessionJSON(s, players)
 
-		res.json(session)
+			if(list_players.length === 0 || !f) return res.sendStatus(404)
+
+			const tmp_list_players = []
+			for(const p of list_players) {
+				tmp_list_players.push(filter_player(p))
+			}
+	
+			res.json({ 
+				List_Players: tmp_list_players, 
+				FinalScore: filter_finalscore(f)
+			})
+
+
+		}).catch((err) => {
+			console.log('POST /endscreen findone finalscores', err)
+			return res.sendStatus(500)
+		})
 
 	}).catch((err) => {
 		console.log('GET /endscreen', err)
@@ -288,22 +197,28 @@ app.get('/selectsession', async (req, res) => {
 
 	const { UserID } = req
 
-	Sessions.findAll({ where: { UserID }, include: Players }).then((s) => {
+	Sessions.findAll({ where: { UserID }, include: Players }).then((list_sessions) => {
+
 
 		const list = []
 
-		for(const e of s) {
-			const players = []
-			for(const p of e.Players) {
-				players.push(getPlayerJSON(p))
-			}
-			list.push(getSessionJSON(e, players))
+		for(const session of list_sessions) {
+			
+			const list_players = []
+			for(const p of session.Players) {list_players.push(filter_player(p))}
+
+			list.push({
+				...filter_session(session), 
+				List_Players: list_players
+			})
+
 		}
 
 		res.json(list)
 
+
 	}).catch((err) => {
-		console.log('GET /selectSession', err)
+		console.log('GET /selectsession', err)
 		res.sendStatus(500)
 	})
 
@@ -312,19 +227,21 @@ app.get('/selectsession', async (req, res) => {
 app.post('/selectsession', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = req.body.SessionID
+	const { SessionID } = req.body
 
 	if(!isInt(SessionID)) return res.sendStatus(400)
 
 	PlayerTable.findOne({ where: { SessionID, UserID } }).then((p) => {
+
 
 		const json = { Exists: Boolean(p) }
 		if(p) json.JoinCode = p.JoinCode
 
 		res.json(json)
 
+
 	}).catch((err) => {
-		console.log('POST /selectSession', err)
+		console.log('POST /selectsession', err)
 		res.sendStatus(500)
 	})
 
@@ -333,7 +250,7 @@ app.post('/selectsession', async (req, res) => {
 app.delete('/selectsession', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.id
+	const SessionID = +req.query.session_id
 	
 	if(!SessionID) return res.sendStatus(400)
 
@@ -355,7 +272,7 @@ app.delete('/selectsession', async (req, res) => {
 		res.sendStatus(204)
 
 	} catch(err) {
-		console.log('DELETE /selectSession', err)
+		console.log('DELETE /selectsession', err)
 		res.sendStatus(500)
 	}
 
@@ -368,29 +285,33 @@ app.delete('/selectsession', async (req, res) => {
 app.get('/sessionpreview', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.id
-	if(!SessionID) return res.sendStatus(400)
+	const session_id = +req.query.session_id
 
-	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players, FinalScores ] }).then((s) => {
+	if(!session_id) return res.sendStatus(400)
+
+	Sessions.findOne({ where: { id: session_id, UserID }, include: [ Players, FinalScores ] }).then((s) => {
+
 
 		if(!s) return res.sendStatus(404)
+		
+		const session = filter_session(s)
 
-		const players = []
-		for(const p of s.Players) {
-			players.push(getPlayerJSON(p))
-		}
+		const list_players = []
+		for(const p of s.Players) {list_players.push(filter_player(p))}
 
-		const Session = getSessionJSON(s, players)
+		const list_finalScores = []
+		for(const f of s.FinalScores) {list_finalScores.push(filter_finalscore(f))}
 
-		const finalScores = []
-		for(const f of s.FinalScores) {
-			finalScores.push(getFinalScoreJSON(f))
-		}
 
-		res.json({ Session, FinalScores: finalScores })
+		res.json({ 
+			Session: session, 
+			List_Players: list_players, 
+			List_FinalScores: list_finalScores
+		})
+
 
 	}).catch((err) => {
-		console.log('GET /SessionPreview', err)
+		console.log('GET /sessionpreview', err)
 		res.sendStatus(500)
 	})
 
@@ -400,13 +321,15 @@ app.post('/sessionpreview', async (req, res) => {
 
 	const { UserID } = req
 	const JoinCode = generateJoinCode()
-	const SessionID = +req.body.SessionID
+	const { SessionID } = req.body
 
-	if(!SessionID) return res.sendStatus(400)
+	if(!isInt(SessionID)) return res.sendStatus(400)
 
 	if(await destroyGame(SessionID, UserID) === 500) return res.sendStatus(500)
 	
+
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
+
 
 		if(!s) return res.sendStatus(404)
 
@@ -414,8 +337,9 @@ app.post('/sessionpreview', async (req, res) => {
 		await createNewGame(new Date(), UserID, s.Players, SessionID, s.Columns, JoinCode)
 		res.json({ JoinCode })
 
+
 	}).catch((err) => {
-		console.log('POST /SessionPreview', err)
+		console.log('POST /sessionpreview', err)
 		res.sendStatus(500)
 	})
 
@@ -428,8 +352,11 @@ app.post('/sessionpreview', async (req, res) => {
 app.get('/sessionpreview-table', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.SessionID
-	const FinalScoreID = +req.query.FinalScoreID
+	const SessionID = +req.query.session_id
+	const FinalScoreID = +req.query.finalscore_id
+
+	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
+
 
 	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
 
@@ -441,20 +368,21 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 			const json = { 
 				List_PlayerOrder: s.List_PlayerOrder, 
-				List_Players: s.Players.map((p) => getPlayerJSON(p)), 
-				FinalScores: getFinalScoreJSON(f), 
-				...getTableJSON(f.TableArchive)
+				List_Players: s.Players.map((p) => filter_player(p)), 
+				FinalScores: filter_finalscore(f), 
+				...filter_tablearchive(f.TableArchive)
 			}
 
 			res.json(json)
 
+
 		}).catch((err) => {
-			console.log('GET /SessionPreview-Table - FinalScores', err)
+			console.log('GET /sessionpreview-table finalscores', err)
 			res.sendStatus(500)
 		})
 
 	}).catch((err) => {
-		console.log('GET /SessionAPreview-Table - Sessions', err)
+		console.log('GET /sessionpreview-table findone sessions', err)
 		res.sendStatus(500)
 	})
 
@@ -464,46 +392,143 @@ app.get('/sessionpreview-table', async (req, res) => {
 
 
 
+app.post('/customdate', async (req, res) => {
+
+	const { UserID } = req
+	const { SessionID, CustomDate } = req.body
+
+	if(!SessionID || !isInt(SessionID) || !CustomDate || !isDate(new Date(CustomDate))) return res.sendStatus(500)
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ FinalScores, Players ] }).then((session) => {
+
+		if(!session === 0) return res.sendStatus(404)
+
+		session.update({ CustomDate: new Date(CustomDate) }).then(async () => {
+			
+			let scoresBefore = {}
+			let scoresAfter = {}
+
+			for(const p of session.Players) {scoresAfter[p.Alias] = 0}
+
+
+			// Get finalScores later than customdate
+			const list_finalscores = []
+			for(const f of session.FinalScores) {
+				if(new Date(f.End) >= new Date(CustomDate)) {
+					list_finalscores.push(f)
+				}
+			}
+			list_finalscores.sort((a, b) => new Date(a.End) - new Date(b.End))
+
+
+			// Initialize ScoresAfter/ScoresBefore for correct finalScores
+			for(const f of list_finalscores) {
+
+				scoresBefore = { ...scoresAfter }
+
+				// Add wins to scoresAfter
+				for(const playerAlias of f.List_Winner) {
+					scoresAfter[playerAlias] = scoresAfter[playerAlias] + 1
+				}
+
+				// Update finalScore
+				await f.update({ ScoresBefore_SinceCustomDate: scoresBefore, ScoresAfter_SinceCustomDate: scoresAfter }).catch((err) => {
+					console.log('POST /customdate update finalscore', err)
+					return res.sendStatus(500)
+				})
+
+			}
+			
+			res.sendStatus(204)
+			
+
+		}).catch((err) => {
+			console.log('POST /customdate session update', err)
+			res.sendStatus(500)
+		})
+
+	}).catch((err) => {
+		console.log('POST /customdate', err)
+		res.sendStatus(500)
+	})
+
+})
+
+
+
+
 
 app.post('/updatesession', (req, res) => {
 
 	const { UserID } = req
-	const { id, Columns, List_Players } = req.body
-
-	//TODO Check validity of list_players
+	const { SessionID, Columns, List_Players } = req.body
+	
 	if(!List_Players) return res.sendStatus(400)
 
 	const List_PlayerOrder = List_Players.map((p) => p.Alias)
 	const updatedSession = { List_PlayerOrder }
 	if(Columns) {
-		if(Columns < 1 || Columns > MAX_COLUMNS) return res.sendStatus(400)
-		updatedSession['Columns'] = +Columns
+		if(!isInt(Columns) || Columns < 1 || Columns > ( process.env.MAX_COLUMNS || 16 )) return res.sendStatus(400)
+		updatedSession['Columns'] = Columns
 	}
 
-	Sessions.findOne({ where: { id, UserID }, include: Players }).then(async (s) => {
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then(async (s) => {
+
 
 		if(!s) return res.sendStatus(404)
 
-		await s.update(updatedSession)
+		//Check if List_Players is valid
+		if(s.Players.length !== List_Players.length) return res.sendStatus(400)
+		for(const p of s.Players) {
 
-		for(const tmp of List_Players) {
-			for(const p of s.Players) {
-				if(tmp.Alias === p.Alias) {
+			let found = false
 
-					await p.update({
-						Name: tmp.Name,
-						Color: tmp.Color,
-					})
-					break
-
+			for(const newP of List_Players) {
+				if(newP.id === p.id) {
+					if(!newP.Color || !isColor(newP.Color) || !newP.Name || !isString(newP.Name)) {
+						break
+					} else {
+						found = true
+						break
+					}
 				}
 			}
+
+			if(!found) return res.sendStatus(400)
+
 		}
 
-		res.sendStatus(204)
+
+		s.update(updatedSession).then(async (s) => {
+
+
+			if(s[0] === 0) return res.sendStatus(404)
+			
+			for(const tmp of List_Players) {
+				for(const p of s.Players) {
+					if(tmp.Alias === p.Alias) {
+	
+						await p.update({
+							Name: tmp.Name,
+							Color: tmp.Color,
+						})
+						break
+	
+					}
+				}
+			}
+	
+			res.sendStatus(204)
+
+
+		}).catch((err) => {
+			console.log('POST /updatesession update session', err)
+			res.sendStatus(500)
+		})
 
 	}).catch((err) => {
-		console.log('POST /updateSession', err)
+		console.log('POST /updatesession', err)
 		res.sendStatus(500)
 	})
 

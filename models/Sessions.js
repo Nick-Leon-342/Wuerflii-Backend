@@ -14,10 +14,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-		ShowScores: {
-			type: DataTypes.BOOLEAN, 
-			allowNull: false, 
-		}, 
         LastPlayed: {
             type: DataTypes.DATE,
             allowNull: false,
@@ -33,6 +29,10 @@ module.exports = (sequelize, DataTypes) => {
         List_PlayerOrder: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
+        },
+        CustomDate: {
+            type: DataTypes.DATE,
+            allowNull: true,
         },
     })
 

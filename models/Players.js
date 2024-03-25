@@ -18,10 +18,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		Wins: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
     })
 
     return Players
