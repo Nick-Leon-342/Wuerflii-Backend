@@ -4,8 +4,10 @@ const express = require('express')
 const router = express.Router()
 const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../models')
 const { filter_player, filter_session, filter_finalscore, filter_tablearchive } = require('../Filter_DatabaseJSON')
-const { isInt } = require('../IsDataType')
-const { generateJoinCode } = require('../CreateNewGame')
+const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
+const { generateJoinCode, createNewGame } = require('../CreateNewGame')
+const { destroyGame } = require('../DestroyGame')
+const { isDate } = require('util/types')
 
 
 
@@ -242,6 +244,11 @@ router.post('/date', async (req, res) => {
 			for(const f of session.FinalScores) {
 				if(new Date(f.End) >= new Date(CustomDate)) {
 					list_finalscores.push(f)
+				} else {
+					await f.update({ ScoresBefore_SinceCustomDate: null, ScoresAfter_SinceCustomDate: null }).catch((err) => {
+						console.log('POST /session/date erase scores', err)
+						return res.sendStatus(500)
+					})
 				}
 			}
 			list_finalscores.sort((a, b) => new Date(a.End) - new Date(b.End))

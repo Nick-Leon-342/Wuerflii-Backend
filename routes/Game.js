@@ -121,28 +121,28 @@ router.post('', async (req, res) => {
 
 		} else {
 
-			scoresBefore = fs.ScoresAfter
-			scoresAfter = fs.ScoresAfter
+			scoresBefore = { ...fs.ScoresAfter }
+			scoresAfter = { ...fs.ScoresAfter }
 
 			if(new Date(fs.End).getFullYear() === date.getFullYear() && new Date(fs.End).getMonth() === date.getMonth()) {
-				scoresBefore_Month = fs.ScoresAfter_Month
-				scoresAfter_Month = fs.ScoresAfter_Month
+				scoresBefore_Month = { ...fs.ScoresAfter_Month }
+				scoresAfter_Month = { ...fs.ScoresAfter_Month }
 			} else {
 				scoresBefore_Month = {...tmp}
 				scoresAfter_Month = {...tmp}
 			}
 
 			if(new Date(fs.End).getFullYear() === date.getFullYear()) {
-				scoresBefore_Year = fs.ScoresAfter_Year
-				scoresAfter_Year = fs.ScoresAfter_Year
+				scoresBefore_Year = { ...fs.ScoresAfter_Year }
+				scoresAfter_Year = { ...fs.ScoresAfter_Year }
 			} else {
 				scoresBefore_Year = {...tmp}
 				scoresAfter_Year = {...tmp}
 			}
 
 			if(fs.ScoresAfter_SinceCustomDate) {
-				scoresBefore_SinceCustomDate = fs.ScoresAfter_SinceCustomDate
-				scoresAfter_SinceCustomDate = fs.ScoresAfter_SinceCustomDate
+				scoresBefore_SinceCustomDate = { ...fs.ScoresAfter_SinceCustomDate }
+				scoresAfter_SinceCustomDate = { ...fs.ScoresAfter_SinceCustomDate }
 			}
 
 		}

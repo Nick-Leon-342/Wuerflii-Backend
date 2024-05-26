@@ -106,7 +106,7 @@ router.patch('/login', async (req, res) => {
 
 	Users.findOne({ where: { id: UserID }}).then(async (user) => {
 
-		await user.update(updateJSON).then(() => {
+		user.update(updateJSON).then(() => {
 			sendToken(res, user)
 		}).catch(() => {
 			res.sendStatus(500)

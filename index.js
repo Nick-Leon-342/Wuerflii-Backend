@@ -19,7 +19,6 @@ const {
 
 const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
 const { destroyGame } = require('./DestroyGame')
-const { isDate } = require('util/types')
 
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
