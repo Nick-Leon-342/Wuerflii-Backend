@@ -491,6 +491,49 @@ router.post('/gnadenwurf', async (req, res) => {
 
 })
 
+router.get('/end', (req, res) => {
+
+	const { UserID } = req
+	const SessionID = +req.query.session_id
+	const FinalScoreID = +req.query.finalscore_id
+
+	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
+
+
+	Sessions.findOne({ where: { id: SessionID, UserID }, include: [ Players ] }).then((session) => {
+
+		FinalScores.findOne({ where: { id: FinalScoreID, SessionID, UserID } }).then((f) => {
+
+
+			if(!session || !f) return res.sendStatus(404)
+
+			const tmp_list_players = []
+			for(const alias of session.List_PlayerOrder) {
+				for(const p of session.Players) {
+					if(p.Alias === alias) {
+						tmp_list_players.push(filter_player(p))
+					}
+				}
+			}
+	
+			res.json({ 
+				List_Players: tmp_list_players, 
+				FinalScore: filter_finalscore(f)
+			})
+
+
+		}).catch((err) => {
+			console.log('POST /game/end findone finalscores', err)
+			return res.sendStatus(500)
+		})
+
+	}).catch((err) => {
+		console.log('GET /game/end find session', err)
+		res.sendStatus(500)
+	})
+
+})
+
 
 
 

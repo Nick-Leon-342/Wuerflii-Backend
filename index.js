@@ -150,49 +150,6 @@ app.use('/session', require('./routes/Session'))
 
 
 
-app.get('/endscreen', (req, res) => {
-
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const FinalScoreID = +req.query.finalscore_id
-
-	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
-
-
-	Players.findAll({ where: { SessionID, UserID } }).then((list_players) => {
-
-		FinalScores.findOne({ where: { id: FinalScoreID, SessionID, UserID } }).then((f) => {
-
-
-			if(list_players.length === 0 || !f) return res.sendStatus(404)
-
-			const tmp_list_players = []
-			for(const p of list_players) {
-				tmp_list_players.push(filter_player(p))
-			}
-	
-			res.json({ 
-				List_Players: tmp_list_players, 
-				FinalScore: filter_finalscore(f)
-			})
-
-
-		}).catch((err) => {
-			console.log('POST /endscreen findone finalscores', err)
-			return res.sendStatus(500)
-		})
-
-	}).catch((err) => {
-		console.log('GET /endscreen', err)
-		res.sendStatus(500)
-	})
-
-})
-
-
-
-
-
 //handling page not found (404)
 app.all('*', (req, res) => {
 	res.sendStatus(404)
