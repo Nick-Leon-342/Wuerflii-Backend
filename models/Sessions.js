@@ -1,28 +1,17 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const Sessions = sequelize.define('Sessions', {
+    return sequelize.define('Sessions', {
+
+        Name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
 		Columns: {
 			type: DataTypes.INTEGER,
 			allowNull: false
 		},
-        JoinCode: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
         InputType: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        LastPlayed: {
-            type: DataTypes.DATE,
-            allowNull: false,
-        },
-        CreatedDate: {
-            type: DataTypes.DATE,
-            allowNull: false,
-        },
-        SessionName: {
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -30,11 +19,25 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
         },
+		ShowScores: {
+			type: DataTypes.BOOLEAN, 
+			allowNull: false, 
+		},
+
+		
+		
         CustomDate: {
             type: DataTypes.DATE,
             allowNull: true,
         },
-    })
+        CurrentGameStart: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        LastPlayed: {
+            type: DataTypes.DATE,
+            allowNull: false,
+        },
 
-    return Sessions
+    })
 }

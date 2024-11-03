@@ -1,16 +1,9 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const Players = sequelize.define('Players', {
-		UserID: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
-        Name: {
-            type: DataTypes.STRING,
-			allowNull: false,
-        },
-		Alias: {
+    return sequelize.define('Players', {
+
+		Name: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
@@ -18,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		Gnadenwurf: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+		},
+		
     })
-
-    return Players
 }

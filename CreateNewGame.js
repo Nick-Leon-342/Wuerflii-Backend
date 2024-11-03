@@ -1,59 +1,64 @@
 
 
-const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('./models')
+const { 
+	Table_Columns
+} = require('./models')
 
 
 
 
 
-async function createNewGame(date, UserID, List_Players, SessionID, Columns, JoinCode) {
+/**
+ * 
+ * Creates a new game session with specified players and columns.
+ * Generates a unique join code for the session, sets up initial data for each player,
+ * and saves it to the database.
+ * 
+ * @module createNewGame
+ * @async
+ * 
+ * @param {Object} options - The options object for creating a new game.
+ * @param {Array<Object>} options.List_Players - List of player objects with details such as `Alias`.
+ * @param {Object} options.transaction - The transaction object for managing database changes.
+ * @param {Object} options.session - The sessions object.
+ * @param {number} options.Columns - Number of columns to set up for each player.
+ * @param {number} options.UserID - Unique identifier of the user who created the game session.
+ * @param {number} options.date - Current date.
+ * 
+ * @returns {Promise<number>} Returns a promise that resolves to the generated join code.
+ * 
+ * @throws {Error} Throws an error if database operations fail.
+ * 
+ */
+
+module.exports = async function createNewGame({
+	List_Players, 
+	transaction, 
+	session, 
+	Columns, 
+	date, 
+}) {
+
+
+	await session.update({ CurrentGameStart: date }, { transaction })
 
 	const gnadenwürfe = {}
 	const array_columns = Array.from({ length: Columns }, (_, index) => index)
+
 
 	for(const p of List_Players) {
 		gnadenwürfe[p.Alias] = false
 
 		for(const column of array_columns) {
 
-			const json = { 
-				UserID, 
-				Alias: p.Alias, 
+			await Table_Columns.create({ 
 				Column: column, 
-				JoinCode, SessionID 
-			}
-			
-			UpperTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - UpperTable', err)})
-			BottomTable.create(json).catch((err) => {console.log('FUNCTION createNewGame - BottomTable', err)})
+				TotalScore: 0, 
+			}, { transaction })
 
 		}
 
 	}
+	
 
-	await PlayerTable.create({ 
-		UserID: UserID, 
-		JoinCode: JoinCode, 
-		Start: date, 
-		Gnadenwürfe: gnadenwürfe, 
-		SessionID: SessionID, 
-	}).catch((err) => {console.log('FUNCTION createNewGame - PlayerTable', err)})
-
-}
-
-function generateJoinCode() {
-
-	const min = 10000000
-	const max = 99999999
-	const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min
-	return randomNumber
-
-}
-
-
-
-
-
-module.exports = {
-	createNewGame, 
-	generateJoinCode
 }

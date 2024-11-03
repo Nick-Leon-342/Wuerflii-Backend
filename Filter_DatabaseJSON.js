@@ -10,7 +10,7 @@ function filter_session(s) {
 
 	return {
 		id: s.id,
-		SessionName: s.SessionName,
+		Name: s.Name,
 		Columns: s.Columns,
 		JoinCode: s.JoinCode,
 		InputType: s.InputType,

@@ -1,7 +1,8 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const TableArchive = sequelize.define('TableArchive', {
+    return sequelize.define('Table_Archives', {
+
 		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
@@ -14,7 +15,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ARRAY(DataTypes.JSON),
             allowNull: false,
         },
+		
     })
-
-    return TableArchive
 }

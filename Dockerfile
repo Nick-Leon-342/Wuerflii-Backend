@@ -1,6 +1,8 @@
+
+
 FROM node:20.8.0
 
-WORKDIR /kniffel-backendend
+WORKDIR /kniffel-backend
 
 COPY package*.json ./
 

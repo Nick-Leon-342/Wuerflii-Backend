@@ -1,7 +1,8 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const Users = sequelize.define('Users', {
+    return sequelize.define('Users', {
+
         Name: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -14,7 +15,10 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: true, 
 		},
-    })
+		DarkMode: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false, 
+		},
 
-    return Users
+    })
 }

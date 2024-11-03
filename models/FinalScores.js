@@ -1,7 +1,8 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    const FinalScores = sequelize.define('FinalScores', {
+    return sequelize.define('FinalScores', {
+
 		UserID: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
@@ -64,7 +65,6 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.JSON, 
 			allowNull: true
 		},
-    })
 
-    return FinalScores
+    })
 }

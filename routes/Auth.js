@@ -55,12 +55,6 @@ router.get('/regex', async (req, res) => {
 
 })
 
-
-
-
-
-// __________________________________________________ Login __________________________________________________
-
 router.post('/login', async (req, res) => {
 
     const { Name, Password } = req.body
@@ -91,75 +85,11 @@ router.post('/login', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.log('POST /Login', err)
+		console.log('POST /auth/login\n', err)
 		res.sendStatus(500)
 	}
 
 })
-
-router.patch('/login', async (req, res) => {
-
-	const { UserID } = req
-	const { Name, Password } = req.body
-
-	if(!Name && !Password) return res.sendStatus(400)
-
-
-	const transaction = await sequelize.transaction()
-	try {
-		
-
-		const updateJSON = {}
-		if(Name) {
-
-			if(!(new RegExp(NAME_REGEX)).test(Name)) return res.sendStatus(400)
-
-			const tmp = await Users.findOne({ 
-				where: { Name }, 
-				transaction, 
-			})
-			if(tmp) return res.status(409).send('Username already taken.')
-
-			updateJSON['Name'] = Name
-
-		} 
-		
-		if(Password) {
-
-			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
-
-			const hashedPassword = await bcrypt.hash(Password, 10)
-			updateJSON['Password'] = hashedPassword
-
-		}
-
-
-		await Users.update(
-			{ where: { id: UserID } }, 
-			transaction, 
-			updateJSON, 
-		)
-
-		await sendToken({
-			transaction, 
-			UserID, 
-			res, 
-		})
-
-
-	} catch(err) {
-		await transaction.fallback()
-		console.log('PATCH /auth/login\n', err)
-		res.sendStatus(500)
-	}
-
-})
-
-
-
-
-
-// __________________________________________________ Registration __________________________________________________
 
 router.post('/registration', async (req, res) => {
 	
@@ -178,10 +108,9 @@ router.post('/registration', async (req, res) => {
 	
 		const user = await Users.create({
 			Password: hashedPassword, 
+			DarkMode: false, 
 			Name: Name,
 		}, { transaction })
-
-		console.log(user)
 
 		await sendToken({
 			UserID: user.id, 
@@ -192,7 +121,7 @@ router.post('/registration', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.log('POST /auth/registration', err)
+		console.log('POST /auth/registration\n', err)
 		res.sendStatus(500)
 	}
 

@@ -2,24 +2,6 @@
 
 require('dotenv').config()
 
-const {
-	createNewGame, 
-	generateJoinCode
-} = require('./CreateNewGame')
-
-const { 
-	filter_session,
-	filter_player,
-	filter_finalscore,
-	filter_playertable,
-	filter_uppertable,
-	filter_bottomtable, 
-	filter_tablearchive 
-} = require('./Filter_DatabaseJSON')
-
-const { isInt, isArray, isBoolean, isString, isColor } = require('./IsDataType')
-const { destroyGame } = require('./DestroyGame')
-
 const allowedOrigins 	= require('./config/allowedOrigins')
 const cors 				= require('cors')
 const corsOptions 		= {
@@ -31,9 +13,7 @@ const express 			= require('express')
 const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
-const db 				= require('./models')
 const cookieParser 		= require('cookie-parser')
-
 
 app.use(express.json())
 app.use(cookieParser())
@@ -43,27 +23,66 @@ app.use(cors(corsOptions))
 
 
 
-const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('./models')
+const { 
+	FinalScores, 
+	
+	Sessions, 
+
+	Players, 
+
+	Table_Archives, 
+	Table_Columns, 
+
+	Users, 
+
+	sequelize
+} = require('./models')
+
+// __________________________________________________ Users __________________________________________________
+
 Users.hasMany(Sessions, { foreignKey: 'UserID' })
+
+
+
+// __________________________________________________ Sessions __________________________________________________
+
 Sessions.belongsTo(Users, { foreignKey: 'UserID' })
 
-Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
-FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
-
-FinalScores.hasOne(TableArchive, { foreignKey: 'FinalScoresID' })
-TableArchive.belongsTo(FinalScores, { foreignKey: 'FinalScoresID'})
-
 Sessions.hasMany(Players, { foreignKey: 'SessionID' })
+Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
+
+
+
+// __________________________________________________ Players __________________________________________________
+
 Players.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(PlayerTable, { foreignKey: 'SessionID' })
-PlayerTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
+Players.hasMany(Table_Columns, { foreignKey: 'PlayerID' })
 
-Sessions.hasMany(UpperTable, { foreignKey: 'SessionID' })
-UpperTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Sessions.hasMany(BottomTable, { foreignKey: 'SessionID' })
-BottomTable.belongsTo(Sessions, { foreignKey: 'SessionID' })
+
+// __________________________________________________ Table_Columns __________________________________________________
+
+Table_Columns.belongsTo(Players, { foreignKey: 'PlayerID' })
+
+
+
+// __________________________________________________ FinalScores __________________________________________________
+
+FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
+
+FinalScores.hasOne(Table_Archives, { foreignKey: 'FinalScoresID' })
+
+
+
+// __________________________________________________ Table_Archives __________________________________________________
+
+Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoresID'})
+
+
+
+
+
 
 
 
@@ -79,78 +98,18 @@ app.use('/logout', require('./routes/Logout'))
 
 
 
-app.get('/joingame', (req, res) => {
+// use middleware to auth user
+app.use(require('./middleware/verifyJWT'))
 
-	const JoinCode = +req.query.joincode
-
-	if(!JoinCode) return res.sendStatus(400)
-
-	Sessions.findOne({ where: { JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
-
-		if(!s) return res.sendStatus(404)
-
-		const tableColumns = []
-		for(const ut of s.UpperTables) {	tableColumns.push(getUpperTableJSON(ut))	}
-		for(const bt of s.BottomTables) {	tableColumns.push(getBottomTableJSON(bt))	}
-
-		const gnadenwürfe = getPlayerTableJSON(s.PlayerTables[0])
-
-		const list_players = []
-		for(const p of s.Players) {
-			list_players.push(getPlayerJSON(p))
-		}
-		const session = getSessionJSON(s, list_players)
-
-		res.json({
-			Session: session,
-			Gnadenwürfe: gnadenwürfe,
-			TableColumns: tableColumns,
-		})
-
-	}).catch((err) => {
-		console.log('GET /JoinGame', err)
-		res.sendStatus(500)
-	})
-
-})
-
-app.post('/joingame', async (req, res) => {
-
-	const JoinCode = req.body.JoinCode
-	if(!isInt(JoinCode) || 10000000 > JoinCode || 99999999 < JoinCode) return res.sendStatus(400)
-	
-	Sessions.findOne({ where: { JoinCode }}).then((s) => {
-
-		if(!s) return res.sendStatus(404)
-		res.sendStatus(200)
-
-	}).catch((err) => {
-		console.log('POST /JoinGame', err)
-		res.sendStatus(500)
-	})
-
-})
-
-
-
-
-
-//use middleware to auth user
-const verifyJWT = require('./middleware/verifyJWT')
-app.use(verifyJWT)
-
-
-
-
-
-app.use('/game', require('./routes/Game'))
+app.use('/user', require('./routes/User'))
+app.use('/game', require('./routes/Game/Game'))
 app.use('/session', require('./routes/Session'))
 
 
 
 
 
-//handling page not found (404)
+// handling page not found (404)
 app.all('*', (req, res) => {
 	res.sendStatus(404)
 })
@@ -159,6 +118,10 @@ app.all('*', (req, res) => {
 
 
 
-db.sequelize.sync().then(() => {
-    httpServer.listen(process.env.PORT || 10001, () => { console.log('Listening') })
+sequelize.sync().then(() => {
+	const port = process.env.PORT || 10001
+
+    httpServer.listen(port, () => { 
+		console.log('Listening on port', port) 
+	})
 })

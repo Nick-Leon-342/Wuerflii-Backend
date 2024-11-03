@@ -2,26 +2,22 @@
 
 const express = require('express')
 const router = express.Router()
-const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../models')
-const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
-const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../PossibleEntries')
-const { destroyGame } = require('../DestroyGame')
-const { v4 }			= require('uuid')
 
-const {
-	createNewGame, 
-	generateJoinCode
-} = require('../CreateNewGame')
+const { Players, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../../models')
+const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../../PossibleEntries')
+const { isInt, isBoolean, isString } = require('../../IsDataType')
+const { destroyGame } = require('../../DestroyGame')
 
 const { 
-	filter_session,
 	filter_player,
-	filter_finalscore,
-	filter_playertable,
+	filter_session,
 	filter_uppertable,
+	filter_finalscore,
 	filter_bottomtable, 
-	filter_tablearchive 
-} = require('../Filter_DatabaseJSON')
+	filter_playertable,
+} = require('../../Filter_DatabaseJSON')
+
+router.use('/create', require('./Game_Create'))
 
 
 
@@ -309,90 +305,6 @@ router.delete('', async (req, res) => {
 
 
 
-
-
-
-
-
-
-// __________________________________________________ Create __________________________________________________
-
-router.get('/create', (req, res) => {
-
-	res.json({
-		MAX_PLAYERS: process.env.MAX_PLAYERS || 16,
-		MAX_COLUMNS: process.env.MAX_COLUMNS || 10
-	})
-
-})
-
-router.post('/create', async (req, res) => {
-
-	const date = new Date()
-	const joincode = generateJoinCode()
-	const { UserID } = req
-	const { SessionName, Columns, List_Players } = req.body
-
-	if(
-		!SessionName || !isString(SessionName) || 
-		!Columns || !isInt(Columns) || Columns < 1 || Columns > ( process.env.MAX_COLUMNS || 16) || 
-		!List_Players || !isArray(List_Players)
-	) return res.sendStatus(400)
-
-	const List_PlayerOrder = []
-	const list = []
-	for(const p of List_Players) {
-
-		if(!p.Name || !isString(p.Name) || !p.Color || !isColor(p.Color)) return res.sendStatus(400)
-
-		const Alias = v4()
-		List_PlayerOrder.push(Alias)
-		list.push({ 
-			UserID, 
-			Alias,
-			Name: p.Name,
-			Color: p.Color,
-		})
-
-	}
-	
-
-	// ____________________ Create session ____________________
-
-	Sessions.create({
-		UserID: UserID, 
-		JoinCode: joincode,
-		CreatedDate: date,
-		LastPlayed: date, 
-		InputType: 'type',
-		SessionName,
-		Columns, 
-		List_PlayerOrder,
-	}).then(async (s) => {
-
-
-		for(const p of list) {await Players.create({ ...p, SessionID: s.id })}
-		await createNewGame(date, UserID, list, s.id, Columns, joincode)
-
-		res.json({ SessionID: s.id, JoinCode: joincode })
-
-
-	}).catch((err) => {
-		console.log('POST /game/create', err)
-		res.sendStatus(500)
-	})
-
-})
-
-
-
-
-
-
-
-
-
-
 // __________________________________________________ Gameplay __________________________________________________
 
 router.post('/inputtype', async (req, res) => {
@@ -533,11 +445,6 @@ router.get('/end', (req, res) => {
 	})
 
 })
-
-
-
-
-
 
 
 
