@@ -3,30 +3,60 @@
 const jwt = require('jsonwebtoken')
 const { Users } = require('../models')
 
-//__________________________________________________SendToken__________________________________________________
 
-module.exports = async function sendToken(res, user) {
 
-	//create both token
-	const id = user.id
+
+
+/**
+ * 
+ * Generates and sends authentication tokens for a user. Creates an access token and a refresh token,
+ * saves the refresh token in the database, and sends the tokens in the response.
+ * 
+ * @module sendToken
+ * @async
+ * 
+ * @param {Object} options - The options object.
+ * @param {Object} options.transaction - The transaction object for managing database changes.
+ * @param {number} options.UserID - The unique identifier of the user.
+ * @param {Object} options.res - The response object to send back to the client.
+ * 
+ * @returns {Promise<void>} Returns a promise that resolves when the tokens are generated, saved, and sent.
+ * 
+ * @throws {Error} Throws an error if token generation or database update fails.
+ * 
+ */
+
+module.exports = async function sendToken({
+	transaction, 
+	UserID, 
+	res, 
+}) {
+
+	// Create both token
 	const accessToken = jwt.sign(
-		{ 'id': id },
+		{ 'id': UserID },
 		process.env.ACCESS_TOKEN_SECRET,
 		{ expiresIn: `${process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
 	)
 	const refreshToken = jwt.sign(
-		{ 'id': id },
+		{ 'id': UserID },
 		process.env.REFRESH_TOKEN_SECRET
 	)
 
-	//save in database
-	const updatedRefreshToken = { RefreshToken: refreshToken }
-	await Users.update( updatedRefreshToken, { where: { id: id } }).catch((err) => {
-		console.log('FUNCTION sendtoken', err)
-		return res.sendStatus(500)
-	})
-	
-	//send refreshtoken as cookie and accesstoken as response in json
+
+	// Save in database
+	await Users.update( 
+		{ RefreshToken: refreshToken }, 
+		{ 
+			where: { id: UserID }, 
+			transaction 
+		},  
+	)
+
+	await transaction.commit()
+
+
+	// Send refreshtoken as cookie and accesstoken as response in json
 	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
 	res.cookie('Kniffel_RefreshToken', refreshToken, { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || false })
 	res.json({ accessToken })

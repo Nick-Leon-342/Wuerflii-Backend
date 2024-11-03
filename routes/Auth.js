@@ -3,7 +3,10 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const router = express.Router()
-const { Users } = require('../models')
+const { 
+	Users, 
+	sequelize
+} = require('../models')
 const sendToken = require('./SendToken')
 
 const {
@@ -63,17 +66,36 @@ router.post('/login', async (req, res) => {
     const { Name, Password } = req.body
 	if (!Name || !Password) return res.sendStatus(400)
 
-	const user = await Users.findOne({ where: { Name } }).catch((err) => {
-		console.log('POST /Login', err)
-		return res.sendStatus(500)
-	})
 
-	if(!user || !await bcrypt.compare(Password, user.Password)) return res.status(409).send('Wrong credentials!')
-	
-	sendToken(res, user)
+	const transaction = await sequelize.transaction()
+	try {
+
+
+		const user = await Users.findOne(
+			{ where: { Name } }, 
+			transaction, 
+		)
+
+		if(!user || !await bcrypt.compare(Password, user.Password)) {
+			await transaction.rollback()
+			res.status(409).send('Wrong credentials!')
+			return 
+		}
+		
+		await sendToken({
+			UserID: user.id, 
+			transaction, 
+			res, 
+		})
+
+
+	} catch(err) {
+		await transaction.rollback()
+		console.log('POST /Login', err)
+		res.sendStatus(500)
+	}
 
 })
-
 
 router.patch('/login', async (req, res) => {
 
@@ -82,40 +104,54 @@ router.patch('/login', async (req, res) => {
 
 	if(!Name && !Password) return res.sendStatus(400)
 
-	const updateJSON = {}
-	if(Name) {
 
-		if(!(new RegExp(NAME_REGEX)).test(Name)) return res.sendStatus(400)
+	const transaction = await sequelize.transaction()
+	try {
+		
 
-		const tmp = await Users.findOne({ where: { Name } })
-		if(tmp) return res.sendStatus(409)
+		const updateJSON = {}
+		if(Name) {
 
-		updateJSON['Name'] = Name
+			if(!(new RegExp(NAME_REGEX)).test(Name)) return res.sendStatus(400)
 
-	} 
-	
-	if(Password) {
+			const tmp = await Users.findOne({ 
+				where: { Name }, 
+				transaction, 
+			})
+			if(tmp) return res.status(409).send('Username already taken.')
 
-		if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
+			updateJSON['Name'] = Name
 
-		const hashedPassword = await bcrypt.hash(Password, 10).then((hP) => {return hP})
+		} 
+		
+		if(Password) {
 
-		updateJSON['Password'] = hashedPassword
+			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
 
-	}
+			const hashedPassword = await bcrypt.hash(Password, 10)
+			updateJSON['Password'] = hashedPassword
 
-	Users.findOne({ where: { id: UserID }}).then(async (user) => {
+		}
 
-		user.update(updateJSON).then(() => {
-			sendToken(res, user)
-		}).catch(() => {
-			res.sendStatus(500)
+
+		await Users.update(
+			{ where: { id: UserID } }, 
+			transaction, 
+			updateJSON, 
+		)
+
+		await sendToken({
+			transaction, 
+			UserID, 
+			res, 
 		})
 
-	}).catch((err) => {
-		console.log('PATCH /login', err)
-		res.sendStatus(403)
-	})
+
+	} catch(err) {
+		await transaction.fallback()
+		console.log('PATCH /auth/login\n', err)
+		res.sendStatus(500)
+	}
 
 })
 
@@ -130,30 +166,35 @@ router.post('/registration', async (req, res) => {
 	const { Name, Password } = req.body
 	if (!Name || !(new RegExp(NAME_REGEX)).test(Name) || !Password || !(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
 
-	const tmp = await Users.findOne({ where: { Name: Name } }).catch((err) => {
-		console.log('POST /auth/registration findOne user', err)
-		return res.sendStatus(500)
-	})
-	if(tmp) return res.sendStatus(409)
 
-	bcrypt.hash(Password, 10).then( async (hashedPassword) => {
+	const transaction = await sequelize.transaction()
+	try {
 
-		Users.create({
+
+		const tmp = await Users.findOne({ where: { Name: Name }, transaction })
+		if(tmp) return res.status(409).send('Username already taken.')
+	
+		const hashedPassword = await bcrypt.hash(Password, 10)
+	
+		const user = await Users.create({
+			Password: hashedPassword, 
 			Name: Name,
-			Password: hashedPassword
-		}).then((user) => {
+		}, { transaction })
 
-			sendToken(res, user)
+		console.log(user)
 
-		}).catch((err) => {
-			console.log('POST /auth/registration create user', err)
-			return res.sendStatus(500)
+		await sendToken({
+			UserID: user.id, 
+			transaction, 
+			res, 
 		})
-		
-	}).catch((err) => {
-		console.log('POST /auth/registration bcrypt', err)
+
+
+	} catch(err) {
+		await transaction.rollback()
+		console.log('POST /auth/registration', err)
 		res.sendStatus(500)
-	})
+	}
 
 })
 
