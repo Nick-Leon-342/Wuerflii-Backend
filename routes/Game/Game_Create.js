@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const {	createNewGame } = require('../../CreateNewGame')
+const CreateNewGame = require('../../CreateNewGame')
 const { Players, Sessions, sequelize } = require('../../models')
 const { isInt, isArray, isString, isColor } = require('../../IsDataType')
 const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils_env')
@@ -45,19 +45,17 @@ router.post('/', async (req, res) => {
 			Name,
 			Columns, 
 			InputType: 'type',
-			List_PlayerOrder: [''],
+			List_PlayerOrder: [0],
 			ShowScores: true, 
 
 			LastPlayed: date, 
 		}, { transaction })
-
-		const SessionID = session.id
 		
 
 		const list_created_players = []
 		for(const p of List_Players) {
 			const player = await Players.create({ 
-				SessionID, 
+				SessionID: session.id, 
 				Name: p.Name, 
 				Color: p.Color, 
 				Gnadenwurf: false, 
@@ -65,18 +63,19 @@ router.post('/', async (req, res) => {
 			list_created_players.push(player)
 		}
 
-		await session.update({ List_PlayerOrder: list_created_players.map(p => p.id) })
+		console.log(list_created_players.map(p => p.id))
+		await session.update({ List_PlayerOrder: list_created_players.map(p => p.id) }, { transaction })
 
-		await createNewGame({
+		await CreateNewGame({
 			List_Players: list_created_players, 
 			transaction, 
-			SessionID, 
+			session, 
 			Columns, 
 			UserID, 
 		})
 
 		await transaction.commit()
-		res.json({ SessionID })
+		res.json({ SessionID: session.id })
 
 
 	} catch(err) {

@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         List_PlayerOrder: {
-            type: DataTypes.ARRAY(DataTypes.STRING),
+            type: DataTypes.ARRAY(DataTypes.INTEGER),
             allowNull: false,
         },
 		ShowScores: {

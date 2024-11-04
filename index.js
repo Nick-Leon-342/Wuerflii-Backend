@@ -88,7 +88,7 @@ Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoresID'})
 
 
 
-// __________________________________________________Routers__________________________________________________
+// __________________________________________________ Routers __________________________________________________
 
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
@@ -98,7 +98,8 @@ app.use('/logout', require('./routes/Logout'))
 
 
 
-// use middleware to auth user
+// __________________________________________________ Middleware __________________________________________________
+
 app.use(require('./middleware/verifyJWT'))
 
 app.use('/user', require('./routes/User'))

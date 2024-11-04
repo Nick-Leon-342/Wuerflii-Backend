@@ -3,10 +3,6 @@
 module.exports = (sequelize, DataTypes) => {
     return sequelize.define('FinalScores', {
 
-		UserID: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-		},
 		Start: {
 			type: DataTypes.DATE,
 			allowNull: false,

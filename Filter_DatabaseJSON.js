@@ -1,24 +1,18 @@
 
 
-const { id_upperTable, id_bottomTable } = require('./utils')
-
-
-
-
-
 function filter_session(s) {
 
 	return {
 		id: s.id,
 		Name: s.Name,
 		Columns: s.Columns,
-		JoinCode: s.JoinCode,
 		InputType: s.InputType,
+		List_PlayerOrder: s.List_PlayerOrder,
 		ShowScores: s.ShowScores,
-		LastPlayed: s.LastPlayed,
+
 		CustomDate: s.CustomDate,
 		CreatedDate: s.CreatedDate,
-		List_PlayerOrder: s.List_PlayerOrder,
+		LastPlayed: s.LastPlayed,
 	}
 
 }
@@ -28,9 +22,8 @@ function filter_player(p) {
 	return {
 		id: p.id,
 		Name: p.Name,
-		Alias: p.Alias,
 		Color: p.Color,
-		Wins: p.Wins,
+		Gnadenwurf: p.Gnadenwurf, 
 	}
 
 }
@@ -58,49 +51,64 @@ function filter_finalscore(f) {
 
 }
 
-function filter_playertable(pt) {
 
-	return pt.Gnadenwürfe
 
-}
 
-function filter_uppertable(ut) {
+
+function filter_table_column(tc) {
 
 	return {
-		Alias: ut.Alias,
-		Column: ut.Column,
-		TableID: id_upperTable,
-		0: ut[0],
-		1: ut[1],
-		2: ut[2],
-		3: ut[3],
-		4: ut[4],
-		5: ut[5],
+		id: tc.id, 
+		Column: tc.Column, 
+
+		Upper_Table_1: tc.Upper_Table_1, 
+		Upper_Table_2: tc.Upper_Table_2, 
+		Upper_Table_3: tc.Upper_Table_3, 
+		Upper_Table_4: tc.Upper_Table_4, 
+		Upper_Table_5: tc.Upper_Table_5, 
+		Upper_Table_6: tc.Upper_Table_6, 
+
+		Upper_Table_Score: tc.Upper_Table_Score, 
+		Upper_Table_Add35: tc.Upper_Table_Add35, 
+		Upper_Table_TotalScore: tc.Upper_Table_TotalScore, 
+
+
+		Bottom_Table_1: tc.Bottom_Table_1, 
+		Bottom_Table_2: tc.Bottom_Table_2, 
+		Bottom_Table_3: tc.Bottom_Table_3, 
+		Bottom_Table_4: tc.Bottom_Table_4, 
+		Bottom_Table_5: tc.Bottom_Table_5, 
+		Bottom_Table_6: tc.Bottom_Table_6, 
+		Bottom_Table_7: tc.Bottom_Table_7, 
+
+		Bottom_Table_Score: tc.Bottom_Table_Score, 
+		Bottom_Table_UpperTableScore: tc.Bottom_Table_UpperTableScore, 
+		Bottom_Table_TotalScore: tc.Bottom_Table_TotalScore, 
+
+
+		TotalScore: tc.TotalScore, 
 	}
 
 }
 
-function filter_bottomtable(bt) {
-
-	return {
-		Alias: bt.Alias,
-		Column: bt.Column,
-		TableID: id_bottomTable,
-		0: bt[0],
-		1: bt[1],
-		2: bt[2],
-		3: bt[3],
-		4: bt[4],
-		5: bt[5],
-		6: bt[6],
-	}
-
-}
-
-function filter_tablearchive(ta) {
+function filter_table_archive(ta) {
 
 	return {
 		Table: ta.Table
+	}
+
+}
+
+
+
+
+
+function filter_user(u) {
+
+	return {
+		id: u.id, 
+		Name: u.Name, 
+		DarkMode: u.Name, 
 	}
 
 }
@@ -113,8 +121,9 @@ module.exports = {
 	filter_session,
 	filter_player,
 	filter_finalscore,
-	filter_playertable,
-	filter_uppertable,
-	filter_bottomtable, 
-	filter_tablearchive, 
+	
+	filter_table_column, 
+	filter_table_archive, 
+
+	filter_user, 
 }

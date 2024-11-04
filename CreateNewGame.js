@@ -52,6 +52,7 @@ module.exports = async function createNewGame({
 		for(const column of array_columns) {
 
 			await Table_Columns.create({ 
+				PlayerID: p.id, 
 				Column: column, 
 				TotalScore: 0, 
 			}, { transaction })

@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { Players, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../../models')
+const { Users, Players, Sessions, FinalScores, Table_Columns, Table_Archives } = require('../../models')
 const { possibleEntries_upperTable, possibleEntries_bottomTable } = require('../../PossibleEntries')
 const { isInt, isBoolean, isString } = require('../../IsDataType')
 const { destroyGame } = require('../../DestroyGame')
@@ -11,10 +11,12 @@ const { destroyGame } = require('../../DestroyGame')
 const { 
 	filter_player,
 	filter_session,
-	filter_uppertable,
 	filter_finalscore,
-	filter_bottomtable, 
-	filter_playertable,
+
+	filter_table_archive, 
+	filter_table_column, 
+
+	filter_user,
 } = require('../../Filter_DatabaseJSON')
 
 router.use('/create', require('./Game_Create'))
@@ -27,35 +29,40 @@ router.get('', (req, res) => {
 	
 	const { UserID } = req
 	const SessionID = +req.query.session_id
-	const JoinCode = +req.query.joincode
 	
-	if(!SessionID || !JoinCode) return res.sendStatus(400)
-
-	Sessions.findOne({ where: { id: SessionID, UserID, JoinCode }, include: [ Players, PlayerTable, UpperTable, BottomTable] }).then((s) => {
+	if(!SessionID) return res.sendStatus(400)
 
 
-		if(!s) return res.sendStatus(404)
+	Users.findOne({ 
+		where: { id: UserID }, 
+		include: [{
+			model: Sessions, 
+			where: { id: SessionID }, 
+			include: [{
+				model: Players, 
+				where: {}, 
+				include: Table_Columns
+			}]
+		}]
+	}).then(user => {
 
-		const list_columns = []
-		for(const ut of s.UpperTables) {	list_columns.push(filter_uppertable(ut))	}
-		for(const bt of s.BottomTables) {	list_columns.push(filter_bottomtable(bt))	}
-
-		const list_players = []
-		for(const p of s.Players) {list_players.push(filter_player(p))}
-		
-		const session = filter_session(s)
-		const gnadenwürfe = filter_playertable(s.PlayerTables[0])
 
 		res.json({
-			Session: session,
-			List_Players: list_players, 
-			Gnadenwürfe: gnadenwürfe,
-			List_Columns: list_columns,
+			User: filter_user(user), 
+			Session: {
+				...filter_session(user.Sessions[0]), 
+				List_Players: user.Sessions[0].Players.map(p => {
+					return {
+						...filter_player(p), 
+						List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
+					}
+				})
+			}
 		})
 
 
-	}).catch((err) => {
-		console.log('GET /game', err)
+	}).catch(err => {
+		console.log('GET /game\n', err)
 		res.sendStatus(500)
 	})
 
