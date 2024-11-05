@@ -47,17 +47,23 @@ router.get('', (req, res) => {
 	}).then(user => {
 
 
-		res.json({
-			User: filter_user(user), 
-			Session: {
-				...filter_session(user.Sessions[0]), 
-				List_Players: user.Sessions[0].Players.map(p => {
-					return {
+		const List_Players = []
+		for(const id of user.Sessions[0].List_PlayerOrder) {
+			for(const p of user.Sessions[0].Players) {
+				if(id === p.id) {
+					List_Players.push({
 						...filter_player(p), 
 						List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
-					}
-				})
+					})
+					break
+				}
 			}
+		}
+
+		res.json({
+			User: filter_user(user), 
+			Session: filter_session(user.Sessions[0]),
+			List_Players, 
 		})
 
 

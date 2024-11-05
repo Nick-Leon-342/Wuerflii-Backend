@@ -108,7 +108,7 @@ function filter_user(u) {
 	return {
 		id: u.id, 
 		Name: u.Name, 
-		DarkMode: u.Name, 
+		DarkMode: u.DarkMode, 
 	}
 
 }
