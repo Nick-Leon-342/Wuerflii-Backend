@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false
 		},
         InputType: {
-            type: DataTypes.DataTypes.ENUM('type', 'select', 'select_and_type'),
+            type: DataTypes.ENUM('type', 'select', 'select_and_type'),
             allowNull: false,
         },
         List_PlayerOrder: {
