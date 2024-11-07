@@ -40,30 +40,25 @@ router.get('', (req, res) => {
 			where: { id: SessionID }, 
 			include: [{
 				model: Players, 
-				where: {}, 
 				include: Table_Columns
 			}]
-		}]
+		}], 
+		order: [
+			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+			[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
+		]
 	}).then(user => {
-
-
-		const List_Players = []
-		for(const id of user.Sessions[0].List_PlayerOrder) {
-			for(const p of user.Sessions[0].Players) {
-				if(id === p.id) {
-					List_Players.push({
-						...filter_player(p), 
-						List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
-					})
-					break
-				}
-			}
-		}
+		
 
 		res.json({
 			User: filter_user(user), 
 			Session: filter_session(user.Sessions[0]),
-			List_Players, 
+			List_Players: user.Sessions[0].Players.map(p => {
+				return {
+					...filter_player(p), 
+					List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
+				}
+			}), 
 		})
 
 

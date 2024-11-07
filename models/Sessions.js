@@ -15,10 +15,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('type', 'select', 'select_and_type'),
             allowNull: false,
         },
-        List_PlayerOrder: {
-            type: DataTypes.ARRAY(DataTypes.INTEGER),
-            allowNull: false,
-        },
 		ShowScores: {
 			type: DataTypes.BOOLEAN, 
 			allowNull: false, 

@@ -82,7 +82,6 @@ function filter_table_column(tc) {
 		Bottom_Table_7: tc.Bottom_Table_7, 
 
 		Bottom_Table_Score: tc.Bottom_Table_Score, 
-		Bottom_Table_UpperTableScore: tc.Bottom_Table_UpperTableScore, 
 		Bottom_Table_TotalScore: tc.Bottom_Table_TotalScore, 
 
 

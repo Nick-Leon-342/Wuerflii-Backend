@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
 			UserID, 
 			Name,
 			Columns, 
-			InputType: 'type',
+			InputType: 'select',
 			List_PlayerOrder: [0],
 			ShowScores: true, 
 
@@ -53,18 +53,17 @@ router.post('/', async (req, res) => {
 		
 
 		const list_created_players = []
-		for(const p of List_Players) {
+		for(let i = 0; List_Players.length > i; i++) {
 			const player = await Players.create({ 
 				SessionID: session.id, 
-				Name: p.Name, 
-				Color: p.Color, 
+				Name: List_Players[i].Name, 
+				Color: List_Players[i].Color, 
 				Gnadenwurf: false, 
+				Order_Index: i, 
 			}, { transaction })
 			list_created_players.push(player)
 		}
 
-		console.log(list_created_players.map(p => p.id))
-		await session.update({ List_PlayerOrder: list_created_players.map(p => p.id) }, { transaction })
 
 		await CreateNewGame({
 			List_Players: list_created_players, 
@@ -74,6 +73,7 @@ router.post('/', async (req, res) => {
 			UserID, 
 		})
 
+		
 		await transaction.commit()
 		res.json({ SessionID: session.id })
 
