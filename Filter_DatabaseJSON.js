@@ -10,6 +10,10 @@ function filter_session(s) {
 		List_PlayerOrder: s.List_PlayerOrder,
 		ShowScores: s.ShowScores,
 
+		View_Month: s.View_Month, 
+		View_Year: s.View_Year, 
+		View: s.View, 
+
 		CustomDate: s.CustomDate,
 		CreatedDate: s.CreatedDate,
 		LastPlayed: s.LastPlayed,

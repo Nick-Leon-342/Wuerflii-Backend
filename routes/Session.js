@@ -2,12 +2,19 @@
 
 const express = require('express')
 const router = express.Router()
-const { Players, Users, Sessions, FinalScores, PlayerTable, UpperTable, BottomTable, TableArchive } = require('../models')
-const { filter_player, filter_session, filter_finalscore, filter_tablearchive } = require('../Filter_DatabaseJSON')
+
+const { filter_player, filter_session, filter_finalscore, filter_tablearchive, filter_user } = require('../Filter_DatabaseJSON')
 const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
 const { generateJoinCode, createNewGame } = require('../CreateNewGame')
-const { destroyGame } = require('../DestroyGame')
 const { isDate } = require('util/types')
+
+const { 
+	FinalScores, 
+	Players, 
+	Sessions, 
+	Users,
+	sequelize, 
+} = require('../models')
 
 
 
@@ -15,86 +22,80 @@ const { isDate } = require('util/types')
 
 // __________________________________________________ Select __________________________________________________
 
-router.get('/select', async (req, res) => {
+router.get('/all', async (req, res) => {
 
 	const { UserID } = req
 
-	Sessions.findAll({ where: { UserID }, include: Players }).then((list_sessions) => {
+	Users.findOne({ 
+		where: { id: UserID }, 
+		include: [{
+			model: Sessions, 
+			include: Players
+		}], 
+		order: [
+			[ { model: Sessions }, 'LastPlayed', 'DESC' ],
+			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+		]
+	}).then(user => {
 
 
-		const list = []
+		// TODO check if user etc. exists (return 404)
 
-		for(const session of list_sessions) {
-			
-			const list_players = []
-			for(const p of session.Players) {list_players.push(filter_player(p))}
-
-			list.push({
-				...filter_session(session), 
-				List_Players: list_players
+		res.json({
+			User: filter_user(user), 
+			List_Sessions: user.Sessions.map(s => {
+				return {
+					...filter_session(s), 
+					List_Players: s.Players.map(p => filter_player(p))
+				}
 			})
+		})
 
-		}
-
-		res.json(list)
 
 
 	}).catch((err) => {
-		console.log('GET /session/select', err)
+		console.log('GET /session/all\n', err)
 		res.sendStatus(500)
 	})
 
 })
 
-router.post('/select', async (req, res) => {
-
-	const { UserID } = req
-	const { SessionID } = req.body
-
-	if(!isInt(SessionID)) return res.sendStatus(400)
-
-	PlayerTable.findOne({ where: { SessionID, UserID } }).then((p) => {
-
-
-		const json = { Exists: Boolean(p) }
-		if(p) json.JoinCode = p.JoinCode
-
-		res.json(json)
-
-
-	}).catch((err) => {
-		console.log('POST /session/select', err)
-		res.sendStatus(500)
-	})
-
-})
-
-router.delete('/select', async (req, res) => {
+router.delete('', async (req, res) => {
 
 	const { UserID } = req
 	const SessionID = +req.query.session_id
 	
 	if(!SessionID) return res.sendStatus(400)
 
+
+	const transaction = await sequelize.transaction()
 	try {
 
-		const json = { UserID, SessionID }
 
-		await TableArchive.destroy({ where: json })
+		const user = await Users.findOne({ 
+			where: { id: UserID }, 
+			transaction, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+			}], 
+		})
 
-		await PlayerTable.destroy({ where: json })
-		await UpperTable.destroy({ where: json })
-		await BottomTable.destroy({ where: json })
+		if(!user || !user.Sessions[0]) {
+			await transaction.rollback()
+			return res.sendStatus(404)
+		}
 
-		await Players.destroy({ where: json })
-		await FinalScores.destroy({ where: json })
+		await user.Sessions[0].destroy({ transaction })
 
-		await Sessions.destroy({ where: { UserID, id: SessionID } })
+		await transaction.commit()
 
 		res.sendStatus(204)
 
+
 	} catch(err) {
-		console.log('DELETE /session/select', err)
+		console.log('DELETE /session/select\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
 	}
 
@@ -108,36 +109,55 @@ router.delete('/select', async (req, res) => {
 
 router.get('/preview', async (req, res) => {
 
-	const { UserID } = req
-	const session_id = +req.query.session_id
+	// const { UserID } = req
+	// const { SessionID } = req.body
 
-	if(!session_id) return res.sendStatus(400)
+	// if(!isInt(SessionID)) return res.sendStatus(400)
 
-	Sessions.findOne({ where: { id: session_id, UserID }, include: [ Players, FinalScores ] }).then((s) => {
+	// PlayerTable.findOne({ where: { SessionID, UserID } }).then((p) => {
 
 
-		if(!s) return res.sendStatus(404)
+	// 	const json = { Exists: Boolean(p) }
+	// 	if(p) json.JoinCode = p.JoinCode
+
+	// 	res.json(json)
+
+
+	// }).catch((err) => {
+	// 	console.log('POST /session/select', err)
+	// 	res.sendStatus(500)
+	// })
+
+	// const { UserID } = req
+	// const session_id = +req.query.session_id
+
+	// if(!session_id) return res.sendStatus(400)
+
+	// Sessions.findOne({ where: { id: session_id, UserID }, include: [ Players, FinalScores ] }).then((s) => {
+
+
+	// 	if(!s) return res.sendStatus(404)
 		
-		const session = filter_session(s)
+	// 	const session = filter_session(s)
 
-		const list_players = []
-		for(const p of s.Players) {list_players.push(filter_player(p))}
+	// 	const list_players = []
+	// 	for(const p of s.Players) {list_players.push(filter_player(p))}
 
-		const list_finalScores = []
-		for(const f of s.FinalScores) {list_finalScores.push(filter_finalscore(f))}
-
-
-		res.json({ 
-			Session: session, 
-			List_Players: list_players, 
-			List_FinalScores: list_finalScores
-		})
+	// 	const list_finalScores = []
+	// 	for(const f of s.FinalScores) {list_finalScores.push(filter_finalscore(f))}
 
 
-	}).catch((err) => {
-		console.log('GET /session/preview', err)
-		res.sendStatus(500)
-	})
+	// 	res.json({ 
+	// 		Session: session, 
+	// 		List_Players: list_players, 
+	// 		List_FinalScores: list_finalScores
+	// 	})
+
+
+	// }).catch((err) => {
+	// 	console.log('GET /session/preview', err)
+	// 	res.sendStatus(500)
+	// })
 
 })
 

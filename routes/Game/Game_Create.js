@@ -3,10 +3,10 @@
 const express = require('express')
 const router = express.Router()
 
-const CreateNewGame = require('../../CreateNewGame')
-const { Players, Sessions, sequelize } = require('../../models')
-const { isInt, isArray, isString, isColor } = require('../../IsDataType')
 const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils_env')
+const { isInt, isArray, isString, isColor } = require('../../IsDataType')
+const { Players, Sessions, sequelize } = require('../../models')
+const CreateNewGame = require('../../CreateNewGame')
 
 
 
@@ -48,6 +48,10 @@ router.post('/', async (req, res) => {
 			List_PlayerOrder: [0],
 			ShowScores: true, 
 
+			View_Month: new Date().getMonth(), 
+			View_Year: new Date().getFullYear(), 
+			View: 'show_total', 
+
 			LastPlayed: date, 
 		}, { transaction })
 		
@@ -71,6 +75,7 @@ router.post('/', async (req, res) => {
 			session, 
 			Columns, 
 			UserID, 
+			date,
 		})
 
 		

@@ -8,6 +8,7 @@ const {
 	sequelize
 } = require('../models')
 const sendToken = require('./SendToken')
+const { isBoolean, isString } = require('../IsDataType')
 
 
 
@@ -17,9 +18,13 @@ const sendToken = require('./SendToken')
 router.patch('/', async (req, res) => {
 
 	const { UserID } = req
-	const { Name, Password } = req.body
+	const { Name, Password, DarkMode } = req.body
 
-	if(!Name && !Password) return res.sendStatus(400)
+	if(
+		(Name && !isString(Name)) || 
+		(Password && !isString(Password)) || 
+		((DarkMode !== undefined || DarkMode !== null) && !isBoolean(DarkMode))
+	) return res.sendStatus(400)
 
 
 	const transaction = await sequelize.transaction()
@@ -54,11 +59,15 @@ router.patch('/', async (req, res) => {
 
 		}
 
+		if(isBoolean(DarkMode)) updateJSON.DarkMode = DarkMode
+
 
 		await Users.update(
-			{ where: { id: UserID } }, 
-			transaction, 
 			updateJSON, 
+			{ 
+				where: { id: UserID }, 
+				transaction, 
+			}
 		)
 
 		await sendToken({
@@ -69,8 +78,8 @@ router.patch('/', async (req, res) => {
 
 
 	} catch(err) {
-		await transaction.fallback()
 		console.log('PATCH /user\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
 	}
 

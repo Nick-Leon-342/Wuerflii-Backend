@@ -40,7 +40,7 @@ const {
 
 // __________________________________________________ Users __________________________________________________
 
-Users.hasMany(Sessions, { foreignKey: 'UserID' })
+Users.hasMany(Sessions, { foreignKey: 'UserID', onDelete: 'CASCADE' })
 
 
 
@@ -48,8 +48,8 @@ Users.hasMany(Sessions, { foreignKey: 'UserID' })
 
 Sessions.belongsTo(Users, { foreignKey: 'UserID' })
 
-Sessions.hasMany(Players, { foreignKey: 'SessionID' })
-Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
+Sessions.hasMany(Players, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
+Sessions.hasMany(FinalScores, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
 
 
 
@@ -57,7 +57,7 @@ Sessions.hasMany(FinalScores, { foreignKey: 'SessionID' })
 
 Players.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-Players.hasMany(Table_Columns, { foreignKey: 'PlayerID' })
+Players.hasMany(Table_Columns, { foreignKey: 'PlayerID', onDelete: 'CASCADE' })
 
 
 
@@ -71,7 +71,7 @@ Table_Columns.belongsTo(Players, { foreignKey: 'PlayerID' })
 
 FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
-FinalScores.hasOne(Table_Archives, { foreignKey: 'FinalScoresID' })
+FinalScores.hasOne(Table_Archives, { foreignKey: 'FinalScoresID', onDelete: 'CASCADE' })
 
 
 
