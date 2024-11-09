@@ -3,8 +3,8 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session, filter_finalscore, filter_table_archive, filter_table_column } = require('../Filter_DatabaseJSON')
-const { isInt, isArray, isBoolean, isString, isColor } = require('../IsDataType')
+const { filter_table_column } = require('../Filter_DatabaseJSON')
+const { isInt,isBoolean, isString } = require('../IsDataType')
 const { 
 	Players, 
 	Sessions,
@@ -68,6 +68,12 @@ router.patch('', async (req, res) => {
 
 })
 
+
+
+
+
+// __________________________________________________ Input __________________________________________________
+
 router.post('/input', async (req, res) => {
 
 	const { UserID } = req
@@ -76,9 +82,11 @@ router.post('/input', async (req, res) => {
 	if(
 		!SessionID || !isInt(SessionID) ||
 		!PlayerID || !isInt(PlayerID) || 
-		!Column || !isInt(Column) ||
-		!is_valid_input(Name, Value)
+		!isInt(Column) ||
+		!Name || !isString(Name) || 
+		(Value !== null && !isInt(Value))
 	) return res.sendStatus(400)
+	if(!is_valid_input(Name, Value)) return res.sendStatus(409)
 
 
 	const transaction = await sequelize.transaction()
@@ -158,7 +166,7 @@ async function calculate_table_column( tc, transaction ) {
 
 	for(let i = 1; 7 >= i; i++) {
 		const value = tc[`Bottom_Table_${i}`]
-		if(value) {
+		if(value || value === 0) {
 			bottom_table_score += value
 		} else {
 			bottom_table_has_null = true
@@ -183,11 +191,13 @@ async function calculate_table_column( tc, transaction ) {
 }
 
 function is_valid_input( Name, Value ) {
+
 	if (possible_entries.hasOwnProperty(Name)) {
 		const validValues = possible_entries[Name]
-		return validValues.includes(Value)
+		return (validValues.includes(Value) || Value === null)
 	}
 	return false
+
 }
 
 const possible_entries = {
