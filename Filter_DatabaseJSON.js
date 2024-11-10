@@ -13,6 +13,7 @@ function filter_session(s) {
 		View_Month: s.View_Month, 
 		View_Year: s.View_Year, 
 		View: s.View, 
+		View_List_Years: s.View_List_Years, 
 
 		CustomDate: s.CustomDate,
 		CreatedDate: s.CreatedDate,

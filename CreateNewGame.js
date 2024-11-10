@@ -20,9 +20,8 @@ const {
  * @param {Object} options - The options object for creating a new game.
  * @param {Array<Object>} options.List_Players - List of player objects with details such as `Alias`.
  * @param {Object} options.transaction - The transaction object for managing database changes.
- * @param {Object} options.session - The sessions object.
+ * @param {Object} options.Session - The sessions object.
  * @param {number} options.Columns - Number of columns to set up for each player.
- * @param {number} options.UserID - Unique identifier of the user who created the game session.
  * @param {number} options.date - Current date.
  * 
  * @returns {Promise<number>} Returns a promise that resolves to the generated join code.
@@ -34,20 +33,16 @@ const {
 module.exports = async function createNewGame({
 	List_Players, 
 	transaction, 
-	session, 
+	Session, 
 	Columns, 
 	date, 
 }) {
 
+	await Session.update({ CurrentGameStart: date }, { transaction })
 
-	await session.update({ CurrentGameStart: date }, { transaction })
-
-	const gnadenwürfe = {}
 	const array_columns = Array.from({ length: Columns }, (_, index) => index)
 
-
 	for(const p of List_Players) {
-		gnadenwürfe[p.Alias] = false
 
 		for(const column of array_columns) {
 
@@ -59,7 +54,6 @@ module.exports = async function createNewGame({
 
 		}
 
-	}
-	
+	}	
 
 }

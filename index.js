@@ -105,7 +105,7 @@ app.use(require('./middleware/verifyJWT'))
 app.use('/user', require('./routes/User'))
 app.use('/player', require('./routes/Player'))
 app.use('/game', require('./routes/Game/Game'))
-app.use('/session', require('./routes/Session'))
+app.use('/session', require('./routes/Session/Session'))
 
 
 

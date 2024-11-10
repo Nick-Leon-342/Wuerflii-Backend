@@ -55,8 +55,8 @@ router.get('', (req, res) => {
 		]
 	}).then(user => {
 		
-
-		// TODO check if user etc. exists (return 404)
+		
+		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0] || !user.Sessions[0].Players[0].Table_Columns[0]) return res.sendStatus(404)
 
 		res.json({
 			User: filter_user(user), 
@@ -105,7 +105,7 @@ router.post('', async (req, res) => {
 						model: Players, 
 						include: Table_Columns
 					}, 
-					{ model: FinalScores }, 
+					FinalScores
 				]
 			}], 
 			order: [
@@ -128,7 +128,7 @@ router.post('', async (req, res) => {
 
 		// __________________________________________________ Check if some entries are missing __________________________________________________
 
-		if(user.Sessions[0].Players.some(p => p.Table_Columns.some(tc => !tc.Bottom_Table_TotalScore))) {
+		if(!Surrendered_PlayerID && user.Sessions[0].Players.some(p => p.Table_Columns.some(tc => !tc.Bottom_Table_TotalScore))) {
 			await transaction.rollback()
 			return res.status(409).send('Missing entries.')
 		}
@@ -190,7 +190,7 @@ router.post('', async (req, res) => {
 			tmp_final_score[p.id] = 0 
 
 			let tmp_score = 0
-			for(const tc of p.Table_Columns) { tmp_score += tc.Bottom_Table_TotalScore }
+			for(const tc of p.Table_Columns) { tmp_score += tc.TotalScore }
 			PlayerScores[p.id] = tmp_score
 
 			if(highestScore < tmp_score) {
@@ -252,9 +252,17 @@ router.post('', async (req, res) => {
 			}), 
 		}, { transaction })
 
+
+
+		// Add year to list for /session/preview
+
+		const tmp_view_list_years = [ ...session.View_List_Years ]
+		if(!tmp_view_list_years.includes(date.getFullYear())) tmp_view_list_years.push(date.getFullYear())
+
 		await session.update({ 
 			LastPlayed: date, 
 			CurrentGameStart: null, 
+			View_List_Years: tmp_view_list_years, 
 		}, { transaction })
 
 
@@ -314,7 +322,10 @@ router.delete('', async (req, res) => {
 			return res.sendStatus(404)
 		}
 
+		await user.Sessions[0].update({ CurrentGameStart: null }, { transaction })
+
 		for(const player of user.Sessions[0].Players) {
+			await player.update({ Gnadenwurf: false }, { transaction })
 			for(const tc of player.Table_Columns) {
 				await tc.destroy({ transaction })
 			}
@@ -367,6 +378,7 @@ router.get('/end', (req, res) => {
 		if(!user || !user.Sessions[0] || !user.Sessions[0].FinalScores[0]) return res.sendStatus(404)
 
 		res.json({ 
+			User: filter_user(user), 
 			FinalScore: filter_finalscore(user.Sessions[0].FinalScores[0]), 
 			List_Players: user.Sessions[0].Players.map(p => filter_player(p)), 
 		})

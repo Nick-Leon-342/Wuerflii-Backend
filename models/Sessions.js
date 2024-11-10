@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM('show_month', 'show_year', 'custom_date', 'show_all'),
             allowNull: false,
         },
+		View_List_Years: {
+			type: DataTypes.ARRAY(DataTypes.INTEGER), 
+			allowNull: false, 
+		}, 
 
 
 
@@ -44,7 +48,7 @@ module.exports = (sequelize, DataTypes) => {
 		
         CustomDate: {
             type: DataTypes.DATE,
-            allowNull: true,
+            allowNull: false,
         },
         CurrentGameStart: {
             type: DataTypes.DATE,

@@ -5,24 +5,45 @@ const router = express.Router()
 
 const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils_env')
 const { isInt, isArray, isString, isColor } = require('../../IsDataType')
-const { Players, Sessions, sequelize } = require('../../models')
 const CreateNewGame = require('../../CreateNewGame')
 
+const { 
+	Players, 
+	Sessions, 
+	Users, 
+	sequelize, 
+} = require('../../models')
+const { filter_user } = require('../../Filter_DatabaseJSON')
 
 
 
 
-router.get('/', (req, res) => {
 
-	res.json({
-		MAX_PLAYERS,
-		MAX_COLUMNS,
-		MAX_LENGTH_PLAYER_NAME
+router.get('', (req, res) => {
+
+	const { UserID } = req
+
+	Users.findOne({ where: { id: UserID }}).then(user => {
+
+
+		if(!user) return res.sendStatus(404)
+
+		res.json({
+			MAX_PLAYERS,
+			MAX_COLUMNS,
+			MAX_LENGTH_PLAYER_NAME, 
+			User: filter_user(user), 
+		})
+
+
+	}).catch(err => {
+		console.log('GET /game/create\n', err)
+		res.sendStatus(500)
 	})
 
 })
 
-router.post('/', async (req, res) => {
+router.post('', async (req, res) => {
 
 	const { UserID } = req
 	const { Name, Columns, List_Players } = req.body
@@ -36,7 +57,6 @@ router.post('/', async (req, res) => {
 	) return res.sendStatus(400)
 
 
-	// Create session 
 	const transaction = await sequelize.transaction()
 	try {
 
@@ -51,8 +71,10 @@ router.post('/', async (req, res) => {
 			View_Month: new Date().getMonth(), 
 			View_Year: new Date().getFullYear(), 
 			View: 'show_total', 
+			View_List_Years: [], 
 
 			LastPlayed: date, 
+			CustomDate: date, 
 		}, { transaction })
 		
 
@@ -72,9 +94,8 @@ router.post('/', async (req, res) => {
 		await CreateNewGame({
 			List_Players: list_created_players, 
 			transaction, 
-			session, 
+			Session: session, 
 			Columns, 
-			UserID, 
 			date,
 		})
 
@@ -86,6 +107,57 @@ router.post('/', async (req, res) => {
 	} catch(err) {
 		await transaction.rollback()
 		console.log('POST /game/create\n', err)
+		res.sendStatus(500)
+	}
+
+})
+
+router.patch('', async (req, res) => {
+
+	const { UserID } = req
+	const { SessionID } = req.body
+	const date = new Date()
+
+	if(!SessionID || !isInt(SessionID)) return res.sendStatus(400)
+	
+
+	const transaction = await sequelize.transaction()
+	try {
+
+
+		const user = await Users.findOne({ 
+			where: { id: UserID }, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+				include: Players
+			}], 
+			order: [
+				[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+			]
+		})
+
+		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.sendStatus(404)
+		}
+
+
+		await CreateNewGame({
+			List_Players: user.Sessions[0].Players, 
+			transaction, 
+			Session: user.Sessions[0], 
+			Columns: user.Sessions[0].Columns, 
+			date,
+		})
+
+		await transaction.commit()
+		res.sendStatus(204)
+
+
+	} catch(err) {
+		console.log('PATCH /game/create\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
 	}
 
