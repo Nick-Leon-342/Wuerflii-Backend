@@ -3,9 +3,8 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session, filter_finalscore, filter_user } = require('../../Filter_DatabaseJSON')
-const { isInt, isArray, isBoolean, isString, isColor } = require('../../IsDataType')
-const { generateJoinCode, createNewGame } = require('../../CreateNewGame')
+const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
+const { isInt, isBoolean, isString } = require('../../IsDataType')
 const { isDate } = require('util/types')
 
 const { 
@@ -15,7 +14,6 @@ const {
 	Users,
 	sequelize, 
 } = require('../../models')
-const { MAX_COLUMNS } = require('../../utils_env')
 
 router.use('/preview', require('./Session_Preview'))
 
@@ -40,7 +38,7 @@ router.get('/all', async (req, res) => {
 	}).then(user => {
 
 
-		// TODO check if user etc. exists (return 404)
+		if(!user) return res.sendStatus(404)
 
 		res.json({
 			User: filter_user(user), 
@@ -71,7 +69,6 @@ router.patch('', async (req, res) => {
 		View_Month, 
 		View_Year, 
 
-		Columns, 
 		InputType, 
 		ShowScores, 
 	} = req.body
@@ -83,7 +80,6 @@ router.patch('', async (req, res) => {
 		(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) || 
 		(View_Year && !isInt(View_Year)) || 
 		
-		(Columns && (!isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS)) ||
 		(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) || 
 		(ShowScores !== null && ShowScores !== undefined && !isBoolean(ShowScores))
 	) return res.sendStatus(400)
@@ -115,7 +111,6 @@ router.patch('', async (req, res) => {
 		if(View_Month) json.View_Month = View_Month
 		if(View_Year) json.View_Year = View_Year
 		
-		if(Columns) json.Columns = Columns
 		if(InputType) json.InputType = InputType
 		if(ShowScores !== null && ShowScores !== undefined) json.ShowScores = ShowScores
 

@@ -4,7 +4,7 @@ const express = require('express')
 const router = express.Router()
 
 const { filter_table_column } = require('../Filter_DatabaseJSON')
-const { isInt,isBoolean, isString } = require('../IsDataType')
+const { isInt,isBoolean, isString, isColor } = require('../IsDataType')
 const { 
 	Players, 
 	Sessions,
@@ -13,6 +13,7 @@ const {
 
 	sequelize, 
 } = require('../models')
+const { MAX_LENGTH_PLAYER_NAME } = require('../utils_env')
 
 
 
@@ -21,11 +22,11 @@ const {
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, PlayerID, Gnadenwurf } = req.body
+	const { SessionID, PlayerID, Gnadenwurf} = req.body
 
 	if(
 		!SessionID || !isInt(SessionID) || 
-		((Gnadenwurf !== null && Gnadenwurf !== undefined) && !isBoolean(Gnadenwurf))
+		!isBoolean(Gnadenwurf)
 	) return res.sendStatus(400)
 
 	
@@ -62,6 +63,86 @@ router.patch('', async (req, res) => {
 
 	} catch(err) {
 		console.log('PATCH /player\n', err)
+		await transaction.rollback()
+		res.sendStatus(500)
+	}
+
+})
+
+router.patch('/list', async (req, res) => {
+
+	const { UserID } = req
+	const { SessionID, List_Players} = req.body
+
+	if(
+		!SessionID || !isInt(SessionID) || 
+		!List_Players || 
+		!List_Players.every(p => (
+			p.id && isInt(p.id) && 
+			p.Name && isString(p.Name) && p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME &&
+			p.Color && isColor(p.Color)
+		))
+	) return res.sendStatus(400)
+
+	
+	const transaction = await sequelize.transaction()
+	try {
+
+		
+		const user = await Users.findOne({ 
+			where: { id: UserID }, 
+			transaction, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+				include: Players
+			}]
+		})
+
+
+		// ____________________ Check if everything has been found ____________________
+
+		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.sendStatus(404)
+		}
+
+
+		// ____________________ Check if every player exists in both lists ____________________
+
+		const tmp_list_players = user.Sessions[0].Players
+		if(
+			tmp_list_players.length !== List_Players.length || 
+			!tmp_list_players.every(player => List_Players.some(p => p.id === player.id))
+		) {
+			await transaction.rollback()
+			return res.sendStatus(400)
+		}
+
+
+		// ____________________ Update players ____________________
+
+		for(let i = 0; List_Players.length > i; i++) {
+			const p = List_Players[i]
+
+			for(const player of tmp_list_players) {
+				if(player.id === p.id) {
+					await player.update({
+						Name: p.Name, 
+						Color: p.Color, 
+						Order_Index: i
+					}, { transaction })
+					continue
+				}
+			}
+		}
+
+		await transaction.commit()
+		res.sendStatus(204)
+
+
+	} catch(err) {
+		console.log('PATCH /player/list\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

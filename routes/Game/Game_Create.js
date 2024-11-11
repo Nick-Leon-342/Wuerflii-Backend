@@ -70,7 +70,7 @@ router.post('', async (req, res) => {
 
 			View_Month: new Date().getMonth(), 
 			View_Year: new Date().getFullYear(), 
-			View: 'show_total', 
+			View: 'show_all', 
 			View_List_Years: [], 
 
 			LastPlayed: date, 
