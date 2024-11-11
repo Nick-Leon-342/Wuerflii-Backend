@@ -9,7 +9,7 @@ const {
 } = require('../models')
 const sendToken = require('./SendToken')
 const { isBoolean, isString } = require('../IsDataType')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE } = require('../utils_env')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils_env')
 
 
 
@@ -97,7 +97,8 @@ router.delete('', async (req, res) => {
 
 	Users.destroy({ where: { id: UserID } }).then(() => {
 
-		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
+		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
+		res.sendStatus(204)
 
 	}).catch(err => {
 		console.log('DELETE /user\n', err)

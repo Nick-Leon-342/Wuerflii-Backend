@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken')
 const { Users } = require('../models')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE } = require('../utils_env')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils_env')
 
 
 
@@ -58,8 +58,7 @@ module.exports = async function sendToken({
 
 
 	// Send refreshtoken as cookie and accesstoken as response in json
-	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
-	res.cookie('Kniffel_RefreshToken', refreshToken, { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
+	res.cookie('Kniffel_RefreshToken', refreshToken, { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 	res.json({ accessToken })
 
 }

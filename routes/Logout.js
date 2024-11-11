@@ -4,7 +4,7 @@ const express = require('express')
 const router = express.Router()
 
 const { Users } = require('../models')
-const { REFRESH_TOKEN_SECURE, REFRESH_TOKEN_SAMESITE } = require('../utils_env')
+const { REFRESH_TOKEN_SECURE, REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils_env')
 
 
 
@@ -17,11 +17,10 @@ router.delete('/', async (req, res) => {
 	const refreshToken = cookies.Kniffel_RefreshToken
 
 	const user = await Users.findOne({ where: { RefreshToken: refreshToken } })
-	const maxAge = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
 
 	//there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
 	if(!user) {
-		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
+		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 		return res.sendStatus(204)
 	}
 
@@ -31,7 +30,7 @@ router.delete('/', async (req, res) => {
 		return res.sendStatus(500)
 	})
 	
-	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
+	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 	res.sendStatus(204)
 
 })
