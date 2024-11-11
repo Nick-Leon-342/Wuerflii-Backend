@@ -2,12 +2,13 @@
 
 const express = require('express')
 const router = express.Router()
+
 const { Users } = require('../models')
+const { REFRESH_TOKEN_SECURE, REFRESH_TOKEN_SAMESITE } = require('../utils_env')
 
 
 
 
-//__________________________________________________HandleRefreshToken__________________________________________________
 
 router.delete('/', async (req, res) => {
 
@@ -20,18 +21,17 @@ router.delete('/', async (req, res) => {
 
 	//there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
 	if(!user) {
-		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
+		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
 		return res.sendStatus(204)
 	}
 
 	//delete RefreshToken
-	const updatedRefreshToken = { RefreshToken: '' }
-	await Users.update(updatedRefreshToken, { where: { RefreshToken: refreshToken } }).catch((err) => {
-		console.log('DELETE /Logout', err)
+	await user.update({ RefreshToken: '' }).catch(err => {
+		console.log('DELETE /logout\n', err)
 		return res.sendStatus(500)
 	})
 	
-	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: maxAge, secure: process.env.REFRESH_TOKEN_SECURE === 'true' || true })
+	res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
 	res.sendStatus(204)
 
 })

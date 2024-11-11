@@ -9,13 +9,14 @@ const {
 } = require('../models')
 const sendToken = require('./SendToken')
 const { isBoolean, isString } = require('../IsDataType')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE } = require('../utils_env')
 
 
 
 
 
 
-router.patch('/', async (req, res) => {
+router.patch('', async (req, res) => {
 
 	const { UserID } = req
 	const { Name, Password, DarkMode } = req.body
@@ -29,6 +30,17 @@ router.patch('/', async (req, res) => {
 
 	const transaction = await sequelize.transaction()
 	try {
+
+
+		const user = await Users.findOne({
+			where: { id: UserID }, 
+			transaction
+		})
+
+		if(!user) {
+			await transaction.rollback()
+			return res.sendStatus(404)
+		}
 		
 
 		const updateJSON = {}
@@ -62,13 +74,7 @@ router.patch('/', async (req, res) => {
 		if(isBoolean(DarkMode)) updateJSON.DarkMode = DarkMode
 
 
-		await Users.update(
-			updateJSON, 
-			{ 
-				where: { id: UserID }, 
-				transaction, 
-			}
-		)
+		await user.update(updateJSON, { transaction })
 
 		await sendToken({
 			transaction, 
@@ -82,6 +88,21 @@ router.patch('/', async (req, res) => {
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
+
+})
+
+router.delete('', async (req, res) => {
+
+	const { UserID } = req
+
+	Users.destroy({ where: { id: UserID } }).then(() => {
+
+		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: maxAge, secure: REFRESH_TOKEN_SECURE })
+
+	}).catch(err => {
+		console.log('DELETE /user\n', err)
+		res.sendStatus(500)
+	})
 
 })
 
