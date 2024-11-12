@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false
 		},
         InputType: {
-            type: DataTypes.ENUM('type', 'select', 'select_and_type'),
+            type: DataTypes.STRING,
             allowNull: false,
         },
 		ShowScores: {
@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false, 
 		},
         View: {	// Selected view
-            type: DataTypes.ENUM('show_month', 'show_year', 'custom_date', 'show_all'),
+            type: DataTypes.STRING,
             allowNull: false,
         },
 		View_List_Years: {
