@@ -44,6 +44,8 @@ module.exports = async function createNewGame({
 
 	for(const p of List_Players) {
 
+		await p.update({ Gnadenwurf: false }, { transaction })
+
 		for(const column of array_columns) {
 
 			await Table_Columns.create({ 

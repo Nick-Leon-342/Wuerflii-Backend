@@ -79,10 +79,13 @@ router.patch('/list', async (req, res) => {
 		!List_Players || 
 		!List_Players.every(p => (
 			p.id && isInt(p.id) && 
-			p.Name && isString(p.Name) && p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME &&
+			p.Name && isString(p.Name) &&
 			p.Color && isColor(p.Color)
 		))
 	) return res.sendStatus(400)
+
+	// Check if length of user.Name-length is valid
+	if(!List_Players.every(p => p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME)) return res.status(409).send('Name length not valid.')
 
 	
 	const transaction = await sequelize.transaction()
