@@ -3,15 +3,15 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session, filter_finalscore, filter_user } = require('../../Filter_DatabaseJSON')
+const { filter_player, filter_session, filter_finalscore, filter_user, filter_table_archive } = require('../../Filter_DatabaseJSON')
 const { isInt } = require('../../IsDataType')
-const { isDate } = require('util/types')
 const { Op } = require('sequelize')
 
 const { 
 	FinalScores, 
 	Players, 
 	Sessions, 
+	Table_Archives, 
 	Users,
 	sequelize, 
 } = require('../../models')
@@ -162,33 +162,57 @@ router.get('/table', async (req, res) => {
 	const FinalScoreID = +req.query.finalscore_id
 
 	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
+	
+	
+	Users.findOne({ 
+		where: { id: UserID }, 
+		include: [{
+			model: Sessions, 
+			where: { id: SessionID }, 
+			include: [ Players, {
+				model: FinalScores, 
+				where: { id: FinalScoreID }, 
+				include: Table_Archives
+			}]
+		}], 
+		order: [
+			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+		]
+	}).then(user => {
+		
+		
+		if(
+			!user || 
+			!user.Sessions[0] || 
+			!user.Sessions[0].Players[0] || 
+			!user.Sessions[0].FinalScores[0] || 
+			!user.Sessions[0].FinalScores[0].Table_Archive
+		) return res.sendStatus(404)
 
+		const List_Players = []
+		for(const p of user.Sessions[0].Players) {
+			const tmp = filter_player(p)
 
-	Sessions.findOne({ where: { id: SessionID, UserID }, include: Players }).then((s) => {
-
-		if(!s) return res.sendStatus(404)
-
-		FinalScores.findOne({ where: { id: FinalScoreID, UserID, SessionID }, include: TableArchive }).then((f) => {
-
-			if(!f || !f.TableArchive) return res.sendStatus(404)
-
-			const json = { 
-				List_PlayerOrder: s.List_PlayerOrder, 
-				List_Players: s.Players.map((p) => filter_player(p)), 
-				FinalScores: filter_finalscore(f), 
-				...filter_tablearchive(f.TableArchive)
+			for(const ta of user.Sessions[0].FinalScores[0].Table_Archive.Table) {
+				if(ta.PlayerID === p.id) {
+					tmp.List_Table_Columns = ta.List_Table_Columns
+					continue
+				}
 			}
 
-			res.json(json)
+			List_Players.push(tmp)
+		}
 
-
-		}).catch((err) => {
-			console.log('GET /session/preview-table finalscores', err)
-			res.sendStatus(500)
+		res.json({
+			User: filter_user(user), 
+			Session: filter_session(user.Sessions[0]),
+			List_Players
 		})
 
-	}).catch((err) => {
-		console.log('GET /session/preview-table findone sessions', err)
+
+	}).catch(err => {
+		console.log('GET /session/preview/table\n', err)
 		res.sendStatus(500)
 	})
 
