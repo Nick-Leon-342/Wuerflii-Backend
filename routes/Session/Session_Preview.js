@@ -91,25 +91,23 @@ router.get('/all', async (req, res) => {
 		const tmp_session = tmp_user.Sessions[0]
 
 
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		const finalscores = await FinalScores.findAndCountAll({
+			where: {
+				...getQuery(tmp_session), 
+				SessionID
+			},
+			offset,
 			transaction, 
-			include: [{
-				model: Sessions, 
-				where: { id: SessionID }, 
-				include: [{
-					model: FinalScores, 
-					where: getQuery(tmp_session), 
-					order: [['End', 'DESC']], 
-					offset, 
-					limit: MAX_FINALSCORES_LIMIT
-				}]
-			}], 
-		})
+			order: [['End', 'DESC']],
+			limit: MAX_FINALSCORES_LIMIT,
+		}) 
 
 		await transaction.commit()
 
-		res.json({ List: user.Sessions[0].FinalScores.map(f => filter_finalscore(f)) })
+		res.json({ 
+			List_Length: finalscores.count, 
+			List: finalscores.rows.map(f => filter_finalscore(f)), 
+		})
 
 
 	} catch(err) {
