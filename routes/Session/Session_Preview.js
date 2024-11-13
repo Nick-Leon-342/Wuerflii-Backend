@@ -65,7 +65,7 @@ router.get('/all', async (req, res) => {
 
 	const { UserID } = req
 	const SessionID = +req.query.session_id
-	const offset = +req.query.offset
+	const offset = +req.query.offset_int
 
 	if(!SessionID || offset === null || offset === undefined) return res.sendStatus(400)
 
@@ -109,7 +109,7 @@ router.get('/all', async (req, res) => {
 
 		await transaction.commit()
 
-		res.json({ List_FinalScores: user.Sessions[0].FinalScores.map(f => filter_finalscore(f)) })
+		res.json({ List: user.Sessions[0].FinalScores.map(f => filter_finalscore(f)) })
 
 
 	} catch(err) {
