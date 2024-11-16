@@ -65,9 +65,9 @@ router.get('/all', async (req, res) => {
 
 	const { UserID } = req
 	const SessionID = +req.query.session_id
-	const offset = +req.query.offset_int
+	const offset_block = +req.query.offset_block
 
-	if(!SessionID || offset === null || offset === undefined) return res.sendStatus(400)
+	if(!SessionID || !offset_block) return res.sendStatus(400)
 
 
 	const transaction = await sequelize.transaction()
@@ -96,7 +96,7 @@ router.get('/all', async (req, res) => {
 				...getQuery(tmp_session), 
 				SessionID
 			},
-			offset,
+			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
 			transaction, 
 			order: [['End', 'DESC']],
 			limit: MAX_FINALSCORES_LIMIT,
@@ -105,7 +105,7 @@ router.get('/all', async (req, res) => {
 		await transaction.commit()
 
 		res.json({ 
-			List_Length: finalscores.count, 
+			Has_More: finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
 			List: finalscores.rows.map(f => filter_finalscore(f)), 
 		})
 
