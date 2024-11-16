@@ -19,12 +19,14 @@ services:
       - 10001:10001
     environment:
       - PORT=10001
+
       - ACCESS_TOKEN_SECRET=
       - REFRESH_TOKEN_SECRET=
       - REFRESH_TOKEN_SECURE=
       - REFRESH_TOKEN_SAMESITE=
       - REFRESH_TOKEN_MAX_AGE_IN_MINUTES=
       - ACCESS_TOKEN_MAX_AGE_IN_MINUTES=
+
       - DB_USERNAME=
       - DB_PASSWORD=
       - DB_DATABASE=
@@ -32,7 +34,10 @@ services:
       - DB_PORT=
       - DB_TYPE=
       - DB_CONSOLE_LOGGING=
+
       - MAX_PLAYERS=
       - MAX_COLUMNS=
-```
+      - MAX_LENGTH_PLAYER_NAME=
 
+	  - MAX_FINALSCORES_LIMIT=
+```
