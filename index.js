@@ -14,6 +14,7 @@ const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
+const { PORT }			= require('./utils_env')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -121,9 +122,7 @@ app.all('*', (req, res) => {
 
 
 sequelize.sync().then(() => {
-	const port = process.env.PORT || 10001
-
-    httpServer.listen(port, () => { 
-		console.log('Listening on port', port) 
+    httpServer.listen(PORT, () => { 
+		console.log('Listening on port', PORT) 
 	})
 })

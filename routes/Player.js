@@ -222,6 +222,8 @@ async function calculate_table_column( tc, transaction ) {
 
 	const tmp = {}
 
+	// ____________________ Upper Table ____________________
+
 	let upper_table_score = 0
 	let upper_table_has_null = false
 
@@ -234,17 +236,20 @@ async function calculate_table_column( tc, transaction ) {
 		}
 	}
 
+	tmp.Upper_Table_Score = upper_table_score
+
 	if(!upper_table_has_null) {
-		tmp.Upper_Table_Score = upper_table_score
 		tmp.Upper_Table_Add35 = upper_table_score >= 63 ? 35 : 0
 		tmp.Upper_Table_TotalScore = tmp.Upper_Table_Score + tmp.Upper_Table_Add35
 	} else {
-		tmp.Upper_Table_Score = null
 		tmp.Upper_Table_Add35 = null
 		tmp.Upper_Table_TotalScore = null
 	}
 
-	
+
+
+	// ____________________ Bottom Table ____________________
+
 	let bottom_table_score = 0
 	let bottom_table_has_null = false
 

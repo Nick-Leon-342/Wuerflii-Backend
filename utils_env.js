@@ -1,5 +1,7 @@
 
 
+const PORT = process.env.PORT || 10001
+
 const MAX_LENGTH_PLAYER_NAME = +process.env.MAX_LENGTH_PLAYER_NAME || 50
 const MAX_PLAYERS = +process.env.MAX_PLAYERS || 16
 const MAX_COLUMNS = +process.env.MAX_COLUMNS || 10
@@ -19,6 +21,8 @@ const REFRESH_TOKEN_MAX_AGE_IN_MINUTES = (parseInt(process.env.REFRESH_TOKEN_MAX
 
 
 module.exports = {
+	PORT, 
+	
 	MAX_LENGTH_PLAYER_NAME, 
 	MAX_PLAYERS, 
 	MAX_COLUMNS, 
