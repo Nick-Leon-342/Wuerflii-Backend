@@ -13,7 +13,7 @@ const {
 
 	sequelize, 
 } = require('../models')
-const { MAX_LENGTH_PLAYER_NAME } = require('../utils_env')
+const { MAX_LENGTH_PLAYER_NAME } = require('../utils')
 
 
 

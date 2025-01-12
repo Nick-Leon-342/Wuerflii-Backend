@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils_env')
+const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils')
 const { isInt, isArray, isString, isColor } = require('../../IsDataType')
 const CreateNewGame = require('../../CreateNewGame')
 

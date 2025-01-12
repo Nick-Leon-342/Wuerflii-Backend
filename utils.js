@@ -19,6 +19,12 @@ const REFRESH_TOKEN_MAX_AGE_IN_MINUTES = (parseInt(process.env.REFRESH_TOKEN_MAX
 
 
 
+const DB_RETRIES = process.env.DB_RETRIES || 60
+const DB_RETRY_TIMEOUT_IN_SECONDS = ( process.env.DB_RETRY_TIMEOUT_IN_SECONDS || 5 ) * 1000
+
+
+
+
 
 module.exports = {
 	PORT, 
@@ -32,4 +38,7 @@ module.exports = {
 	REFRESH_TOKEN_SAMESITE, 
 	REFRESH_TOKEN_SECURE, 
 	REFRESH_TOKEN_MAX_AGE_IN_MINUTES, 
+
+	DB_RETRIES, 
+	DB_RETRY_TIMEOUT_IN_SECONDS, 
 }

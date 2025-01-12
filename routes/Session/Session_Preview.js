@@ -15,7 +15,7 @@ const {
 	Users,
 	sequelize, 
 } = require('../../models')
-const { MAX_FINALSCORES_LIMIT } = require('../../utils_env')
+const { MAX_FINALSCORES_LIMIT } = require('../../utils')
 
 
 

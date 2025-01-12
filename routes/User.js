@@ -9,7 +9,7 @@ const {
 } = require('../models')
 const sendToken = require('./SendToken')
 const { isBoolean, isString } = require('../IsDataType')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils_env')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
 
 
 

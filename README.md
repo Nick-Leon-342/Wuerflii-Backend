@@ -4,6 +4,7 @@ ___
 
 
 Use `npm run backend` to start the dev-server.
+Don't forget to check out .env.sample for some explanation.
 You could add a docker-compose file like this:
 
 ```
@@ -34,6 +35,9 @@ services:
       - DB_PORT=
       - DB_TYPE=
       - DB_CONSOLE_LOGGING=
+
+	  - DB_RETRIES=
+	  - DB_RETRY_TIMEOUT_IN_SECONDS=
 
       - MAX_PLAYERS=
       - MAX_COLUMNS=
