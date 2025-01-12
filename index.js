@@ -132,8 +132,8 @@ async function try_to_connect_to_database_with_retry() {
         } catch (err) {
             console.error(`Connection to database failed:`, err.message)
             if (i < DB_RETRIES) {
-				console.log(`Waiting ${DB_RETRY_TIMEOUT_IN_SECONDS} seconds for next try...`)
-                await new Promise((resolve) => setTimeout(resolve, DB_RETRY_TIMEOUT_IN_SECONDS))		// Wait for until next try
+				console.log(`Waiting ${DB_RETRY_TIMEOUT_IN_SECONDS} second${DB_RETRY_TIMEOUT_IN_SECONDS === 1 ? '' : 's'} for next try...`)
+                await new Promise((resolve) => setTimeout(resolve, DB_RETRY_TIMEOUT_IN_SECONDS * 1000))		// Wait for until next try
             } else {
                 throw new Error('Exceeded retry limit.')
             }
