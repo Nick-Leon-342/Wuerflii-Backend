@@ -15,7 +15,9 @@ const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
 const nodemailer		= require('nodemailer')
-const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD }			= require('./utils')
+const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD, EMAIL_OF_ADMIN, EMAIL_SMTP_REPLYTOEMAIL }			= require('./utils')
+
+const { format } = require('date-fns')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -161,8 +163,15 @@ try_to_connect_to_database_with_retry().then(() => {
 		})
 	})
 
-}).catch((err) => {
-	console.error('Failed to start server:', err.message)
+}).catch(async err => {
+
+	console.error('Failed to start server:', err.message, '\nSending email if provided.')
+	await email_transporter.sendMail({
+		from: `"Kniffel Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
+		to: EMAIL_OF_ADMIN, 
+		subject: `Kniffel - Server can't connect to database.`, 
+		text: `Server couldn't connect to database.\nTimestamp: ${format(new Date(), 'HH:mm dd.MM.yyyy')}`, 
+	})
 	process.exit(1)
-	// TODO send an email
+
 })
