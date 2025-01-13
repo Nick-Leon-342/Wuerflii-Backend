@@ -14,7 +14,8 @@ const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
-const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS }			= require('./utils')
+const nodemailer		= require('nodemailer')
+const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD }			= require('./utils')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -119,6 +120,17 @@ app.all('*', (req, res) => {
 
 
 
+
+
+const email_transporter = nodemailer.createTransport({
+	host: EMAIL_SMTP_HOST, 
+	port: EMAIL_SMTP_PORT, 
+	secure: EMAIL_SMTP_SSL, 
+	auth: {
+		user: EMAIL_SMTP_USERNAME, 
+		pass: EMAIL_SMTP_PASSWORD, 
+	}
+})
 
 
 

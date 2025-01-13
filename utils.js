@@ -26,6 +26,20 @@ const DB_RETRY_TIMEOUT_IN_SECONDS = +process.env.DB_RETRY_TIMEOUT_IN_SECONDS || 
 
 
 
+// ____________________ Email ____________________
+
+const EMAIL_OF_ADMIN = process.env.EMAIL_OF_ADMIN
+const EMAIL_SMTP_REPLYTOEMAIL = process.env.EMAIL_SMTP_REPLYTOEMAIL
+const EMAIL_SMTP_HOST = process.env.EMAIL_SMTP_HOST
+const EMAIL_SMTP_PORT = +process.env.EMAIL_SMTP_PORT
+const EMAIL_SMTP_SSL = process.env.EMAIL_SMTP_SSL === 'true'
+const EMAIL_SMTP_USERNAME = process.env.EMAIL_SMTP_USERNAME
+const EMAIL_SMTP_PASSWORD = process.env.EMAIL_SMTP_PASSWORD
+
+
+
+
+
 module.exports = {
 	PORT, 
 	
@@ -41,4 +55,12 @@ module.exports = {
 
 	DB_RETRIES, 
 	DB_RETRY_TIMEOUT_IN_SECONDS, 
+
+	EMAIL_OF_ADMIN, 
+	EMAIL_SMTP_REPLYTOEMAIL, 
+	EMAIL_SMTP_HOST, 
+	EMAIL_SMTP_PORT, 
+	EMAIL_SMTP_SSL, 
+	EMAIL_SMTP_USERNAME, 
+	EMAIL_SMTP_PASSWORD, 
 }
