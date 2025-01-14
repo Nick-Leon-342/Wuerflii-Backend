@@ -1,6 +1,6 @@
 
 
-FROM node:20.8.0
+FROM node:23.5.0
 
 WORKDIR /kniffel-backend
 
