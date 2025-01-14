@@ -4,7 +4,8 @@ ___
 
 
 Use `npm run backend` to start the dev-server.
-Don't forget to check out .env.sample for some explanation.
+
+Don't forget to set .env file. For some explanation or a template look at .env.sample.
 You could add a docker-compose file like this:
 
 ```
@@ -18,30 +19,6 @@ services:
       context: .
     ports:
       - 10001:10001
-    environment:
-      - PORT=10001
-
-      - ACCESS_TOKEN_SECRET=
-      - REFRESH_TOKEN_SECRET=
-      - REFRESH_TOKEN_SECURE=
-      - REFRESH_TOKEN_SAMESITE=
-      - REFRESH_TOKEN_MAX_AGE_IN_MINUTES=
-      - ACCESS_TOKEN_MAX_AGE_IN_MINUTES=
-
-      - DB_USERNAME=
-      - DB_PASSWORD=
-      - DB_DATABASE=
-      - DB_HOST=
-      - DB_PORT=
-      - DB_TYPE=
-      - DB_CONSOLE_LOGGING=
-
-	  - DB_RETRIES=
-	  - DB_RETRY_TIMEOUT_IN_SECONDS=
-
-      - MAX_PLAYERS=
-      - MAX_COLUMNS=
-      - MAX_LENGTH_PLAYER_NAME=
-
-	  - MAX_FINALSCORES_LIMIT=
+    env_file:
+      - .env
 ```
