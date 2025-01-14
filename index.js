@@ -124,18 +124,6 @@ app.all('*', (req, res) => {
 
 
 
-const email_transporter = nodemailer.createTransport({
-	host: EMAIL_SMTP_HOST, 
-	port: EMAIL_SMTP_PORT, 
-	secure: EMAIL_SMTP_SSL, 
-	auth: {
-		user: EMAIL_SMTP_USERNAME, 
-		pass: EMAIL_SMTP_PASSWORD, 
-	}
-})
-
-
-
 async function try_to_connect_to_database_with_retry() {
     for (let i = 1; i <= DB_RETRIES; i++) {
 		console.log(`Database connection - Try ${i} of ${DB_RETRIES}.`)
@@ -165,13 +153,33 @@ try_to_connect_to_database_with_retry().then(() => {
 
 }).catch(async err => {
 
-	console.error('Failed to start server:', err.message, '\nSending email if provided.')
-	await email_transporter.sendMail({
-		from: `"Kniffel Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
-		to: EMAIL_OF_ADMIN, 
-		subject: `Kniffel - Server can't connect to database.`, 
-		text: `Server couldn't connect to database.\nTimestamp: ${format(new Date(), 'HH:mm dd.MM.yyyy')}`, 
-	})
+	console.error('Failed to start server:', err.message)
+
+	// Send error email if all data has been provided
+	if(EMAIL_SMTP_HOST && EMAIL_SMTP_PORT && EMAIL_SMTP_SSL && EMAIL_SMTP_USERNAME && EMAIL_SMTP_PASSWORD && EMAIL_SMTP_REPLYTOEMAIL && EMAIL_OF_ADMIN) {
+		
+		console.error('Sending email.')
+
+		const email_transporter = nodemailer.createTransport({
+			host: EMAIL_SMTP_HOST, 
+			port: EMAIL_SMTP_PORT, 
+			secure: EMAIL_SMTP_SSL, 
+			auth: {
+				user: EMAIL_SMTP_USERNAME, 
+				pass: EMAIL_SMTP_PASSWORD, 
+			}
+		})
+		await email_transporter.sendMail({
+			from: `"Kniffel Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
+			to: EMAIL_OF_ADMIN, 
+			subject: `Kniffel - Server can't connect to database.`, 
+			text: `Server couldn't connect to database.\nTimestamp: ${format(new Date(), 'HH:mm dd.MM.yyyy')}`, 
+		}).then(() => {
+			console.error('Done')
+		}).catch(err_email => console.err('Some error occured during sending email:\n', err_email))
+
+	}
+
 	process.exit(1)
 
 })
