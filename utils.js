@@ -2,6 +2,7 @@
 
 const PORT = process.env.PORT || 10001
 
+const MAX_LENGTH_SESSION_NAME = +process.env.MAX_LENGTH_SESSION_NAME || 50
 const MAX_LENGTH_PLAYER_NAME = +process.env.MAX_LENGTH_PLAYER_NAME || 50
 const MAX_PLAYERS = +process.env.MAX_PLAYERS || 16
 const MAX_COLUMNS = +process.env.MAX_COLUMNS || 10
@@ -43,6 +44,7 @@ const EMAIL_SMTP_PASSWORD = process.env.EMAIL_SMTP_PASSWORD
 module.exports = {
 	PORT, 
 	
+	MAX_LENGTH_SESSION_NAME, 
 	MAX_LENGTH_PLAYER_NAME, 
 	MAX_PLAYERS, 
 	MAX_COLUMNS, 

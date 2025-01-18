@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS } = require('../../utils')
+const { MAX_LENGTH_PLAYER_NAME, MAX_PLAYERS, MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
 const { isInt, isArray, isString, isColor } = require('../../IsDataType')
 const CreateNewGame = require('../../CreateNewGame')
 
@@ -32,6 +32,7 @@ router.get('', (req, res) => {
 			MAX_PLAYERS,
 			MAX_COLUMNS,
 			MAX_LENGTH_PLAYER_NAME, 
+			MAX_LENGTH_SESSION_NAME, 
 			User: filter_user(user), 
 		})
 
@@ -46,11 +47,12 @@ router.get('', (req, res) => {
 router.post('', async (req, res) => {
 
 	const { UserID } = req
-	const { Name, Columns, List_Players } = req.body
+	const { Name, Color, Columns, List_Players } = req.body
 	const date = new Date()
 
 	if(
-		!Name || !isString(Name) || 
+		!Name || !isString(Name) || Name.length > MAX_LENGTH_PLAYER_NAME || 
+		!Color || !isColor(Color) || 
 		!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS || 
 		!List_Players || !isArray(List_Players) || List_Players.length < 1 || List_Players.length > MAX_PLAYERS || 
 		List_Players.some(player => (!player.Name || !isString(player.Name) || player.Name.length > MAX_LENGTH_PLAYER_NAME || !player.Color || !isColor(player.Color)))
@@ -62,14 +64,15 @@ router.post('', async (req, res) => {
 
 		const session = await Sessions.create({
 			UserID, 
-			Name,
+			Name, 
+			Color, 
 			Columns, 
 			InputType: 'select',
 			List_PlayerOrder: [0],
 			ShowScores: true, 
 
-			View_Month: new Date().getMonth(), 
-			View_Year: new Date().getFullYear(), 
+			View_Month: date.getMonth() + 1, 
+			View_Year: date.getFullYear(), 
 			View: 'show_all', 
 			View_List_Years: [], 
 

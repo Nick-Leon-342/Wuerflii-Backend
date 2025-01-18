@@ -5,6 +5,7 @@ function filter_session(s) {
 	return {
 		id: s.id,
 		Name: s.Name,
+		Color: s.Color, 
 		Columns: s.Columns,
 		InputType: s.InputType,
 		List_PlayerOrder: s.List_PlayerOrder,
