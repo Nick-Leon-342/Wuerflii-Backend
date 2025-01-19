@@ -4,6 +4,7 @@ const express = require('express')
 const router = express.Router()
 
 const { isInt } = require('../../IsDataType')
+const CreateNewGame = require('../../CreateNewGame')
 
 const { 
 	FinalScores, 
@@ -25,13 +26,11 @@ const {
 	filter_user,
 } = require('../../Filter_DatabaseJSON')
 
-router.use('/create', require('./Game_Create'))
 
 
 
 
-
-router.get('', (req, res) => {
+router.get('', async (req, res) => {
 	
 	const { UserID } = req
 	const SessionID = +req.query.session_id
@@ -39,41 +38,95 @@ router.get('', (req, res) => {
 	if(!SessionID) return res.sendStatus(400)
 
 
-	Users.findOne({ 
-		where: { id: UserID }, 
-		include: [{
-			model: Sessions, 
-			where: { id: SessionID }, 
-			include: [{
-				model: Players, 
-				include: Table_Columns
-			}]
-		}], 
-		order: [
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-			[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
-		]
-	}).then(user => {
-		
-		
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0] || !user.Sessions[0].Players[0].Table_Columns[0]) return res.sendStatus(404)
+	const transaction = await sequelize.transaction()
+	try {
 
+
+		let user = await Users.findOne({ 
+			where: { id: UserID }, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+				include: [{
+					model: Players, 
+					include: Table_Columns
+				}]
+			}], 
+			order: [
+				[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+				[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
+			]
+		})
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
+		}
+
+
+		// Create new game if it doesn't exist
+		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
+
+			await CreateNewGame({
+				List_Players: user.Sessions[0].Players, 
+				Columns: user.Sessions[0].Columns, 
+				Session: user.Sessions[0], 
+				date: new Date(),
+				transaction, 
+			})
+
+			user = await Users.findOne({ 
+				where: { id: UserID }, 
+				include: [{
+					model: Sessions, 
+					where: { id: SessionID }, 
+					include: [{
+						model: Players, 
+						include: Table_Columns
+					}]
+				}], 
+				order: [
+					[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+					[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
+				]
+			})
+
+		}
+
+
+		await transaction.commit()
 		res.json({
 			User: filter_user(user), 
 			Session: filter_session(user.Sessions[0]),
-			List_Players: user.Sessions[0].Players.map(p => {
+			List_Players: user.Sessions[0].Players.map(player => {
 				return {
-					...filter_player(p), 
-					List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
+					...filter_player(player), 
+					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
 				}
 			}), 
 		})
 
 
-	}).catch(err => {
+	} catch(err) {
 		console.log('GET /game\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
 
