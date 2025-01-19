@@ -4,7 +4,7 @@ const express = require('express')
 const router = express.Router()
 
 const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
-const { isInt, isBoolean, isString } = require('../../IsDataType')
+const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
 const { isDate } = require('util/types')
 
 const { 
@@ -14,46 +14,87 @@ const {
 	Users,
 	sequelize, 
 } = require('../../models')
+const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
 
 router.use('/preview', require('./Session_Preview'))
+router.use('/players', require('./Session_Players'))
 
 
 
 
 
-router.get('/all', async (req, res) => {
+router.get('', (req, res) => {
 
 	const { UserID } = req
-
-	Users.findOne({ 
-		where: { id: UserID }, 
-		include: [{
-			model: Sessions, 
-			include: Players
-		}], 
-		order: [
-			[ { model: Sessions }, 'LastPlayed', 'DESC' ],
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-		]
-	}).then(user => {
+	const { session_id } = req.query
 
 
-		if(!user) return res.sendStatus(404)
+	// Init sequelize/sql query
+	const json = { where: { id: UserID }}
+	if(session_id) json.include = [{
+		model: Sessions, 
+		where: { id: session_id }, 
+	}]
 
-		res.json({
+
+	Users.findOne(json).then(user => {
+
+
+		if(!user) return res.status(404).send('User not found.')
+		if(session_id && !user.Sessions[0]) return res.status(404).send('Session not found.')
+
+		const res_json = {
+			MAX_COLUMNS,
+			MAX_LENGTH_SESSION_NAME, 
 			User: filter_user(user), 
-			List_Sessions: user.Sessions.map(s => {
-				return {
-					...filter_session(s), 
-					List_Players: s.Players.map(p => filter_player(p))
-				}
-			})
-		})
+		}
+		if(session_id) res_json.Session = filter_session(user.Sessions[0])
+
+		res.json(res_json)
 
 
+	}).catch(err => {
+		console.log('GET /session\n', err)
+		res.sendStatus(500)
+	})
 
-	}).catch((err) => {
-		console.log('GET /session/all\n', err)
+})
+
+router.post('', (req, res) => {
+
+	const { UserID } = req
+	const { Name, Color, Columns } = req.body
+	const date = new Date()
+
+	if(
+		!Name || !isString(Name) || Name.length > MAX_LENGTH_SESSION_NAME || 
+		!Color || !isColor(Color) || 
+		!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS 
+	) return res.sendStatus(400)
+
+
+	Sessions.create({
+		UserID, 
+		Name, 
+		Color, 
+		Columns, 
+		InputType: 'select',
+		List_PlayerOrder: [0],
+		ShowScores: true, 
+
+		View_Month: date.getMonth() + 1, 
+		View_Year: date.getFullYear(), 
+		View: 'show_all', 
+		View_List_Years: [], 
+
+		LastPlayed: date, 
+		CustomDate: date, 
+	}).then(session => {
+		
+		res.json({ SessionID: session.id })
+
+	}).catch(err => {
+		console.log('POST /session\n', err)
 		res.sendStatus(500)
 	})
 
@@ -167,6 +208,48 @@ router.delete('', async (req, res) => {
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
+
+})
+
+
+
+
+
+router.get('/all', async (req, res) => {
+
+	const { UserID } = req
+
+	Users.findOne({ 
+		where: { id: UserID }, 
+		include: [{
+			model: Sessions, 
+			include: Players
+		}], 
+		order: [
+			[ { model: Sessions }, 'LastPlayed', 'DESC' ],
+			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
+		]
+	}).then(user => {
+
+
+		if(!user) return res.sendStatus(404)
+
+		res.json({
+			User: filter_user(user), 
+			List_Sessions: user.Sessions.map(s => {
+				return {
+					...filter_session(s), 
+					List_Players: s.Players.map(p => filter_player(p))
+				}
+			})
+		})
+
+
+
+	}).catch((err) => {
+		console.log('GET /session/all\n', err)
+		res.sendStatus(500)
+	})
 
 })
 
