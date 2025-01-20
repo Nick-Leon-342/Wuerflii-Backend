@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false, 
 		},
 		View_Sessions: {
-			type: DataTypes.ENUM('Created', 'Last_Played', 'Name', 'Players'),
+			type: DataTypes.ENUM('Created', 'Last_Played', 'Name'),
 			allowNull: false, 
 		},
 		View_Sessions_Desc: {

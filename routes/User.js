@@ -10,11 +10,27 @@ const {
 const sendToken = require('./SendToken')
 const { isBoolean, isString } = require('../IsDataType')
 const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
+const { filter_user } = require('../Filter_DatabaseJSON')
 
 
 
 
 
+
+router.get('', (req, res) => {
+
+	const { UserID } = req
+
+	Users.findOne({ where: { id: UserID } }).then(user => {
+
+		res.json(filter_user(user))
+
+	}).catch(err => {
+		console.log('GET /user\n', err)
+		res.sendStatus(500)
+	})
+
+})
 
 router.patch('', async (req, res) => {
 

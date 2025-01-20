@@ -5,6 +5,7 @@ const router = express.Router()
 
 const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
 const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
+const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
 const { isDate } = require('util/types')
 
 const { 
@@ -14,7 +15,6 @@ const {
 	Users,
 	sequelize, 
 } = require('../../models')
-const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
 
 router.use('/preview', require('./Session_Preview'))
 router.use('/players', require('./Session_Players'))
@@ -215,39 +215,72 @@ router.get('/all', async (req, res) => {
 
 	const { UserID } = req
 
-	Users.findOne({ 
-		where: { id: UserID }, 
-		include: [{
-			model: Sessions, 
-			include: Players
-		}], 
-		order: [
-			[ { model: Sessions }, 'LastPlayed', 'DESC' ],
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-		]
-	}).then(user => {
+	const transaction = await sequelize.transaction()
+	try {
 
 
-		if(!user) return res.sendStatus(404)
+		const user = await Users.findOne({
+			where: { id: UserID }, 
+			transaction, 
+		})
 
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		const list_sessions = await Sessions.findAll({
+			where: { UserID }, 
+			transaction, 
+			include: Players, 
+			order: [
+				getOrder(user),
+				[ { model: Players }, 'Order_Index', 'ASC' ],
+			]
+		})
+
+
+		await transaction.commit()
 		res.json({
 			User: filter_user(user), 
-			List_Sessions: user.Sessions.map(s => {
+			List_Sessions: list_sessions.map(session => {
 				return {
-					...filter_session(s), 
-					List_Players: s.Players.map(p => filter_player(p))
+					...filter_session(session), 
+					List_Players: session.Players.map(player => filter_player(player)), 
 				}
 			})
 		})
 
 
-
-	}).catch((err) => {
+	} catch(err) {
 		console.log('GET /session/all\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
+
+function getOrder(user) {
+
+	const view = user.View_Sessions
+	const desc = user.View_Sessions_Desc
+
+	switch(view) {
+		case 'Created':
+			return [ 'createdAt', desc ? 'ASC' : 'DESC' ]
+
+		case 'Name':
+			return [ 'Name', desc ? 'ASC' : 'DESC' ]
+
+		default:
+			return [ 'LastPlayed', desc ? 'DESC' : 'ASC' ]
+
+	}
+
+}
 
 
 
