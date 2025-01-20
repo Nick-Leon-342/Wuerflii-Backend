@@ -19,6 +19,22 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.BOOLEAN,
 			allowNull: false, 
 		},
+		Show_Session_Names: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false, 
+		},
+		Show_Session_Date: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false, 
+		},
+		View_Sessions: {
+			type: DataTypes.ENUM('Created', 'Last_Played', 'Name', 'Players'),
+			allowNull: false, 
+		},
+		View_Sessions_Desc: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false, 
+		},
 
     })
 }

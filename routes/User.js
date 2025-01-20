@@ -19,13 +19,24 @@ const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_M
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
-	const { Name, Password, DarkMode } = req.body
+	const { 
+		Name, 
+		Password, 
+		DarkMode, 
+		Show_Session_Names, 
+		Show_Session_Date, 
+		View_Sessions, 
+		View_Sessions_Desc, 
+	} = req.body
 
-	if(
-		(Name && !isString(Name)) || 
-		(Password && !isString(Password)) || 
-		((DarkMode !== undefined || DarkMode !== null) && !isBoolean(DarkMode))
-	) return res.sendStatus(400)
+
+	if(Name && !isString(Name)) return res.status(400).send('Name invalid.')
+	if(Password && !isString(Password)) return res.status(400).send('Password invalid.')
+	if(DarkMode !== undefined && !isBoolean(DarkMode)) return res.status(400).send('DarkMode invalid.')
+	if(Show_Session_Names !== undefined && !isBoolean(Show_Session_Names)) return res.status(400).send('Show_Session_Names invalid.')
+	if(Show_Session_Date !== undefined && !isBoolean(Show_Session_Date)) return res.status(400).send('Show_Session_Date invalid.')
+	if(View_Sessions && !isString(View_Sessions) && ['Created', 'Last_Played', 'Name', 'Players'].includes(View_Sessions)) return res.status(400).send('View_Sessions invalid.')
+	if(View_Sessions_Desc !== undefined && !isBoolean(View_Sessions_Desc)) return res.status(400).send('View_Sessions_Desc invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -72,6 +83,10 @@ router.patch('', async (req, res) => {
 		}
 
 		if(isBoolean(DarkMode)) updateJSON.DarkMode = DarkMode
+		if(isBoolean(Show_Session_Names)) updateJSON.Show_Session_Names = Show_Session_Names
+		if(isBoolean(Show_Session_Date)) updateJSON.Show_Session_Date = Show_Session_Date
+		if(View_Sessions) updateJSON.View_Sessions = View_Sessions
+		if(isBoolean(View_Sessions_Desc)) updateJSON.View_Sessions_Desc = View_Sessions_Desc
 
 
 		await user.update(updateJSON, { transaction })

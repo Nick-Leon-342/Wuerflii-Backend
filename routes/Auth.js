@@ -110,6 +110,10 @@ router.post('/registration', async (req, res) => {
 			Password: hashedPassword, 
 			DarkMode: false, 
 			Name: Name,
+			Show_Session_Names: true, 
+			Show_Session_Date: true, 
+			View_Sessions: 'Last_Played', 
+			View_Sessions_Desc: true, 
 		}, { transaction })
 
 		await sendToken({

@@ -67,14 +67,15 @@ router.get('/all', async (req, res) => {
 	const SessionID = +req.query.session_id
 	const offset_block = +req.query.offset_block
 
-	if(!SessionID || !offset_block) return res.sendStatus(400)
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(!offset_block) return res.status(400).send('Offset invalid.')
 
 
 	const transaction = await sequelize.transaction()
 	try {
 
 
-		const tmp_user = await Users.findOne({ 
+		const user = await Users.findOne({ 
 			where: { id: UserID }, 
 			transaction, 
 			include: [{
@@ -83,18 +84,25 @@ router.get('/all', async (req, res) => {
 			}]
 		})
 
-		if(!tmp_user || !tmp_user.Sessions[0]) {
+		
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
 
-		const tmp_session = tmp_user.Sessions[0]
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
 
 
-		const finalscores = await FinalScores.findAndCountAll({
+		const list_finalscores = await FinalScores.findAndCountAll({
 			where: {
-				...getQuery(tmp_session), 
-				SessionID
+				...getQuery(user.Sessions[0]), 
+				SessionID, 
 			},
 			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
 			transaction, 
@@ -105,8 +113,8 @@ router.get('/all', async (req, res) => {
 		await transaction.commit()
 
 		res.json({ 
-			Has_More: finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
-			List: finalscores.rows.map(f => filter_finalscore(f)), 
+			Has_More: list_finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
+			List: list_finalscores.rows.map(f => filter_finalscore(f)), 
 		})
 
 
