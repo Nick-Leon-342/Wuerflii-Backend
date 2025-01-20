@@ -28,7 +28,7 @@ router.get('', (req, res) => {
 	const { UserID } = req
 	const { session_id } = req.query
 
-	if(+session_id) return res.status(400).send('SessionID invalid.')
+	if(session_id && !+session_id) return res.status(400).send('SessionID invalid.')
 
 
 	// Init sequelize/sql query
@@ -106,6 +106,9 @@ router.patch('', async (req, res) => {
 	const { 
 		SessionID,
 
+		Name, 
+		Color, 
+
 		View, 
 		View_Month, 
 		View_Year, 
@@ -115,11 +118,14 @@ router.patch('', async (req, res) => {
 	} = req.body
 	
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
+	if(Name && !isString(Name)) return res.status(400).send('Name invalid.')
+	if(Color && !isColor(Color)) return res.status(400).send('Color invalid.')
+
 	if(View && (!isString(View) || !['show_month', 'show_year', 'custom_date', 'show_all'].includes(View))) return res.status(400).send('View invalid.')
 	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) return res.status(400).send('View_Month invalid.')
 	if(View_Year && !isInt(View_Year)) return res.status(400).send('View_Year invalid.')
 	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) return res.status(400).send('InputType invalid.')
-	if(ShowScores !== null && ShowScores !== undefined && !isBoolean(ShowScores)) return res.status(400).send('ShowScores invalid.')
+	if(ShowScores !== undefined && !isBoolean(ShowScores)) return res.status(400).send('ShowScores invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -144,6 +150,9 @@ router.patch('', async (req, res) => {
 
 
 		const json = {}
+		if(Name) json.Name = Name
+		if(Color) json.Color = Color
+
 		if(View) json.View = View
 		if(View_Month) json.View_Month = View_Month
 		if(View_Year) json.View_Year = View_Year
