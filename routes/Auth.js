@@ -26,13 +26,13 @@ const {
 	PASSWORD_REGEX_MINMAX, 
 	PASSWORD_REGEX_ALLOWEDCHARS, 
 	PASSWORD_REGEX_ALLOWEDSYMBOLS, 
-} = require('../Regex')
+} = require('../utils')
 
 
 
 
 
-router.get('/regex', async (req, res) => {
+router.get('/regex', (req, res) => {
 
 	res.json({
 		NAME_MIN_CHARACTER, 
