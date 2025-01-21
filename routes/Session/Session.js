@@ -142,10 +142,17 @@ router.patch('', async (req, res) => {
 		})
 		
 
-
-		if(!user || !user.Sessions[0]) {
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
 		}
 
 
@@ -159,7 +166,6 @@ router.patch('', async (req, res) => {
 		
 		if(InputType) json.InputType = InputType
 		if(ShowScores !== null && ShowScores !== undefined) json.ShowScores = ShowScores
-
 
 
 		await user.Sessions[0].update(json, { transaction })
@@ -196,10 +202,20 @@ router.delete('', async (req, res) => {
 			}], 
 		})
 
+
+		// Check if user exists
 		if(!user || !user.Sessions[0]) {
 			await transaction.rollback()
 			return res.sendStatus(404)
 		}
+
+
+		// Check if user exists
+		if(!user || !user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).sne
+		}
+
 
 		await user.Sessions[0].destroy({ transaction })
 

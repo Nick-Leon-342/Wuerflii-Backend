@@ -8,6 +8,7 @@ const {
 	sequelize
 } = require('../models')
 const sendToken = require('./SendToken')
+const { isString } = require('../IsDataType')
 
 const {
 	NAME_MIN_CHARACTER, 
@@ -58,7 +59,9 @@ router.get('/regex', (req, res) => {
 router.post('/login', async (req, res) => {
 
     const { Name, Password } = req.body
-	if (!Name || !Password) return res.sendStatus(400)
+
+	if(!Name && !isString(Name)) return res.status(400).send('Name invalid.')
+	if(!Password && !isString(Password)) return res.status(400).send('Password invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -72,8 +75,7 @@ router.post('/login', async (req, res) => {
 
 		if(!user || !await bcrypt.compare(Password, user.Password)) {
 			await transaction.rollback()
-			res.status(409).send('Wrong credentials!')
-			return 
+			return res.status(409).send('Wrong credentials!')
 		}
 		
 		await sendToken({
@@ -94,7 +96,9 @@ router.post('/login', async (req, res) => {
 router.post('/registration', async (req, res) => {
 	
 	const { Name, Password } = req.body
-	if (!Name || !(new RegExp(NAME_REGEX)).test(Name) || !Password || !(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
+	
+	if(!Name || !(new RegExp(NAME_REGEX)).test(Name)) return res.status(400).send('Name invalid.')
+	if(!Password || !(new RegExp(PASSWORD_REGEX)).test(Password)) return res.status(400).send('Password invalid.')
 
 
 	const transaction = await sequelize.transaction()

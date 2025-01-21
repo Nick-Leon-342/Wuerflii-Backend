@@ -42,7 +42,8 @@ router.get('', async (req, res) => {
 	}).then(user => {
 
 
-		if(!user || !user.Sessions[0]) return res.sendStatus(404)
+		if(!user) return res.status(404).send('User not found.')
+		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
 
 		const session = user.Sessions[0]
 		
@@ -188,27 +189,28 @@ router.get('/table', async (req, res) => {
 	}).then(user => {
 		
 		
-		if(
-			!user || 
-			!user.Sessions[0] || 
-			!user.Sessions[0].Players[0] || 
-			!user.Sessions[0].FinalScores[0] || 
-			!user.Sessions[0].FinalScores[0].Table_Archive
-		) return res.sendStatus(404)
+		// Check if user exists
+		if(!user) return res.status(404).send('User not found.')
+		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
+		if(!user.Sessions[0].Players[0]) return res.status(404).send('Players not found.')
+		if(!user.Sessions[0].FinalScores[0]) return res.status(404).send('Finalscores not found.')
+		if(!user.Sessions[0].FinalScores[0].Table_Archive) return res.status(404).send('Table_Archive not found.')
+		
 
 		const List_Players = []
-		for(const p of user.Sessions[0].Players) {
-			const tmp = filter_player(p)
+		for(const player of user.Sessions[0].Players) {
+			const tmp_player = filter_player(p)
 
-			for(const ta of user.Sessions[0].FinalScores[0].Table_Archive.Table) {
-				if(ta.PlayerID === p.id) {
-					tmp.List_Table_Columns = ta.List_Table_Columns
+			for(const table_archive of user.Sessions[0].FinalScores[0].Table_Archive.Table) {
+				if(table_archive.PlayerID === player.id) {
+					tmp_player.List_Table_Columns = table_archive.List_Table_Columns
 					continue
 				}
 			}
 
 			List_Players.push(tmp)
 		}
+
 
 		res.json({
 			User: filter_user(user), 

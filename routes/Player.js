@@ -24,10 +24,8 @@ router.patch('', async (req, res) => {
 	const { UserID } = req
 	const { SessionID, PlayerID, Gnadenwurf} = req.body
 
-	if(
-		!SessionID || !isInt(SessionID) || 
-		!isBoolean(Gnadenwurf)
-	) return res.sendStatus(400)
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid')
+	if(!isBoolean(Gnadenwurf)) return res.status(400).send('Gnadenwurf invalid.')
 
 	
 	const transaction = await sequelize.transaction()
@@ -47,10 +45,27 @@ router.patch('', async (req, res) => {
 			}]
 		})
 
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0]) {
+
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
+		}
+
 
 		await user.Sessions[0].Players[0].update({
 			Gnadenwurf
@@ -80,14 +95,13 @@ router.post('/input', async (req, res) => {
 	const { UserID } = req
 	const { SessionID, PlayerID, Column, Name, Value } = req.body
 
-	if(
-		!SessionID || !isInt(SessionID) ||
-		!PlayerID || !isInt(PlayerID) || 
-		!isInt(Column) ||
-		!Name || !isString(Name) || 
-		(Value !== null && !isInt(Value))
-	) return res.sendStatus(400)
-	if(!is_valid_input(Name, Value)) return res.sendStatus(409)
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
+	if(!PlayerID || !isInt(PlayerID)) return res.status(400).send('PlayerID invalid.')
+	if(!isInt(Column)) return res.status(400).send('Column invalid.')
+	if(!Name || !isString(Name)) return res.status(400).send('Name invalid.')
+	if(Value !== null && !isInt(Value)) return res.status(400).send('Value invalid.')
+
+	if(!is_valid_input(Name, Value)) return res.status(409).send('Input invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -111,11 +125,35 @@ router.post('/input', async (req, res) => {
 			}]
 		})
 
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0] || !user.Sessions[0].Players[0].Table_Columns[0]) {
+
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
 
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
+		}
+
+
+		// Check if table_columns exist
+		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Table_Columns not found.')
+		}
+
+		
 		const table_column = await user.Sessions[0].Players[0].Table_Columns[0].update({
 			[Name]: Value
 		}, { transaction })

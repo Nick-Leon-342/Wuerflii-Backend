@@ -9,22 +9,22 @@ const jwt = require('jsonwebtoken')
 
 
 
-//__________________________________________________HandleRefreshToken__________________________________________________
+// __________________________________________________ Handle RefreshToken __________________________________________________
 
 router.get('/', async (req, res) => {
 
     const cookies = req.cookies
-	if (!cookies?.Kniffel_RefreshToken) return res.sendStatus(401)				//check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)
+	if (!cookies?.Kniffel_RefreshToken) return res.status(401).send('No cookie found.')				//check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)
 	const refreshToken = cookies.Kniffel_RefreshToken
 
 	const user = await Users.findOne({ where: { RefreshToken: refreshToken } })
-	if(!user) return res.sendStatus(403)
+	if(!user) return res.status(403).send('User not found.')
 
 	jwt.verify(
 		refreshToken, 
 		process.env.REFRESH_TOKEN_SECRET, 
 		(err, decoded) => {
-			if(err || user.id !== decoded.id) return res.sendStatus(403)
+			if(err || user.id !== decoded.id) return res.status(403).send('Error occured')
 			const accessToken = jwt.sign(
 				{ 'id': decoded.id },
 				process.env.ACCESS_TOKEN_SECRET,

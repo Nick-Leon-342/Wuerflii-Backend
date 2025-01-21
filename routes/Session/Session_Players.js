@@ -58,11 +58,11 @@ router.post('', async (req, res) => {
 	const { UserID } = req
 	const { SessionID, List_Players } = req.body
 
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID not provided or invalid.')
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(
 		!List_Players || !isArray(List_Players) || List_Players.length < 1 || List_Players.length > MAX_PLAYERS || 
 		List_Players.some(player => (!player.Name || !isString(player.Name) || player.Name.length > MAX_LENGTH_PLAYER_NAME || !player.Color || !isColor(player.Color)))
-	) return res.status(400).send('List_Players not provided or invalid.')
+	) return res.status(400).send('List_Players invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -107,18 +107,16 @@ router.patch('', async (req, res) => {
 	const { UserID } = req
 	const { SessionID, List_Players } = req.body
 
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(
-		!SessionID || !isInt(SessionID) || 
 		!List_Players || 
 		!List_Players.every(p => (
 			p.id && isInt(p.id) && 
 			p.Name && isString(p.Name) &&
 			p.Color && isColor(p.Color)
-		))
-	) return res.sendStatus(400)
-
-	// Check if length of user.Name-length is valid
-	if(!List_Players.every(p => p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME)) return res.status(409).send('Name length not valid.')
+		)) ||
+		!List_Players.every(p => p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME)
+	) return res.status(400).send('List_Players invalid.')
 
 	
 	const transaction = await sequelize.transaction()
@@ -136,11 +134,24 @@ router.patch('', async (req, res) => {
 		})
 
 
-		// ____________________ Check if everything has been found ____________________
-
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0]) {
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
+		}
+		
+
+		// Check if session exists
+		if(!user.Session[0]){
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
 		}
 
 
@@ -152,7 +163,7 @@ router.patch('', async (req, res) => {
 			!tmp_list_players.every(player => List_Players.some(p => p.id === player.id))
 		) {
 			await transaction.rollback()
-			return res.sendStatus(400)
+			return res.status(400).send(`List_Players doesn't match.`)
 		}
 
 

@@ -23,6 +23,8 @@ router.get('', (req, res) => {
 
 	Users.findOne({ where: { id: UserID } }).then(user => {
 
+		if(!user) return res.status(404).send('User not found.')
+
 		res.json(filter_user(user))
 
 	}).catch(err => {
@@ -64,16 +66,18 @@ router.patch('', async (req, res) => {
 			transaction
 		})
 
+
+		// Check if user exists
 		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
 		
 
 		const updateJSON = {}
 		if(Name) {
 
-			if(!(new RegExp(NAME_REGEX)).test(Name)) return res.sendStatus(400)
+			if(!(new RegExp(NAME_REGEX)).test(Name)) return res.status(400).send('Name invalid.')
 
 			const tmp = await Users.findOne({ 
 				where: { Name }, 
@@ -91,7 +95,7 @@ router.patch('', async (req, res) => {
 		
 		if(Password) {
 
-			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.sendStatus(400)
+			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.status(400).send('Password invalid.')
 
 			const hashedPassword = await bcrypt.hash(Password, 10)
 			updateJSON['Password'] = hashedPassword

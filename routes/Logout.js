@@ -13,18 +13,18 @@ const { REFRESH_TOKEN_SECURE, REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_MAX_AGE_IN_M
 router.delete('/', async (req, res) => {
 
     const cookies = req.cookies
-	if (!cookies?.Kniffel_RefreshToken) return res.sendStatus(204)				//check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)	-->since there is no RefreshToken, the logout request is finished
+	if (!cookies?.Kniffel_RefreshToken) return res.sendStatus(204)				// check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)	-->since there is no RefreshToken, the logout request is finished
 	const refreshToken = cookies.Kniffel_RefreshToken
 
 	const user = await Users.findOne({ where: { RefreshToken: refreshToken } })
 
-	//there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
+	// there is no user with that refreshtoken, therefore, the Refreshtoken cookie will be cleared
 	if(!user) {
 		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: process.env.REFRESH_TOKEN_SAMESITE || 'None', maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 		return res.sendStatus(204)
 	}
 
-	//delete RefreshToken
+	// delete RefreshToken
 	await user.update({ RefreshToken: '' }).catch(err => {
 		console.log('DELETE /logout\n', err)
 		return res.sendStatus(500)
