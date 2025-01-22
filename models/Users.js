@@ -19,6 +19,12 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.BOOLEAN,
 			allowNull: false, 
 		},
+
+
+
+
+
+		// For session list in /session/select
 		Show_Session_Names: {
 			type: DataTypes.BOOLEAN,
 			allowNull: false, 
@@ -28,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false, 
 		},
 		View_Sessions: {
-			type: DataTypes.STRING,
+			type: DataTypes.ENUM([ 'Last_Played', 'Created', 'Name' ]),
 			allowNull: false, 
 		},
 		View_Sessions_Desc: {

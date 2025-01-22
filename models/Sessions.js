@@ -15,45 +15,11 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.INTEGER,
 			allowNull: false
 		},
-        InputType: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-		ShowScores: {
-			type: DataTypes.BOOLEAN, 
-			allowNull: false, 
-		},
-
-
-
-
-
-		View_Month: {	// Which month to view in /session/preview
-			type: DataTypes.INTEGER,
-			validate: { isIn: [[ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]] },  
-			allowNull: false, 
-		},
-		View_Year: {	// Which year to view in /session/preview
-			type: DataTypes.INTEGER,
-			allowNull: false, 
-		},
-        View: {	// Selected view
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-		View_List_Years: {
+		
+		View_List_Years: {	// Which years could be displayed because games were played in them
 			type: DataTypes.ARRAY(DataTypes.INTEGER), 
 			allowNull: false, 
 		}, 
-
-
-
-		
-		
-        CustomDate: {
-            type: DataTypes.DATE,
-            allowNull: false,
-        },
         CurrentGameStart: {
             type: DataTypes.DATE,
             allowNull: true,
