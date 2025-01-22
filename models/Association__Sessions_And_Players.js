@@ -1,7 +1,7 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('Association__Session_And_Players', {
+    return sequelize.define('Association__Sessions_And_Players', {
 
 		Gnadenwurf_Used: {
 			type: DataTypes.BOOLEAN,
