@@ -1,9 +1,9 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('Association__Players_And_FinalScores', {
+    return sequelize.define('Association__Players_And_FinalScores_With_Sessions', {
 
-		Winner: {
+		IsWinner: {
 			type: DataTypes.BOOLEAN,
 			allowNull: false,
 		},

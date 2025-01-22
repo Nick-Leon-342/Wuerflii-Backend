@@ -296,7 +296,7 @@ router.post('', async (req, res) => {
 		}, { transaction })
 
 		await Table_Archives.create({ 
-			FinalScoresID: created_final_score.id, 
+			FinalScoreID: created_final_score.id, 
 			Table: list_players.map(p => {
 				return {
 					PlayerID: p.id, 

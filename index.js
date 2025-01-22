@@ -28,6 +28,10 @@ app.use(cors(corsOptions))
 
 
 const { 
+	Association__Players_And_FinalScores_With_Sessions, 
+	Association__Sessions_And_Players, 
+	Association__Users_And_Sessions, 
+
 	FinalScores, 
 	
 	Sessions, 
@@ -42,24 +46,30 @@ const {
 	sequelize
 } = require('./models')
 
+
+
+
+
 // __________________________________________________ Users __________________________________________________
 
-Users.hasMany(Sessions, { foreignKey: 'UserID', onDelete: 'CASCADE' })
+Users.belongsToMany(Sessions, { through: Association__Users_And_Sessions, foreignKey: 'UserID' })
 
 
 
 // __________________________________________________ Sessions __________________________________________________
 
-Sessions.belongsTo(Users, { foreignKey: 'UserID' })
+Sessions.belongsToMany(Users, { through: Association__Users_And_Sessions, foreignKey: 'SessionID' })
+Sessions.belongsToMany(Players, { through: Association__Sessions_And_Players, foreignKey: 'SessionID' })
 
-Sessions.hasMany(Players, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
-Sessions.hasMany(FinalScores, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
+Sessions.hasMany(Association__Players_And_FinalScores_With_Sessions, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
+Association__Players_And_FinalScores_With_Sessions.belongsTo(Sessions, { foreignKey: 'SessionID' })
 
 
 
 // __________________________________________________ Players __________________________________________________
 
-Players.belongsTo(Sessions, { foreignKey: 'SessionID' })
+Players.belongsToMany(Sessions, { through: Association__Sessions_And_Players, foreignKey: 'PlayerID' })
+Players.belongsToMany(FinalScores, { through: Association__Players_And_FinalScores_With_Sessions, foreignKey: 'PlayerID' })
 
 Players.hasMany(Table_Columns, { foreignKey: 'PlayerID', onDelete: 'CASCADE' })
 
@@ -73,15 +83,15 @@ Table_Columns.belongsTo(Players, { foreignKey: 'PlayerID' })
 
 // __________________________________________________ FinalScores __________________________________________________
 
-FinalScores.belongsTo(Sessions, { foreignKey: 'SessionID' })
+FinalScores.belongsToMany(Players, { through: Association__Players_And_FinalScores_With_Sessions, foreignKey: 'FinalScoreID' })
 
-FinalScores.hasOne(Table_Archives, { foreignKey: 'FinalScoresID', onDelete: 'CASCADE' })
+FinalScores.hasOne(Table_Archives, { foreignKey: 'FinalScoreID', onDelete: 'CASCADE' })
 
 
 
 // __________________________________________________ Table_Archives __________________________________________________
 
-Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoresID'})
+Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoreID'})
 
 
 

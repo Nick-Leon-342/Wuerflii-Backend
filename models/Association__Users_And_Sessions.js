@@ -1,7 +1,7 @@
 
 
 module.exports = (sequelize, DataTypes) => {
-	return sequelize.define('Sessions', {
+	return sequelize.define('Association__Users_And_Sessions', {
 
 		InputType: {
 			type: DataTypes.ENUM([ 'type', 'select', 'select_and_type' ]),
