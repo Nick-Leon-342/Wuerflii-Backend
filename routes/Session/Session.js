@@ -6,9 +6,13 @@ const router = express.Router()
 const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
 const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
 const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
+const { sort__list_players } = require('../../Functions')
 const { isDate } = require('util/types')
 
 const { 
+	Association__Players_And_FinalScores_With_Sessions, 
+	Association__Users_And_Sessions, 
+
 	FinalScores, 
 	Players, 
 	Sessions, 
@@ -62,7 +66,7 @@ router.get('', (req, res) => {
 
 })
 
-router.post('', (req, res) => {
+router.post('', async (req, res) => {
 
 	const { UserID } = req
 	const { Name, Color, Columns } = req.body
@@ -73,30 +77,56 @@ router.post('', (req, res) => {
 	if(!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS) return res.status(400).send('Columns invalid.')
 
 
-	Sessions.create({
-		UserID, 
-		Name, 
-		Color, 
-		Columns, 
-		InputType: 'select',
-		List_PlayerOrder: [0],
-		ShowScores: true, 
+	const transaction = await sequelize.transaction()
+	try {
 
-		View_Month: date.getMonth() + 1, 
-		View_Year: date.getFullYear(), 
-		View: 'show_all', 
-		View_List_Years: [], 
 
-		LastPlayed: date, 
-		CustomDate: date, 
-	}).then(session => {
+		const user = await Users.findByPk(UserID, { transaction })
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Create session
+		const session = await Sessions.create({
+			UserID, 
+
+			Name, 
+			Color, 
+			Columns, 
+			View_List_Years: [], 
+			LastPlayed: date, 
+		})
+
 		
+		// Create association
+		await Association__Users_And_Sessions.create({
+			UserID, 
+			SessionID: session.id, 
+
+			InputType: 'select',
+			Scores_Visible: true, 
+	
+			View: 'show_all', 
+			View_Month: date.getMonth() + 1, 
+			View_Year: date.getFullYear(), 
+			View_CustomDate: date, 
+		})
+
+
+		// Save changes to database and send response
+		await transaction.commit()
 		res.json({ SessionID: session.id })
 
-	}).catch(err => {
+
+	} catch(err) {
 		console.log('POST /session\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
 
@@ -114,18 +144,18 @@ router.patch('', async (req, res) => {
 		View_Year, 
 
 		InputType, 
-		ShowScores, 
+		Scores_Visible, 
 	} = req.body
 	
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(Name && !isString(Name)) return res.status(400).send('Name invalid.')
 	if(Color && !isColor(Color)) return res.status(400).send('Color invalid.')
 
-	if(View && (!isString(View) || !['show_month', 'show_year', 'custom_date', 'show_all'].includes(View))) return res.status(400).send('View invalid.')
+	if(View && (!isString(View) || !['show_month', 'show_year', 'show_custom_date', 'show_all'].includes(View))) return res.status(400).send('View invalid.')
 	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) return res.status(400).send('View_Month invalid.')
 	if(View_Year && !isInt(View_Year)) return res.status(400).send('View_Year invalid.')
 	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) return res.status(400).send('InputType invalid.')
-	if(ShowScores !== undefined && !isBoolean(ShowScores)) return res.status(400).send('ShowScores invalid.')
+	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) return res.status(400).send('Scores_Visible invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -156,19 +186,34 @@ router.patch('', async (req, res) => {
 		}
 
 
+		// Update session
 		const json = {}
 		if(Name) json.Name = Name
 		if(Color) json.Color = Color
-
-		if(View) json.View = View
-		if(View_Month) json.View_Month = View_Month
-		if(View_Year) json.View_Year = View_Year
-		
-		if(InputType) json.InputType = InputType
-		if(ShowScores !== null && ShowScores !== undefined) json.ShowScores = ShowScores
-
+		if(Scores_Visible !== null && Scores_Visible !== undefined) json.Scores_Visible = Scores_Visible
 
 		await user.Sessions[0].update(json, { transaction })
+
+
+		// Update association if there are some variables to change
+		const json_updates_association = {
+			InputType, 
+			Scores_Visible, 
+
+			View, 
+			View_Month, 
+			View_Year, 
+		}
+
+		await Association__Users_And_Sessions.update(json_updates_association, {
+			where: {
+				SessionID: user.Sessions[0].id, 
+				UserID, 
+			}, 
+			transaction, 
+		})
+
+
 		await transaction.commit()
 		res.sendStatus(204)
 
@@ -193,34 +238,56 @@ router.delete('', async (req, res) => {
 	try {
 
 
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
+				include: Players, 
 			}], 
 		})
 
 
 		// Check if user exists
-		if(!user || !user.Sessions[0]) {
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
 
 
-		// Check if user exists
-		if(!user || !user.Sessions[0]) {
+		// Check if session exists
+		if(!user.Sessions[0]) {
 			await transaction.rollback()
-			return res.status(404).sne
+			return res.status(404).send('Session not found.')
 		}
 
 
+		// Get all associations
+		const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
+			where: { SessionID }, 
+			transaction, 
+		})
+
+		// Remove finalscores through association
+		for(const association of list_associations) {
+			await FinalScores.destroy({
+				where: { id: association.FinalScoreID }, 
+				transaction, 
+			})
+		}
+
+
+		// Remove players 
+		for(const player of user.Sessions[0].Players) {
+			await player.destroy({ transaction })
+		}
+
+
+		// Remove session
 		await user.Sessions[0].destroy({ transaction })
 
-		await transaction.commit()
 
+		await transaction.commit()
 		res.sendStatus(204)
 
 
@@ -244,39 +311,52 @@ router.get('/all', async (req, res) => {
 	try {
 
 
-		const user = await Users.findOne({
-			where: { id: UserID }, 
-			transaction, 
-		})
+		const tmp_user = await Users.findByPk(UserID, { transaction })
 
 
 		// Check if user exists
-		if(!user) {
+		if(!tmp_user) {
 			await transaction.rollback()
 			return res.status(404).send('User not found.')
 		}
 
 
-		const list_sessions = await Sessions.findAll({
-			where: { UserID }, 
+		const user = await Users.findByPk(UserID, {
 			transaction, 
-			include: Players, 
-			order: [
-				getOrder(user),
-				[ { model: Players }, 'Order_Index', 'ASC' ],
-			]
+			include: [{
+				model: Sessions, 
+				through: { attributes: [ 
+					'InputType', 
+					'Scores_Visible', 
+					'View', 
+					'View_Month', 
+					'View_Year', 
+					'View_CustomDate' 
+				] }, 
+				include: [{
+					model: Players, 
+					through: { 
+						as: 'asso', 
+						attributes: [ 'Gnadenwurf_Used', 'Order_Index' ] 
+					}, 
+				}], 
+			}], 
+			order: [[ { model: Sessions }, ...getOrder(tmp_user) ]]
 		})
+
+		const List_Sessions = []
+		for(const session of user.Sessions) {
+			const tmp_session = filter_session(session)
+			tmp_session.List_Players = sort__list_players(session.Players).map(player => filter_player(player))
+			List_Sessions.push(tmp_session)
+		}
 
 
 		await transaction.commit()
+
 		res.json({
 			User: filter_user(user), 
-			List_Sessions: list_sessions.map(session => {
-				return {
-					...filter_session(session), 
-					List_Players: session.Players.map(player => filter_player(player)), 
-				}
-			})
+			List_Sessions, 
 		})
 
 
@@ -316,9 +396,10 @@ function getOrder(user) {
 router.post('/date', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, CustomDate } = req.body
+	const { SessionID, View_CustomDate } = req.body
 
-	if(!SessionID || !isInt(SessionID) || !CustomDate || !isDate(new Date(CustomDate))) return res.sendStatus(400)
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
+	if(!View_CustomDate || !isDate(new Date(View_CustomDate))) return res.status(400).send('CustomDate invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -331,54 +412,110 @@ router.post('/date', async (req, res) => {
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
-				include: [ Players, FinalScores ]
+				include: [ Players ]
 			}], 
-			order: [
-				[ { model: Sessions }, { model: FinalScores }, 'End', 'ASC' ]
-			]
 		})
 
 
-		// ____________________ Check if everything has been found ____________________
+		// ____________________ Check if everything exists ____________________
 
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0]) {
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
 		}
 
 
 		// ____________________ Update session with customdate ____________________
 
 		const session = user.Sessions[0]
-		await session.update({ CustomDate }, { transaction })
+		await Association__Users_And_Sessions.update({ View_CustomDate }, { 
+			transaction, 
+			where: {
+				SessionID, 
+				UserID, 
+			}
+		})
 
 
 		// ____________________ Update scores of finalscores ____________________
 
-		let scoresBefore = {}
-		let scoresAfter = {}
-		for(const p of session.Players) { scoresAfter[p.id] = 0 }
+		const list_finalscores = await FinalScores.findAll({
+			include: [{
+				model: Players, 
+				through: {
+					where: { SessionID }, 
+					as: 'asso', 
+					attributes: [ 
+						'IsWinner', 
+						'Wins__Before_SinceCustomDate', 
+						'Wins__After_SinceCustomDate', 
+					], 
+				}
+			}], 
+			transaction, 
+			order: [[ 'End', 'ASC' ]],
+		}) 
 
-		for(const finalscore of session.FinalScores) {
-			if(new Date(finalscore.End) >= new Date(CustomDate)) {
 
-				scoresBefore = { ...scoresAfter }
+		let wins_before = {}
+		let wins_after = {}
+		for(const p of session.Players) { wins_after[p.id] = 0 }
 
-				// Add wins to scoresAfter
-				for(const player_id of finalscore.List_Winner) { scoresAfter[player_id] = scoresAfter[player_id] + 1 }
-	
-				await finalscore.update({ 
-					ScoresBefore_SinceCustomDate: scoresBefore, 
-					ScoresAfter_SinceCustomDate: scoresAfter 
-				}, { transaction })
+		for(const finalscore of list_finalscores) {
+			if(new Date(finalscore.End) >= new Date(View_CustomDate)) {
+
+				wins_before = structuredClone(wins_after)
+
+				// Add wins to wins_after
+
+				for(const player of finalscore.Players) {
+					if(player.asso.IsWinner) wins_after[player.id] = wins_after[player.id] + 1
+
+					await Association__Players_And_FinalScores_With_Sessions.update({
+						Wins__Before_SinceCustomDate: wins_before[player.id], 
+						Wins__After_SinceCustomDate: wins_after[player.id], 
+					}, {
+						transaction, 
+						where: {
+							SessionID, 
+							FinalScoreID: finalscore.id, 
+							PlayerID: player.id, 
+						}
+					})
+				}
 
 			} else {
 
 				// Finalscore isn't later than customdate, therefore set scores to null
-				await finalscore.update({ 
-					ScoresBefore_SinceCustomDate: null, 
-					ScoresAfter_SinceCustomDate: null 
-				}, { transaction })
+				for(const player of finalscore.Players) {
+
+					await Association__Players_And_FinalScores_With_Sessions.update({
+						Wins__Before_SinceCustomDate: null, 
+						Wins__After_SinceCustomDate: null, 
+					}, {
+						transaction, 
+						where: {
+							SessionID, 
+							FinalScoreID: finalscore.id, 
+							PlayerID: player.id, 
+						}
+					})
+				}
 
 			}
 		}

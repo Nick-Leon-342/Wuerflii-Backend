@@ -3,12 +3,14 @@
 const express = require('express')
 const router = express.Router()
 
-const CreateNewGame = require('../../CreateNewGame')
+const { sort__list_players } = require('../../Functions')
 const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
 const { isArray, isString, isColor, isInt } = require('../../IsDataType')
 const { filter_player, filter_user } = require('../../Filter_DatabaseJSON')
 
 const { 
+	Association__Sessions_And_Players, 
+
 	Players, 
 	Sessions, 
 	Users,
@@ -25,12 +27,14 @@ router.get('', (req, res) => {
 	const { session_id } = req.query
 
 
-	Users.findOne({ 
-		where: { id: UserID }, 
+	Users.findByPk(UserID, { 
 		include: [{
 			model: Sessions, 
 			where: { id: session_id }, 
-			include: Players, 
+			include: [{
+				model: Players, 
+				through: { as: 'asso' }, 
+			}], 
 		}], 
 	}).then(user => {
 
@@ -42,7 +46,7 @@ router.get('', (req, res) => {
 			MAX_PLAYERS,
 			MAX_LENGTH_PLAYER_NAME, 
 			User: filter_user(user), 
-			List_Players: user.Sessions[0].Players.map(player => filter_player(player))
+			List_Players: sort__list_players(user.Sessions[0].Players).map(player => filter_player(player))
 		})
 
 
@@ -68,25 +72,43 @@ router.post('', async (req, res) => {
 	const transaction = await sequelize.transaction()
 	try {
 
-		const session = await Sessions.findOne({ 
+
+		const user = await Users.findByPk(UserID, {
 			transaction, 
-			where: {
-				id: SessionID, 
-				UserID, 
-			}, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+			}], 
 		})
+
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
 		
 
-		const list_created_players = []
 		for(let i = 0; List_Players.length > i; i++) {
 			const player = await Players.create({ 
-				SessionID: session.id, 
 				Name: List_Players[i].Name, 
 				Color: List_Players[i].Color, 
-				Gnadenwurf: false, 
+			}, { transaction })
+			
+			await Association__Sessions_And_Players.create({
+				SessionID: user.Sessions[0].id, 
+				PlayerID: player.id, 
+
+				Gnadenwurf_Used: false, 
 				Order_Index: i, 
 			}, { transaction })
-			list_created_players.push(player)
 		}
 
 
@@ -123,13 +145,15 @@ router.patch('', async (req, res) => {
 	try {
 
 		
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		const user = await Users.findByPk(UserID, {
 			transaction, 
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
-				include: Players
+				include: [{
+					model: Players, 
+					through: { as: 'asso' }, 
+				}], 
 			}]
 		})
 
@@ -142,7 +166,7 @@ router.patch('', async (req, res) => {
 		
 
 		// Check if session exists
-		if(!user.Session[0]){
+		if(!user.Sessions[0]){
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
@@ -177,8 +201,15 @@ router.patch('', async (req, res) => {
 					await player.update({
 						Name: p.Name, 
 						Color: p.Color, 
-						Order_Index: i
 					}, { transaction })
+
+					await Association__Sessions_And_Players.update({ Order_Index: i }, {
+						transaction, 
+						where: {
+							SessionID: user.Sessions[0].id, 
+							PlayerID: player.id, 
+						}, 
+					})
 					continue
 				}
 			}

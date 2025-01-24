@@ -6,6 +6,8 @@ const router = express.Router()
 const { filter_table_column } = require('../Filter_DatabaseJSON')
 const { isInt,isBoolean, isString, isColor } = require('../IsDataType')
 const { 
+	Association__Sessions_And_Players, 
+
 	Players, 
 	Sessions,
 	Table_Columns, 
@@ -22,10 +24,10 @@ const { MAX_LENGTH_PLAYER_NAME } = require('../utils')
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, PlayerID, Gnadenwurf} = req.body
+	const { SessionID, PlayerID, Gnadenwurf_Used } = req.body
 
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid')
-	if(!isBoolean(Gnadenwurf)) return res.status(400).send('Gnadenwurf invalid.')
+	if(!isBoolean(Gnadenwurf_Used)) return res.status(400).send('Gnadenwurf_Used invalid.')
 
 	
 	const transaction = await sequelize.transaction()
@@ -41,6 +43,7 @@ router.patch('', async (req, res) => {
 				include: [{
 					model: Players, 
 					where: { id: PlayerID }, 
+					through: { attributes: [ 'Gnadenwurf_Used' ] }, 
 				}]
 			}]
 		})
@@ -63,13 +66,17 @@ router.patch('', async (req, res) => {
 		// Check if players exist
 		if(!user.Sessions[0].Players[0]) {
 			await transaction.rollback()
-			return res.status(404).send('Players not found.')
+			return res.status(404).send('Player not found.')
 		}
 
 
-		await user.Sessions[0].Players[0].update({
-			Gnadenwurf
-		}, { transaction })
+		await Association__Sessions_And_Players.update({ Gnadenwurf_Used }, { 
+			transaction, 
+			where: {
+				PlayerID, 
+				SessionID, 
+			}
+		})
 
 		await transaction.commit()
 

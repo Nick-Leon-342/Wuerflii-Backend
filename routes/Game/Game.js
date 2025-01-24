@@ -5,8 +5,11 @@ const router = express.Router()
 
 const { isInt } = require('../../IsDataType')
 const CreateNewGame = require('../../CreateNewGame')
+const { sort__list_players } = require('../../Functions')
 
 const { 
+	Association__Players_And_FinalScores_With_Sessions, 
+
 	FinalScores, 
 	Sessions, 
 	Players, 
@@ -46,16 +49,15 @@ router.get('', async (req, res) => {
 			where: { id: UserID }, 
 			include: [{
 				model: Sessions, 
+				through: { attributes: [ 'InputType', 'Scores_Visible', 'View', 'View_Month', 'View_Year', 'View_CustomDate' ] }, 
 				where: { id: SessionID }, 
 				include: [{
 					model: Players, 
-					include: Table_Columns
+					through: { as: 'asso' }, 
+					include: Table_Columns, 
 				}]
 			}], 
-			order: [
-				[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-				[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
-			]
+			order: [[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]], 
 		})
 
 		// Check if user exists
@@ -80,30 +82,15 @@ router.get('', async (req, res) => {
 
 
 		// Create new game if it doesn't exist
+		let list_players
 		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
 
-			await CreateNewGame({
-				List_Players: user.Sessions[0].Players, 
+			list_players = await CreateNewGame({
+				List_Players: sort__list_players(user.Sessions[0].Players), 
 				Columns: user.Sessions[0].Columns, 
 				Session: user.Sessions[0], 
 				date: new Date(),
 				transaction, 
-			})
-
-			user = await Users.findOne({ 
-				where: { id: UserID }, 
-				include: [{
-					model: Sessions, 
-					where: { id: SessionID }, 
-					include: [{
-						model: Players, 
-						include: Table_Columns
-					}]
-				}], 
-				order: [
-					[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-					[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]
-				]
 			})
 
 		}
@@ -113,7 +100,7 @@ router.get('', async (req, res) => {
 		res.json({
 			User: filter_user(user), 
 			Session: filter_session(user.Sessions[0]),
-			List_Players: user.Sessions[0].Players.map(player => {
+			List_Players: list_players || sort__list_players(user.Sessions[0].Players).map(player => {
 				return {
 					...filter_player(player), 
 					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
@@ -153,28 +140,59 @@ router.post('', async (req, res) => {
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
+				through: { attributes: [ 
+					'InputType', 
+					'Scores_Visible', 
+					'View', 
+					'View_Month', 
+					'View_Year', 
+					'View_CustomDate' 
+				] }, 
 				include: [
 					{
 						model: Players, 
+						through: { 
+							as: 'asso', 
+							attributes: [ 'Gnadenwurf_Used', 'Order_Index' ] 
+						}, 
 						include: Table_Columns
 					}, 
-					FinalScores
 				]
 			}], 
 			order: [
-				[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
 				[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ], 
-				[ { model: Sessions }, { model: FinalScores }, 'createdAt', 'DESC' ],
 			]
 		})
 
+		
+		
+		// __________________________________________________ Check if everything exists __________________________________________________
 
-
-		// __________________________________________________ Check if everything has been found __________________________________________________
-
-		if(!user || !user.Sessions[0] || !user.Sessions[0].Players[0].Table_Columns[0]) {
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
+		}
+
+
+		// Check if table_columns exist
+		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Table_Columns not found.')
 		}
 
 
@@ -189,47 +207,65 @@ router.post('', async (req, res) => {
 
 
 		const session = user.Sessions[0]
-		const list_players = session.Players
-		const final_score = session.FinalScores[0]
+		const list_players = sort__list_players(session.Players)
+
+		// Get latest finalscore
+		const final_score = await FinalScores.findOne({
+			order: [[ 'createdAt', 'DESC' ]], 
+			transaction, 
+			include: [{
+				model: Players, 
+				through: {
+					where: { SessionID }, 
+					as: 'asso', 
+					attributes: [ 
+						'IsWinner', 
+						'Score', 
+						'Wins__Before', 
+						'Wins__After', 
+						'Wins__Before_Year', 
+						'Wins__After_Year', 
+						'Wins__Before_Month', 
+						'Wins__After_Month', 
+						'Wins__Before_SinceCustomDate', 
+						'Wins__After_SinceCustomDate', 
+					], 
+				}
+			}], 
+		})
 
 
 
-		// __________________________________________________ Initialize scores __________________________________________________
+		// __________________________________________________ Create finalscore and tablearchive __________________________________________________
 
-		const tmp_player_scores = {}
-		for(const player of list_players) { tmp_player_scores[player.id] = 0 }
-		const tmp_final_score = {
-			ScoresBefore: { ...tmp_player_scores }, 
-			ScoresAfter: { ...tmp_player_scores }, 
-			ScoresBefore_Month: { ...tmp_player_scores }, 
-			ScoresAfter_Month: { ...tmp_player_scores }, 
-			ScoresBefore_Year: { ...tmp_player_scores }, 
-			ScoresAfter_Year: { ...tmp_player_scores }, 
-			ScoresBefore_SinceCustomDate: { ...tmp_player_scores }, 
-			ScoresAfter_SinceCustomDate: { ...tmp_player_scores }, 
-		}
+		const created_final_score = await FinalScores.create({ 
+			Start: session.CurrentGameStart, 
+			End: date,
+			Columns: session.Columns, 
+			Surrendered: Boolean(Surrendered_PlayerID),
+		}, { transaction })
 
-		if(final_score) {
+		await Table_Archives.create({ 
+			FinalScoreID: created_final_score.id, 
+			Table: list_players.map(player => {
+				return {
+					PlayerID: player.id, 
+					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
+				}
+			}), 
+		}, { transaction })
 
-			tmp_final_score.ScoresBefore = { ...final_score.ScoresAfter }
-			tmp_final_score.ScoresAfter = { ...final_score.ScoresAfter }
 
-			if(new Date(final_score.End).getFullYear() === date.getFullYear() && new Date(final_score.End).getMonth() === date.getMonth()) {
-				tmp_final_score.ScoresBefore_Month = { ...final_score.ScoresAfter_Month }
-				tmp_final_score.ScoresAfter_Month = { ...final_score.ScoresAfter_Month }
-			}
+		// Add year to list for /session/preview if necessary (if game has been played in a new unlisted year)
 
-			if(new Date(final_score.End).getFullYear() === date.getFullYear()) {
-				tmp_final_score.ScoresBefore_Year = { ...final_score.ScoresAfter_Year }
-				tmp_final_score.ScoresAfter_Year = { ...final_score.ScoresAfter_Year }
-			}
+		const tmp_view_list_years = [ ...session.View_List_Years ]
+		if(!tmp_view_list_years.includes(date.getFullYear())) tmp_view_list_years.push(date.getFullYear())
 
-			if(final_score.ScoresAfter_SinceCustomDate) {
-				tmp_final_score.ScoresBefore_SinceCustomDate = { ...final_score.ScoresAfter_SinceCustomDate }
-				tmp_final_score.ScoresAfter_SinceCustomDate = { ...final_score.ScoresAfter_SinceCustomDate }
-			}
-
-		}
+		await session.update({ 
+			LastPlayed: date, 
+			CurrentGameStart: null, 
+			View_List_Years: tmp_view_list_years, 
+		}, { transaction })
 
 
 
@@ -239,8 +275,7 @@ router.post('', async (req, res) => {
 		let highestScore = 0
 		const PlayerScores = {}
 
-		for(const p of list_players) { 
-			tmp_final_score[p.id] = 0 
+		for(const p of list_players) {
 
 			let tmp_score = 0
 			for(const tc of p.Table_Columns) { tmp_score += tc.TotalScore }
@@ -264,60 +299,31 @@ router.post('', async (req, res) => {
 		}
 
 
-		// Add +1 win for every winner of game
-		for(const p of list_players) {
-			if(List_Winner.includes(p.id)) {
+		for(const player of list_players) {
+			const id = player.id
+			const a = final_score?.Players.filter(p => p.id === id)[0].asso		// Association between player and finalscore
 
-				tmp_final_score.ScoresAfter[p.id] = tmp_final_score.ScoresBefore[p.id] + 1
-				tmp_final_score.ScoresAfter_Month[p.id] = tmp_final_score.ScoresAfter_Month[p.id] + 1
-				tmp_final_score.ScoresAfter_Year[p.id] = tmp_final_score.ScoresAfter_Year[p.id] + 1 
+			const IsWinner = List_Winner.includes(id)
+			const add_win = IsWinner ? 1 : 0
 
-				if(tmp_final_score.ScoresAfter_SinceCustomDate) tmp_final_score.ScoresAfter_SinceCustomDate[p.id] = tmp_final_score.ScoresAfter_SinceCustomDate[p.id] + 1
+			await Association__Players_And_FinalScores_With_Sessions.create({
+				SessionID, 
+				PlayerID: id, 
+				FinalScoreID: created_final_score.id, 
 
-			}
+				IsWinner, 
+				Score: PlayerScores[id], 
+
+				Wins__Before: 					0 + 		(!a ? 0 : a.Wins__After), 
+				Wins__After: 					add_win + 	(!a ? 0 : a.Wins__After), 
+				Wins__Before_Year: 				0 + 		(!a ? 0 : a.Wins__After_Year), 
+				Wins__After_Year: 				add_win + 	(!a ? 0 : a.Wins__After_Year), 
+				Wins__Before_Month: 			0 + 		(!a ? 0 : a.Wins__After_Month), 
+				Wins__After_Month: 				add_win + 	(!a ? 0 : a.Wins__After_Month), 
+				Wins__Before_SinceCustomDate: 	0 +			(!a ? 0 : a.Wins__After_SinceCustomDate), 
+				Wins__After_SinceCustomDate: 	add_win + 	(!a ? 0 : a.Wins__After_SinceCustomDate), 
+			}, { transaction })
 		}
-
-
-
-		// __________________________________________________ Create finalscore and tablearchive __________________________________________________
-
-		const created_final_score = await FinalScores.create({ 
-
-			SessionID: session.id, 
-			Start: session.CurrentGameStart, 
-			End: date,
-			Columns: session.Columns, 
-			Surrender: Boolean(Surrendered_PlayerID), 
-			List_Winner,  
-			PlayerScores, 
-			
-			...tmp_final_score
-
-		}, { transaction })
-
-		await Table_Archives.create({ 
-			FinalScoreID: created_final_score.id, 
-			Table: list_players.map(p => {
-				return {
-					PlayerID: p.id, 
-					List_Table_Columns: p.Table_Columns.map(tc => filter_table_column(tc))
-				}
-			}), 
-		}, { transaction })
-
-
-
-		// Add year to list for /session/preview
-
-		const tmp_view_list_years = [ ...session.View_List_Years ]
-		if(!tmp_view_list_years.includes(date.getFullYear())) tmp_view_list_years.push(date.getFullYear())
-
-		await session.update({ 
-			LastPlayed: date, 
-			CurrentGameStart: null, 
-			View_List_Years: tmp_view_list_years, 
-		}, { transaction })
-
 
 
 
@@ -329,9 +335,8 @@ router.post('', async (req, res) => {
 			}
 		}
 
+
 		await transaction.commit()
-
-
 		res.json({ FinalScoreID: created_final_score.id })
 
 
@@ -401,7 +406,7 @@ router.delete('', async (req, res) => {
 
 
 
-router.get('/end', (req, res) => {
+router.get('/end', async (req, res) => {
 
 	const { UserID } = req
 	const SessionID = +req.query.session_id
@@ -410,36 +415,92 @@ router.get('/end', (req, res) => {
 	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
 
 
-	Users.findOne({ 
-		where: { id: UserID }, 
-		include: [{
-			model: Sessions, 
-			where: { id: SessionID }, 
-			include: [
-				{
-					model: FinalScores, 
-					where: { id: FinalScoreID }
-				},
-				Players, 
-			]
-		}], 
-		order: [
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-		]
-	}).then(user => {
+	const transaction = await sequelize.transaction()
+	try {
 
-		if(!user || !user.Sessions[0] || !user.Sessions[0].FinalScores[0]) return res.sendStatus(404)
-
-		res.json({ 
-			User: filter_user(user), 
-			FinalScore: filter_finalscore(user.Sessions[0].FinalScores[0]), 
-			List_Players: user.Sessions[0].Players.map(p => filter_player(p)), 
+		
+		// Get user and session
+		const user = await Users.findByPk(UserID, {
+			transaction, 
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
+				include: [{
+					model: Players, 
+					through: { 
+						as: 'asso', 
+						attributes: [ 'Order_Index' ], 
+					}, 
+				}]
+			}]
 		})
 
-	}).catch(err => {
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// Check if players exist
+		if(!user.Sessions[0].Players[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Players not found.')
+		}
+
+
+		const finalscore = await FinalScores.findByPk(FinalScoreID, {
+			transaction, 
+			include: [{
+				model: Players, 
+				through: {
+					where: { SessionID }, 
+					as: 'asso', 
+					attributes: [ 
+						'IsWinner', 
+						'Score', 
+						'Wins__Before', 
+						'Wins__After', 
+						'Wins__Before_Year', 
+						'Wins__After_Year', 
+						'Wins__Before_Month', 
+						'Wins__After_Month', 
+						'Wins__Before_SinceCustomDate', 
+						'Wins__After_SinceCustomDate', 
+					], 
+				}
+			}], 
+		})
+
+
+		// Check if finalscore exists
+		if(!finalscore) {
+			await transaction.rollback()
+			return res.status(404).send('FinalScore not found.')
+		}
+
+
+		await transaction.commit()
+		res.json({ 
+			User: filter_user(user), 
+			FinalScore: filter_finalscore(finalscore), 
+			List_Players: sort__list_players(user.Sessions[0].Players).map(player => filter_player(player)), 
+		})
+
+
+	} catch(err) {
 		console.log('GET /game/end\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
 

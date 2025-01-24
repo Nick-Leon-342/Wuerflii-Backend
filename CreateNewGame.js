@@ -1,6 +1,9 @@
 
 
+const { filter_table_column, filter_player } = require('./Filter_DatabaseJSON')
+const { sort__list_players } = require('./Functions')
 const { 
+	Association__Sessions_And_Players, 
 	Table_Columns
 } = require('./models')
 
@@ -42,20 +45,42 @@ module.exports = async function createNewGame({
 
 	const array_columns = Array.from({ length: Columns }, (_, index) => index)
 
+
+	const tmp_list_players = []
 	for(const p of List_Players) {
 
-		await p.update({ Gnadenwurf: false }, { transaction })
+		await Association__Sessions_And_Players.update({ Gnadenwurf_Used: false }, { 
+			where: {
+				SessionID: Session.id, 
+				PlayerID: p.id, 
+			}, 
+			transaction, 
+		})
 
+
+		const tmp_list_table_columns = []
 		for(const column of array_columns) {
 
-			await Table_Columns.create({ 
+			const table_column = await Table_Columns.create({ 
 				PlayerID: p.id, 
 				Column: column, 
+
+				Upper_Table_Score: 0, 
 				TotalScore: 0, 
 			}, { transaction })
 
+			tmp_list_table_columns.push(filter_table_column(table_column))
+
 		}
 
-	}	
+		const tmp_player = filter_player(p)
+		tmp_player.List_Table_Columns = tmp_list_table_columns
+		tmp_player.Gnadenwurf_Used = false
+		tmp_list_players.push(tmp_player)
+
+	}
+	
+	tmp_list_players.sort((a, b) => a.Order_Index - b.Order_Index)
+	return tmp_list_players
 
 }

@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
 
 		Upper_Table_Score: {
 			type: DataTypes.INTEGER,
-			allowNull: true,
+			allowNull: false,
 		},
 		Upper_Table_Add35: {
 			type: DataTypes.INTEGER,

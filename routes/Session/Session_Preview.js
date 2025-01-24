@@ -16,6 +16,7 @@ const {
 	sequelize, 
 } = require('../../models')
 const { MAX_FINALSCORES_LIMIT } = require('../../utils')
+const { sort__list_players } = require('../../Functions')
 
 
 
@@ -29,16 +30,18 @@ router.get('', async (req, res) => {
 	if(!isInt(SessionID)) return res.sendStatus(400)
 
 
-	Users.findOne({ 
-		where: { id: UserID }, 
+	Users.findByPk(UserID, { 
 		include: [{
 			model: Sessions, 
 			where: { id: SessionID }, 
-			include: Players
+			include: [{
+				model: Players, 
+				through: { 
+					as: 'asso', 
+					attributes: [ 'Order_Index' ],  
+				}, 
+			}]
 		}], 
-		order: [
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-		]
 	}).then(user => {
 
 
@@ -49,7 +52,7 @@ router.get('', async (req, res) => {
 		
 		res.json({
 			Session: filter_session(session), 
-			List_Players: session.Players.map(p => filter_player(p)), 
+			List_Players: sort__list_players(session.Players).map(p => filter_player(p)), 
 			User: filter_user(user), 
 			Exists: Boolean(session.CurrentGameStart), 
 		})
@@ -99,17 +102,34 @@ router.get('/all', async (req, res) => {
 			return res.status(404).send('Session not found.')
 		}
 
-
+		
 		const list_finalscores = await FinalScores.findAndCountAll({
-			where: {
-				...getQuery(user.Sessions[0]), 
-				SessionID, 
-			},
+			where: getQuery(user.Sessions[0]), 
 			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
+			include: [{
+				model: Players, 
+				through: {
+					where: { SessionID }, 
+					as: 'asso', 
+					attributes: [ 
+						'IsWinner', 
+						'Score', 
+						'Wins__Before', 
+						'Wins__After', 
+						'Wins__Before_Year', 
+						'Wins__After_Year', 
+						'Wins__Before_Month', 
+						'Wins__After_Month', 
+						'Wins__Before_SinceCustomDate', 
+						'Wins__After_SinceCustomDate', 
+					], 
+				}
+			}], 
 			transaction, 
-			order: [['End', 'DESC']],
+			order: [[ 'End', 'DESC' ]],
 			limit: MAX_FINALSCORES_LIMIT,
 		}) 
+
 
 		await transaction.commit()
 
@@ -129,8 +149,10 @@ router.get('/all', async (req, res) => {
 
 function getQuery( session ) {
 
-	const year = session.View_Year
-	const month = session.View_Month
+	const asso = session.Association__Users_And_Sessions
+	
+	const year = asso.View_Year
+	const month = asso.View_Month
 	
 	const startOfYear = new Date(`${year}-01-01`)
 	const endOfYear = new Date(`${year}-12-31 23:59:59`)
@@ -138,15 +160,15 @@ function getQuery( session ) {
 	const startOfMonth = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
 	const endOfMonth = new Date(year, month, 0, 23, 59, 59)
 
-	switch(session.View) {
+	switch(asso.View) {
 		case 'show_month':
 			return { End: { [Op.between]: [ startOfMonth, endOfMonth ] } }
 
 		case 'show_year':
 			return { End: { [Op.between]: [ startOfYear, endOfYear ] } }
 
-		case 'custom_date':
-			return { End: { [Op.gte]: new Date(session.CustomDate) } }
+		case 'show_custom_date':
+			return { End: { [Op.gte]: new Date(asso.View_CustomDate) } }
 
 		default: 
 			return {}
@@ -183,7 +205,6 @@ router.get('/table', async (req, res) => {
 			}]
 		}], 
 		order: [
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
 			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
 		]
 	}).then(user => {

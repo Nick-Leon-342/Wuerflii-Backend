@@ -4,55 +4,90 @@ function filter_session(s) {
 
 	return {
 		id: s.id,
+		
 		Name: s.Name,
 		Color: s.Color, 
 		Columns: s.Columns,
-		InputType: s.InputType,
-		List_PlayerOrder: s.List_PlayerOrder,
-		ShowScores: s.ShowScores,
 
-		View_Month: s.View_Month, 
-		View_Year: s.View_Year, 
-		View: s.View, 
 		View_List_Years: s.View_List_Years, 
-
-		CustomDate: s.CustomDate,
-		CreatedDate: s.CreatedDate,
+		CurrentGameStart: s.CurrentGameStart, 
 		LastPlayed: s.LastPlayed,
+
+
+		InputType: s.Association__Users_And_Sessions.InputType,
+		ShowScores: s.Association__Users_And_Sessions.Scores_Visible,
+
+		View: s.Association__Users_And_Sessions.View, 
+		View_Month: s.Association__Users_And_Sessions.View_Month, 
+		View_Year: s.Association__Users_And_Sessions.View_Year, 
+		View_CustomDate: s.Association__Users_And_Sessions.View_CustomDate,
 	}
 
 }
 
 function filter_player(p) {
-
+	
 	return {
 		id: p.id,
+		
 		Name: p.Name,
 		Color: p.Color,
-		Gnadenwurf: p.Gnadenwurf, 
+
+
+		Gnadenwurf_Used: p.asso.Gnadenwurf_Used, 
+		Order_Index: p.asso.Order_Index, 
 	}
 
 }
 
 function filter_finalscore(f) {
 
+	const List_Winner = []
+	const PlayerScores = {}
+	const Wins__Before = {}
+	const Wins__After = {}
+	const Wins__Before_Year = {}
+	const Wins__After_Year = {}
+	const Wins__Before_Month = {}
+	const Wins__After_Month = {}
+	const Wins__Before_SinceCustomDate = {}
+	const Wins__After_SinceCustomDate = {}
+
+	for(const player of f.Players) {
+		const id = player.id
+		const a = player.asso		// Association between player and finalscore
+
+		if(a.IsWinner) List_Winner.push(id)
+		PlayerScores[id] = a.Score
+		Wins__Before[id] = a.Wins__Before
+		Wins__After[id] = a.Wins__After
+		Wins__Before_Year[id] = a.Wins__Before_Year
+		Wins__After_Year[id] = a.Wins__After_Year
+		Wins__Before_Month[id] = a.Wins__Before_Month
+		Wins__After_Month[id] = a.Wins__After_Month
+		Wins__Before_SinceCustomDate[id] = a.Wins__Before_SinceCustomDate
+		Wins__After_SinceCustomDate[id] = a.Wins__After_SinceCustomDate
+	}
+
 	return {
 		id: f.id, 
+
 		Start: f.Start,
 		End: f.End,
 		Columns: f.Columns,
-		Surrender: f.Surrender,
-		List_Winner: f.List_Winner,
-		PlayerScores: f.PlayerScores,
+		Surrendered: f.Surrendered,
+
+		List_Winner,
+		PlayerScores,
 		
-		ScoresBefore: f.ScoresBefore, 
-		ScoresAfter: f.ScoresAfter, 
-		ScoresBefore_Year: f.ScoresBefore_Year, 
-		ScoresAfter_Year: f.ScoresAfter_Year, 
-		ScoresBefore_Month: f.ScoresBefore_Month, 
-		ScoresAfter_Month: f.ScoresAfter_Month, 
-		ScoresBefore_SinceCustomDate: f.ScoresBefore_SinceCustomDate, 
-		ScoresAfter_SinceCustomDate: f.ScoresAfter_SinceCustomDate, 
+		Wins__Before, 
+		Wins__After, 
+		Wins__Before_Year, 
+		Wins__After_Year, 
+		Wins__Before_Month, 
+		Wins__After_Month, 
+		Wins__Before_SinceCustomDate, 
+		Wins__After_SinceCustomDate, 
 	}
 
 }
