@@ -3,13 +3,20 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const router = express.Router()
+
 const { 
+	Association__Players_And_FinalScores_With_Sessions, 
+
 	Users, 
-	sequelize
+	Sessions, 
+	Players, 
+	FinalScores, 
+	sequelize, 
 } = require('../models')
+
 const sendToken = require('./SendToken')
 const { isBoolean, isString } = require('../IsDataType')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, NAME_REGEX, PASSWORD_REGEX } = require('../utils')
 const { filter_user } = require('../Filter_DatabaseJSON')
 
 
@@ -130,15 +137,69 @@ router.delete('', async (req, res) => {
 
 	const { UserID } = req
 
-	Users.destroy({ where: { id: UserID } }).then(() => {
 
+	const transaction = await sequelize.transaction()
+	try {
+
+
+		const user = await Users.findByPk(UserID, { 
+			transaction, 
+			include: [{
+				model: Sessions, 
+				include: Players, 
+			}], 
+		})
+
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+
+		// Remove all sessions
+		for(const session of user.Sessions) {
+
+			// Get all associations
+			const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
+				where: { SessionID: session.id }, 
+				transaction, 
+			})
+	
+			// Remove finalscores through association
+			for(const association of list_associations) {
+				await FinalScores.destroy({
+					where: { id: association.FinalScoreID }, 
+					transaction, 
+				})
+			}
+	
+	
+			// Remove players 
+			for(const player of session.Players) {
+				await player.destroy({ transaction })
+			}
+	
+	
+			// Remove session
+			await session.destroy({ transaction })
+
+		}
+
+		await user.destroy({ transaction })
+
+
+		await transaction.commit()
 		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 		res.sendStatus(204)
 
-	}).catch(err => {
+
+	} catch(err) {
 		console.log('DELETE /user\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
 

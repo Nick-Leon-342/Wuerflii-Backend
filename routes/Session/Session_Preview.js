@@ -4,19 +4,23 @@ const express = require('express')
 const router = express.Router()
 
 const { filter_player, filter_session, filter_finalscore, filter_user, filter_table_archive } = require('../../Filter_DatabaseJSON')
+const { sort__list_players } = require('../../Functions')
+const { MAX_FINALSCORES_LIMIT } = require('../../utils')
 const { isInt } = require('../../IsDataType')
+
 const { Op } = require('sequelize')
 
 const { 
+	Association__Players_And_FinalScores_With_Sessions, 
+
 	FinalScores, 
 	Players, 
 	Sessions, 
 	Table_Archives, 
 	Users,
+
 	sequelize, 
 } = require('../../models')
-const { MAX_FINALSCORES_LIMIT } = require('../../utils')
-const { sort__list_players } = require('../../Functions')
 
 
 
@@ -192,44 +196,68 @@ router.get('/table', async (req, res) => {
 
 	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
 	
-	
-	Users.findOne({ 
-		where: { id: UserID }, 
-		include: [{
-			model: Sessions, 
-			where: { id: SessionID }, 
-			include: [ Players, {
-				model: FinalScores, 
-				where: { id: FinalScoreID }, 
-				include: Table_Archives
+
+	const transaction = await sequelize.transaction()
+	try {
+
+
+		const user = await Users.findByPk(UserID, {
+			include: [{
+				model: Sessions, 
+				where: { id: SessionID }, 
 			}]
-		}], 
-		order: [
-			[ { model: Sessions }, { model: Players }, 'Order_Index', 'ASC' ],
-		]
-	}).then(user => {
-		
-		
+		})
+
+
 		// Check if user exists
-		if(!user) return res.status(404).send('User not found.')
-		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
-		if(!user.Sessions[0].Players[0]) return res.status(404).send('Players not found.')
-		if(!user.Sessions[0].FinalScores[0]) return res.status(404).send('Finalscores not found.')
-		if(!user.Sessions[0].FinalScores[0].Table_Archive) return res.status(404).send('Table_Archive not found.')
-		
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
 
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		const finalscore = await FinalScores.findByPk(FinalScoreID, {
+			include: [
+				Table_Archives, 
+				{
+					model: Players, 
+					through: {
+						where: { SessionID }, 
+						as: 'asso', 
+					}
+				}
+			], 
+			transaction, 
+		})
+
+
+		// Check if association exists
+		if(!finalscore) {
+			await association.rollback()
+			return res.status(404).send('FinalScore not found.')
+		}
+
+
+		const tmp_list_players = sort__list_players(finalscore.Players)
 		const List_Players = []
-		for(const player of user.Sessions[0].Players) {
-			const tmp_player = filter_player(p)
+		for(const player of tmp_list_players) {
+			const tmp_player = filter_player(player)
 
-			for(const table_archive of user.Sessions[0].FinalScores[0].Table_Archive.Table) {
+			for(const table_archive of finalscore.Table_Archive.Table) {
 				if(table_archive.PlayerID === player.id) {
 					tmp_player.List_Table_Columns = table_archive.List_Table_Columns
 					continue
 				}
 			}
 
-			List_Players.push(tmp)
+			List_Players.push(tmp_player)
 		}
 
 
@@ -240,10 +268,12 @@ router.get('/table', async (req, res) => {
 		})
 
 
-	}).catch(err => {
+
+	} catch(err) {
 		console.log('GET /session/preview/table\n', err)
+		await transaction.rollback()
 		res.sendStatus(500)
-	})
+	}
 
 })
 

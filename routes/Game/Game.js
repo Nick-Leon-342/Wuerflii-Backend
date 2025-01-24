@@ -301,7 +301,8 @@ router.post('', async (req, res) => {
 
 		for(const player of list_players) {
 			const id = player.id
-			const a = final_score?.Players.filter(p => p.id === id)[0].asso		// Association between player and finalscore
+			let a	// Association between player and finalscore
+			if(final_score) for(const p of final_score.Players) { if(p.id === id) a = p.asso }
 
 			const IsWinner = List_Winner.includes(id)
 			const add_win = IsWinner ? 1 : 0
