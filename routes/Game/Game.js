@@ -49,7 +49,6 @@ router.get('', async (req, res) => {
 			where: { id: UserID }, 
 			include: [{
 				model: Sessions, 
-				through: { attributes: [ 'InputType', 'Scores_Visible', 'View', 'View_Month', 'View_Year', 'View_CustomDate' ] }, 
 				where: { id: SessionID }, 
 				include: [{
 					model: Players, 
@@ -140,21 +139,10 @@ router.post('', async (req, res) => {
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
-				through: { attributes: [ 
-					'InputType', 
-					'Scores_Visible', 
-					'View', 
-					'View_Month', 
-					'View_Year', 
-					'View_CustomDate' 
-				] }, 
 				include: [
 					{
 						model: Players, 
-						through: { 
-							as: 'asso', 
-							attributes: [ 'Gnadenwurf_Used', 'Order_Index' ] 
-						}, 
+						through: { as: 'asso' }, 
 						include: Table_Columns
 					}, 
 				]
@@ -215,21 +203,10 @@ router.post('', async (req, res) => {
 			transaction, 
 			include: [{
 				model: Players, 
+				required: true, 
 				through: {
 					where: { SessionID }, 
 					as: 'asso', 
-					attributes: [ 
-						'IsWinner', 
-						'Score', 
-						'Wins__Before', 
-						'Wins__After', 
-						'Wins__Before_Year', 
-						'Wins__After_Year', 
-						'Wins__Before_Month', 
-						'Wins__After_Month', 
-						'Wins__Before_SinceCustomDate', 
-						'Wins__After_SinceCustomDate', 
-					], 
 				}
 			}], 
 		})
@@ -462,21 +439,10 @@ router.get('/end', async (req, res) => {
 			transaction, 
 			include: [{
 				model: Players, 
+				required: true, 
 				through: {
 					where: { SessionID }, 
 					as: 'asso', 
-					attributes: [ 
-						'IsWinner', 
-						'Score', 
-						'Wins__Before', 
-						'Wins__After', 
-						'Wins__Before_Year', 
-						'Wins__After_Year', 
-						'Wins__Before_Month', 
-						'Wins__After_Month', 
-						'Wins__Before_SinceCustomDate', 
-						'Wins__After_SinceCustomDate', 
-					], 
 				}
 			}], 
 		})

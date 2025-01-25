@@ -108,30 +108,19 @@ router.get('/all', async (req, res) => {
 
 		
 		const list_finalscores = await FinalScores.findAndCountAll({
-			where: getQuery(user.Sessions[0]), 
+			where: getQuery(user.Sessions[0]),  
 			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
 			include: [{
 				model: Players, 
+				required: true, 
 				through: {
 					where: { SessionID }, 
 					as: 'asso', 
-					attributes: [ 
-						'IsWinner', 
-						'Score', 
-						'Wins__Before', 
-						'Wins__After', 
-						'Wins__Before_Year', 
-						'Wins__After_Year', 
-						'Wins__Before_Month', 
-						'Wins__After_Month', 
-						'Wins__Before_SinceCustomDate', 
-						'Wins__After_SinceCustomDate', 
-					], 
 				}
 			}], 
 			transaction, 
 			order: [[ 'End', 'DESC' ]],
-			limit: MAX_FINALSCORES_LIMIT,
+			limit: MAX_FINALSCORES_LIMIT, 
 		}) 
 
 
@@ -228,6 +217,7 @@ router.get('/table', async (req, res) => {
 				Table_Archives, 
 				{
 					model: Players, 
+					required: true, 
 					through: {
 						where: { SessionID }, 
 						as: 'asso', 

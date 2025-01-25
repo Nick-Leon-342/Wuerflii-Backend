@@ -325,14 +325,6 @@ router.get('/all', async (req, res) => {
 			transaction, 
 			include: [{
 				model: Sessions, 
-				through: { attributes: [ 
-					'InputType', 
-					'Scores_Visible', 
-					'View', 
-					'View_Month', 
-					'View_Year', 
-					'View_CustomDate' 
-				] }, 
 				include: [{
 					model: Players, 
 					through: { 
@@ -457,6 +449,7 @@ router.post('/date', async (req, res) => {
 		const list_finalscores = await FinalScores.findAll({
 			include: [{
 				model: Players, 
+				required: true, 
 				through: {
 					where: { SessionID }, 
 					as: 'asso', 
