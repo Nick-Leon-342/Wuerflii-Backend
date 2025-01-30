@@ -61,8 +61,8 @@ Users.belongsToMany(Sessions, { through: Association__Users_And_Sessions, foreig
 Sessions.belongsToMany(Users, { through: Association__Users_And_Sessions, foreignKey: 'SessionID' })
 Sessions.belongsToMany(Players, { through: Association__Sessions_And_Players, foreignKey: 'SessionID' })
 
-Sessions.hasMany(Association__Players_And_FinalScores_With_Sessions, { foreignKey: 'SessionID', onDelete: 'CASCADE' })
-Association__Players_And_FinalScores_With_Sessions.belongsTo(Sessions, { foreignKey: 'SessionID' })
+Sessions.hasMany(Association__Players_And_FinalScores_With_Sessions, { as: 'association', foreignKey: 'SessionID', onDelete: 'CASCADE' })
+Association__Players_And_FinalScores_With_Sessions.belongsTo(Sessions, { as: 'session', foreignKey: 'SessionID' })
 
 
 
@@ -120,6 +120,7 @@ app.use('/user', require('./routes/User'))
 app.use('/player', require('./routes/Player'))
 app.use('/game', require('./routes/Game/Game'))
 app.use('/session', require('./routes/Session/Session'))
+app.use('/analytics', require('./routes/Analytics/Analytics'))
 
 
 
