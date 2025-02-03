@@ -15,7 +15,7 @@ const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
 const nodemailer		= require('nodemailer')
-const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD, EMAIL_OF_ADMIN, EMAIL_SMTP_REPLYTOEMAIL }			= require('./utils')
+const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD, EMAIL_OF_ADMIN, EMAIL_SMTP_REPLYTOEMAIL } = require('./utils')
 
 const { format } = require('date-fns')
 

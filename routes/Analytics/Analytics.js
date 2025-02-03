@@ -12,6 +12,9 @@ const {
 
 	sequelize, 
 } = require('../../models')
+const { filter_user } = require('../../Filter_DatabaseJSON')
+
+router.use('/session', require('./Analytics_Session'))
 
 
 
@@ -74,6 +77,7 @@ router.get('', async (req, res) => {
 		await transaction.commit()
 		res.json({ 
 			Counts: counts, 
+			User: filter_user(user), 
 			Total_Sessions: user.Sessions.length, 
 			Total_Games_Played: list_finalscores.length, 
 		})
