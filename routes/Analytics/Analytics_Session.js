@@ -85,52 +85,63 @@ router.get('', async (req, res) => {
 		}
 
 
-		const total = {  }
+		let draws = 0
+		const total = {}
 
 		
 		const counts = list_finalscores.reduce((acc, item) => {
+
 			const date = new Date(item.End)
 			const year = date.getFullYear()
 			const month = date.getMonth() + 1
 			const day = date.getDate()
 		
-			if(!acc[year]) acc[year] = { Total: 0, Winners: {} }
-			if(!acc[year][month]) acc[year][month] = { Total: 0, Winners: {} }
-			if(!acc[year][month][day]) acc[year][month][day] = { Total: 0, Winners: {} }
+			if(!acc[year]) acc[year] = { Total: 0, Winners: {}, Draws: 0 }
+			if(!acc[year][month]) acc[year][month] = { Total: 0, Winners: {}, Draws: 0 }
+			if(!acc[year][month][day]) acc[year][month][day] = { Total: 0, Winners: {}, Draws: 0 }
 		
 			acc[year][month][day].Total++
 			acc[year][month].Total++
 			acc[year].Total++
 
-			item.Players.forEach(player => {
-				if(player.asso.IsWinner) {
-					const id = player.id
+			const list_winners = item.Players.filter(player => player.asso.IsWinner)
 
-					// total
-					if(!total[id]) total[id] = 0
-					total[id]++
-		
-					// year
-					if(!acc[year].Winners[id]) acc[year].Winners[id] = 0
-					acc[year].Winners[id]++
-		
-					// month
-					if(!acc[year][month].Winners[id]) acc[year][month].Winners[id] = 0
-					acc[year][month].Winners[id]++
-		
-					// day
-					if(!acc[year][month][day].Winners[id]) acc[year][month][day].Winners[id] = 0
-					acc[year][month][day].Winners[id]++
-				}
+			if(list_winners.length > 1) {
+				draws++
+				acc[year].Draws++
+				acc[year][month].Draws++
+				acc[year][month][day].Draws++
+			}
+
+			list_winners.forEach(player => {
+				const id = player.id
+
+				// total
+				if(!total[id]) total[id] = 0
+				total[id]++
+	
+				// year
+				if(!acc[year].Winners[id]) acc[year].Winners[id] = 0
+				acc[year].Winners[id]++
+	
+				// month
+				if(!acc[year][month].Winners[id]) acc[year][month].Winners[id] = 0
+				acc[year][month].Winners[id]++
+	
+				// day
+				if(!acc[year][month][day].Winners[id]) acc[year][month][day].Winners[id] = 0
+				acc[year][month][day].Winners[id]++
 			})
 		
 			return acc
+			
 		}, {})
 
 
 		await transaction.commit()
 		res.json({ 
 			Total: total, 
+			Draws: draws, 
 			Counts: counts, 
 			User: filter_user(user), 
 			Total_Games_Played: list_finalscores.length, 
