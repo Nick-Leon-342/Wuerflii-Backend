@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
 
 
 
-
 		// Values for /session/preview
         View: {				// Selected view for finalscores-list
             type: DataTypes.ENUM([ 'show_month', 'show_year', 'show_custom_date', 'show_all' ]),
@@ -33,6 +32,27 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.DATE,
 			allowNull: false,
 		},
+
+
+
+		// Values for /session/analytics
+		Statistics_Show_Border: {	// If border should be visible
+			type: DataTypes.BOOLEAN, 
+			allowNull: false, 
+		}, 
+		Statistics_View: {			// Selected view for statistics
+			type: DataTypes.ENUM([ 'statistics_overall', 'statistics_year', 'statistics_month' ]), 
+			allowNull: false, 
+		}, 
+		Statistics_View_Month: {	// Which month to view
+			type: DataTypes.INTEGER,
+			validate: { isIn: [[ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]] },  
+			allowNull: false, 
+		}, 
+		Statistics_View_Year: {		// Which year to view
+			type: DataTypes.INTEGER, 
+			allowNull: false, 
+		}, 
 
 	})
 }

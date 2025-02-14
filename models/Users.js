@@ -42,5 +42,22 @@ module.exports = (sequelize, DataTypes) => {
 			allowNull: false, 
 		},
 
+
+
+		// Values for /analytics
+		Statistics_View: {			// Selected view for statistics
+			type: DataTypes.ENUM([ 'statistics_years', 'statistics_months_of_year', 'statistics_days_of_month' ]), 
+			allowNull: false, 
+		}, 
+		Statistics_View_Month: {	// Which month to view
+			type: DataTypes.INTEGER,
+			validate: { isIn: [[ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]] },  
+			allowNull: false, 
+		}, 
+		Statistics_View_Year: {		// Which year to view
+			type: DataTypes.INTEGER, 
+			allowNull: false, 
+		}, 
+
     })
 }

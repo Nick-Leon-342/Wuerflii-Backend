@@ -21,6 +21,11 @@ function filter_session(s) {
 		View_Month: s.Association__Users_And_Sessions.View_Month, 
 		View_Year: s.Association__Users_And_Sessions.View_Year, 
 		View_CustomDate: s.Association__Users_And_Sessions.View_CustomDate,
+
+		Statistics_Show_Border: s.Association__Users_And_Sessions.Statistics_Show_Border, 
+		Statistics_View: s.Association__Users_And_Sessions.Statistics_View, 
+		Statistics_View_Month: s.Association__Users_And_Sessions.Statistics_View_Month, 
+		Statistics_View_Year: s.Association__Users_And_Sessions.Statistics_View_Year, 
 	}
 
 }
@@ -149,10 +154,16 @@ function filter_user(u) {
 		id: u.id, 
 		Name: u.Name, 
 		DarkMode: u.DarkMode, 
+
 		Show_Session_Names: u.Show_Session_Names, 
 		Show_Session_Date: u.Show_Session_Date, 
+		
 		View_Sessions: u.View_Sessions, 
 		View_Sessions_Desc: u.View_Sessions_Desc, 
+
+		Statistics_View: u.Statistics_View, 
+		Statistics_View_Month: u.Statistics_View_Month, 
+		Statistics_View_Year: u.Statistics_View_Year, 
 	}
 
 }

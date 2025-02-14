@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_user } = require('../../Filter_DatabaseJSON')
+const { filter_player, filter_user, filter_session } = require('../../Filter_DatabaseJSON')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -144,6 +144,7 @@ router.get('', async (req, res) => {
 			Draws: draws, 
 			Counts: counts, 
 			User: filter_user(user), 
+			Session: filter_session(user.Sessions[0]), 
 			Total_Games_Played: list_finalscores.length, 
 			List_Players: user.Sessions[0].Players.map(player => filter_player(player))
 		})

@@ -114,6 +114,11 @@ router.post('', async (req, res) => {
 			View_Month: date.getMonth() + 1, 
 			View_Year: date.getFullYear(), 
 			View_CustomDate: date, 
+
+			Statistics_Show_Border: false, 
+			Statistics_View: 'statistics_overall', 
+			Statistics_View_Month: date.getMonth() + 1, 
+			Statistics_View_Year: date.getFullYear(), 
 		})
 
 
@@ -142,9 +147,14 @@ router.patch('', async (req, res) => {
 		View, 
 		View_Month, 
 		View_Year, 
-
+		
 		InputType, 
 		Scores_Visible, 
+
+		Statistics_Show_Border, 
+		Statistics_View, 
+		Statistics_View_Month, 
+		Statistics_View_Year, 
 	} = req.body
 	
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
@@ -156,6 +166,11 @@ router.patch('', async (req, res) => {
 	if(View_Year && !isInt(View_Year)) return res.status(400).send('View_Year invalid.')
 	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) return res.status(400).send('InputType invalid.')
 	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) return res.status(400).send('Scores_Visible invalid.')
+		
+	if(Statistics_Show_Border !== undefined && !isBoolean(Statistics_Show_Border)) return res.status(400).send('Statistics_Show_Border invalid.')
+	if(Statistics_View && (!isString(Statistics_View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics_View))) return res.status(400).send('Statistics_View invalid.')
+	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) return res.status(400).send('Statistics_View_Month invalid.')
+	if(Statistics_View_Year && !isInt(Statistics_View_Year)) return res.status(400).send('Statistics_View_Year invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -203,6 +218,11 @@ router.patch('', async (req, res) => {
 			View, 
 			View_Month, 
 			View_Year, 
+
+			Statistics_Show_Border, 
+			Statistics_View, 
+			Statistics_View_Month, 
+			Statistics_View_Year, 
 		}
 
 		await Association__Users_And_Sessions.update(json_updates_association, {
@@ -212,7 +232,7 @@ router.patch('', async (req, res) => {
 			}, 
 			transaction, 
 		})
-
+		
 
 		await transaction.commit()
 		res.sendStatus(204)
