@@ -70,7 +70,13 @@ router.get('', async (req, res) => {
 			return res.status(404).send('Players not found.')
 		}
 
+		const association = user.Sessions[0].Association__Users_And_Sessions
+		const statistics_view = association.Statistics_View
+		const statistics_view_month = association.Statistics_View_Month
+		const statistics_view_year = association.Statistics_View_Year
 
+		
+		const list_years = []
 		const list_finalscores = []
 		for(const association of user.Sessions[0].association) {
 			if(list_finalscores.filter(finalscore => finalscore.id === association.FinalScoreID).length > 0) continue
@@ -81,71 +87,79 @@ router.get('', async (req, res) => {
 					through: { as: 'asso' }
 				}]
 			})
+
+			const date = new Date(finalscore.End)
+			if(!list_years.includes(date.getFullYear())) list_years.push(date.getFullYear())
+			if(statistics_view === 'statistics_year' && date.getFullYear() !== statistics_view_year) continue
+			if(statistics_view === 'statistics_month' && (date.getFullYear() !== statistics_view_year || date.getMonth() !== statistics_view_month - 1)) continue
 			list_finalscores.push(finalscore)
 		}
 
 
-		let draws = 0
-		const total = {}
+		const json = { Games_Played: 0, Wins: {}, Draws: 0 }
+		const total = {
+			Total_Games_Played: list_finalscores.length, 
+			Total_Wins: {}, 
+			Total_Draws: 0, 
+			Data: {}, 
+		}
+
+		if(statistics_view === 'statistics_overall') list_years.forEach(year => total.Data[year] = structuredClone(json))
+		if(statistics_view === 'statistics_year') {
+			for(let month = 0; 12 >= month; month++) {
+				total.Data[month] = structuredClone(json)
+			}
+		}
+		if(statistics_view === 'statistics_month') {
+			const daysInMonth = new Date(statistics_view_year, statistics_view_month, 0).getDate()
+			const list_days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+			for(const day of list_days) {
+				total.Data[day] = structuredClone(json)
+			}
+		}
 
 		
-		const counts = list_finalscores.reduce((acc, item) => {
-
-			const date = new Date(item.End)
+		for(const final_score of list_finalscores) {
+			
+			const date = new Date(final_score.End)
 			const year = date.getFullYear()
 			const month = date.getMonth() + 1
 			const day = date.getDate()
-		
-			if(!acc[year]) acc[year] = { Total: 0, Winners: {}, Draws: 0 }
-			if(!acc[year][month]) acc[year][month] = { Total: 0, Winners: {}, Draws: 0 }
-			if(!acc[year][month][day]) acc[year][month][day] = { Total: 0, Winners: {}, Draws: 0 }
-		
-			acc[year][month][day].Total++
-			acc[year][month].Total++
-			acc[year].Total++
 
-			const list_winners = item.Players.filter(player => player.asso.IsWinner)
+			let time
+			if(statistics_view === 'statistics_overall') time = year
+			if(statistics_view === 'statistics_year') time = month
+			if(statistics_view === 'statistics_month') time = day
 
+			
+			total.Data[time].Games_Played++
+
+
+			const list_winners = final_score.Players.filter(player => player.asso.IsWinner)
 			if(list_winners.length > 1) {
-				draws++
-				acc[year].Draws++
-				acc[year][month].Draws++
-				acc[year][month][day].Draws++
+				total.Total_Draws++
+				total.Data[time].Draws++
 			}
 
 			list_winners.forEach(player => {
 				const id = player.id
 
-				// total
-				if(!total[id]) total[id] = 0
-				total[id]++
-	
-				// year
-				if(!acc[year].Winners[id]) acc[year].Winners[id] = 0
-				acc[year].Winners[id]++
-	
-				// month
-				if(!acc[year][month].Winners[id]) acc[year][month].Winners[id] = 0
-				acc[year][month].Winners[id]++
-	
-				// day
-				if(!acc[year][month][day].Winners[id]) acc[year][month][day].Winners[id] = 0
-				acc[year][month][day].Winners[id]++
+				if(!total.Total_Wins[id]) total.Total_Wins[id] = 0
+				total.Total_Wins[id]++
+
+				if(!total.Data[time].Wins[id]) total.Data[time].Wins[id] = 0
+				total.Data[time].Wins[id]++
 			})
-		
-			return acc
-			
-		}, {})
+
+		}
 
 
 		await transaction.commit()
 		res.json({ 
 			Total: total, 
-			Draws: draws, 
-			Counts: counts, 
+			List_Years: list_years, 
 			User: filter_user(user), 
 			Session: filter_session(user.Sessions[0]), 
-			Total_Games_Played: list_finalscores.length, 
 			List_Players: user.Sessions[0].Players.map(player => filter_player(player))
 		})
 
