@@ -26,7 +26,7 @@ router.delete('/', async (req, res) => {
 
 	// delete RefreshToken
 	await user.update({ RefreshToken: '' }).catch(err => {
-		console.log('DELETE /logout\n', err)
+		console.error('DELETE /logout\n', err)
 		return res.sendStatus(500)
 	})
 	

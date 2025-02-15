@@ -35,7 +35,7 @@ router.get('', (req, res) => {
 		res.json(filter_user(user))
 
 	}).catch(err => {
-		console.log('GET /user\n', err)
+		console.error('GET /user\n', err)
 		res.sendStatus(500)
 	})
 
@@ -143,7 +143,7 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('PATCH /user\n', err)
+		console.error('PATCH /user\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -213,7 +213,7 @@ router.delete('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('DELETE /user\n', err)
+		console.error('DELETE /user\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

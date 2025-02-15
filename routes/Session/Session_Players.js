@@ -51,7 +51,7 @@ router.get('', (req, res) => {
 
 
 	}).catch(err => {
-		console.log('GET /session/players\n', err)
+		console.error('GET /session/players\n', err)
 		res.sendStatus(500)
 	})
 
@@ -118,7 +118,7 @@ router.post('', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.log('POST /session/players\n', err)
+		console.error('POST /session/players\n', err)
 		res.sendStatus(500)
 	}
 
@@ -220,7 +220,7 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('PATCH /session/players\n', err)
+		console.error('PATCH /session/players\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

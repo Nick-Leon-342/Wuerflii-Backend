@@ -63,7 +63,7 @@ router.get('', async (req, res) => {
 
 
 	}).catch(err => {
-		console.log('GET /session/preview\n', err)
+		console.error('GET /session/preview\n', err)
 		res.sendStatus(500)
 	})
 
@@ -133,7 +133,7 @@ router.get('/all', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /session/preview/all\n', err)
+		console.error('GET /session/preview/all\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -260,7 +260,7 @@ router.get('/table', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /session/preview/table\n', err)
+		console.error('GET /session/preview/table\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

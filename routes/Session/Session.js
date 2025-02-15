@@ -60,7 +60,7 @@ router.get('', (req, res) => {
 
 
 	}).catch(err => {
-		console.log('GET /session\n', err)
+		console.error('GET /session\n', err)
 		res.sendStatus(500)
 	})
 
@@ -128,7 +128,7 @@ router.post('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('POST /session\n', err)
+		console.error('POST /session\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -239,7 +239,7 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('PATCH /session\n', err)
+		console.error('PATCH /session\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -312,7 +312,7 @@ router.delete('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('DELETE /session/select\n', err)
+		console.error('DELETE /session/select\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -373,7 +373,7 @@ router.get('/all', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /session/all\n', err)
+		console.error('GET /session/all\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -539,7 +539,7 @@ router.post('/date', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('POST /session/date\n', err)
+		console.error('POST /session/date\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

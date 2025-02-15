@@ -109,7 +109,7 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /game\n', err)
+		console.error('GET /game\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -319,7 +319,7 @@ router.post('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('POST /game\n', err)
+		console.error('POST /game\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -373,7 +373,7 @@ router.delete('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('DELETE /game\n', err)
+		console.error('DELETE /game\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -464,7 +464,7 @@ router.get('/end', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /game/end\n', err)
+		console.error('GET /game/end\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

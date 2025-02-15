@@ -151,7 +151,7 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('GET /analytics/session\n', err)
+		console.error('GET /analytics/session\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

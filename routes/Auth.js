@@ -87,7 +87,7 @@ router.post('/login', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.log('POST /auth/login\n', err)
+		console.error('POST /auth/login\n', err)
 		res.sendStatus(500)
 	}
 
@@ -134,7 +134,7 @@ router.post('/registration', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.log('POST /auth/registration\n', err)
+		console.error('POST /auth/registration\n', err)
 		res.sendStatus(500)
 	}
 

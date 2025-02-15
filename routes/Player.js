@@ -84,7 +84,7 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('PATCH /player\n', err)
+		console.error('PATCH /player\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
@@ -173,7 +173,7 @@ router.post('/input', async (req, res) => {
 
 
 	} catch(err) {
-		console.log('PATCH /player\n', err)
+		console.error('PATCH /player\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
