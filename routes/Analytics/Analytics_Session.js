@@ -76,7 +76,9 @@ router.get('', async (req, res) => {
 		const statistics_view_year = association.Statistics_View_Year
 
 		
-		const list_years = []
+		// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
+
+		const list_years = []	// List of all the years in which games were played
 		const list_finalscores = []
 		for(const association of user.Sessions[0].association) {
 			if(list_finalscores.filter(finalscore => finalscore.id === association.FinalScoreID).length > 0) continue
@@ -96,13 +98,24 @@ router.get('', async (req, res) => {
 		}
 
 
+		// __________________________________________________ Prepare response JSON __________________________________________________
+
 		const json = { Games_Played: 0, Wins: {}, Draws: 0 }
 		const total = {
 			Total_Games_Played: list_finalscores.length, 
 			Total_Wins: {}, 
 			Total_Draws: 0, 
+
+			Scores_Lowest: {}, 		// Lowest scores of each player
+			Scores_Average: {}, 	// Average scores of each player
+			Scores_Highest: {}, 	// Highest scores of each player
+			Scores_Total: {}, 		// Every score of each player combined
+			
 			Data: {}, 
 		}
+
+
+		// __________________________________________________ Init years/months/days of data with zeros __________________________________________________
 
 		if(statistics_view === 'statistics_overall') list_years.forEach(year => total.Data[year] = structuredClone(json))
 		if(statistics_view === 'statistics_year') {
@@ -118,7 +131,20 @@ router.get('', async (req, res) => {
 			}
 		}
 
+
+		// __________________________________________________ Init Scores_... for each player with zero __________________________________________________
+
+		for(const player of user.Sessions[0].Players) {
+			const id = player.id
+
+			total.Scores_Lowest[id] = 0
+			total.Scores_Highest[id] = 0
+			total.Scores_Total[id] = 0
+		}
+
 		
+		// __________________________________________________ Iterate through finalscores and calculate scores, wins etc. __________________________________________________
+
 		for(const final_score of list_finalscores) {
 			
 			const date = new Date(final_score.End)
@@ -126,31 +152,55 @@ router.get('', async (req, res) => {
 			const month = date.getMonth() + 1
 			const day = date.getDate()
 
+
+			// Init the selected time -> selected year or month or day
 			let time
 			if(statistics_view === 'statistics_overall') time = year
 			if(statistics_view === 'statistics_year') time = month
 			if(statistics_view === 'statistics_month') time = day
 
 			
+			// Increase games_played count in specific time
 			total.Data[time].Games_Played++
 
 
+			// Calculate if game was a draw
 			const list_winners = final_score.Players.filter(player => player.asso.IsWinner)
 			if(list_winners.length > 1) {
 				total.Total_Draws++
 				total.Data[time].Draws++
 			}
 
-			list_winners.forEach(player => {
+
+			//
+			final_score.Players.forEach(player => {
 				const id = player.id
 
-				if(!total.Total_Wins[id]) total.Total_Wins[id] = 0
-				total.Total_Wins[id]++
+				// Increase wins of players that won
+				if(player.asso.IsWinner) {
+					// Increase total wins
+					if(!total.Total_Wins[id]) total.Total_Wins[id] = 0
+					total.Total_Wins[id]++
+	
+					// Increase wins of the year/month/day
+					if(!total.Data[time].Wins[id]) total.Data[time].Wins[id] = 0
+					total.Data[time].Wins[id]++
+				}
 
-				if(!total.Data[time].Wins[id]) total.Data[time].Wins[id] = 0
-				total.Data[time].Wins[id]++
+
+				const score = player.asso.Score
+				if(total.Scores_Lowest[id] > score || total.Scores_Lowest[id] === 0) total.Scores_Lowest[id] = score
+				if(total.Scores_Highest[id] < score) total.Scores_Highest[id] = score
+				total.Scores_Total[id] = total.Scores_Total[id] + score
+
 			})
 
+		}
+
+
+		// Calculate average scores
+		for(const player of user.Sessions[0].Players) {
+			total.Scores_Average[player.id] = Math.round(total.Scores_Total[player.id] / total.Total_Games_Played)
 		}
 
 
@@ -160,7 +210,7 @@ router.get('', async (req, res) => {
 			List_Years: list_years, 
 			User: filter_user(user), 
 			Session: filter_session(user.Sessions[0]), 
-			List_Players: user.Sessions[0].Players.map(player => filter_player(player))
+			List_Players: user.Sessions[0].Players.map(player => filter_player(player)).sort(((a, b) => a.Order_Index - b.Order_Index))
 		})
 
 
