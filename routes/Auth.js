@@ -120,7 +120,7 @@ router.post('/registration', async (req, res) => {
 			View_Sessions: 'Last_Played', 
 			View_Sessions_Desc: true, 
 
-			Statistics_View: 'statistics_years', 
+			Statistics_View: 'statistics_overall', 
 			Statistics_View_Month: new Date().getMonth() + 1, 
 			Statistics_View_Year: new Date().getFullYear(), 
 		}, { transaction })
