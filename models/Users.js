@@ -46,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
 
 		// Values for /analytics
 		Statistics_View: {			// Selected view for statistics
-			type: DataTypes.ENUM([ 'statistics_years', 'statistics_months_of_year', 'statistics_days_of_month' ]), 
+			type: DataTypes.ENUM([ 'statistics_overall', 'statistics_year', 'statistics_month' ]), 
 			allowNull: false, 
 		}, 
 		Statistics_View_Month: {	// Which month to view

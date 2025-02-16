@@ -69,7 +69,7 @@ router.patch('', async (req, res) => {
 	if(View_Sessions && !isString(View_Sessions) && ['Created', 'Last_Played', 'Name', 'Players'].includes(View_Sessions)) return res.status(400).send('View_Sessions invalid.')
 	if(View_Sessions_Desc !== undefined && !isBoolean(View_Sessions_Desc)) return res.status(400).send('View_Sessions_Desc invalid.')
 
-	if(Statistics_View && (!isString(Statistics_View) || !['statistics_years', 'statistics_months_of_year', 'statistics_days_of_month'].includes(Statistics_View))) return res.status(400).send('Statistics_View invalid.')
+	if(Statistics_View && (!isString(Statistics_View) || !['statistics_overall', 'statistics_year', 'statistics_month'].includes(Statistics_View))) return res.status(400).send('Statistics_View invalid.')
 	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) return res.status(400).send('Statistics_View_Month invalid.')
 	if(Statistics_View_Year && !isInt(Statistics_View_Year)) return res.status(400).send('Statistics_View_Year invalid.')
 
