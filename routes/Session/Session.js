@@ -143,6 +143,7 @@ router.patch('', async (req, res) => {
 
 		Name, 
 		Color, 
+		Columns, 
 
 		View, 
 		View_Month, 
@@ -160,6 +161,7 @@ router.patch('', async (req, res) => {
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(Name && !isString(Name)) return res.status(400).send('Name invalid.')
 	if(Color && !isColor(Color)) return res.status(400).send('Color invalid.')
+	if(Columns && !isInt(Columns)) return res.status(400).send('Columns invalid.')
 
 	if(View && (!isString(View) || !['show_month', 'show_year', 'show_custom_date', 'show_all'].includes(View))) return res.status(400).send('View invalid.')
 	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) return res.status(400).send('View_Month invalid.')
@@ -202,12 +204,12 @@ router.patch('', async (req, res) => {
 
 
 		// Update session
-		const json = {}
-		if(Name) json.Name = Name
-		if(Color) json.Color = Color
-		if(Scores_Visible !== null && Scores_Visible !== undefined) json.Scores_Visible = Scores_Visible
-
-		await user.Sessions[0].update(json, { transaction })
+		await user.Sessions[0].update({
+			Name, 
+			Color, 
+			Columns, 
+			Scores_Visible, 
+		}, { transaction })
 
 
 		// Update association if there are some variables to change
