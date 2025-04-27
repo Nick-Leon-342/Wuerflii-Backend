@@ -181,9 +181,9 @@ try_to_connect_to_database_with_retry().then(() => {
 			}
 		})
 		await email_transporter.sendMail({
-			from: `"Kniffel Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
+			from: `"Wuerflii Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
 			to: EMAIL_OF_ADMIN, 
-			subject: `Kniffel - Server can't connect to database.`, 
+			subject: `Wuerflii - Server can't connect to database.`, 
 			text: `Server couldn't connect to database.\nTimestamp: ${format(new Date(), 'HH:mm dd.MM.yyyy')}`, 
 		}).then(() => {
 			console.error('Done')

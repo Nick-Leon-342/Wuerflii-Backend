@@ -30,33 +30,27 @@ router.use('/players', require('./Session_Players'))
 router.get('', (req, res) => {
 
 	const { UserID } = req
-	const { session_id } = req.query
+	const SessionID = +req.query.session_id
 
-	if(session_id && !+session_id) return res.status(400).send('SessionID invalid.')
-
-
-	// Init sequelize/sql query
-	const json = { where: { id: UserID }}
-	if(session_id) json.include = [{
-		model: Sessions, 
-		where: { id: +session_id }, 
-	}]
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
 
 
-	Users.findOne(json).then(user => {
+	Users.findByPk(UserID, {
+		include: [{
+			model: Sessions, 
+			where: { id: SessionID }, 
+		}]
+	}).then(user => {
 
 
-		if(!user) return res.status(404).send('User not found.')
-		if(session_id && !user.Sessions[0]) return res.status(404).send('Session not found.')
+		// Check if user exists
+		if(!user) return res.sttus(404).send('User not found.')
 
-		const res_json = {
-			MAX_COLUMNS,
-			MAX_LENGTH_SESSION_NAME, 
-			User: filter_user(user), 
-		}
-		if(session_id) res_json.Session = filter_session(user.Sessions[0])
+		// Check if session exists
+		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
 
-		res.json(res_json)
+		// Response
+		res.json(filter_session(user.Sessions[0]))
 
 
 	}).catch(err => {
@@ -103,7 +97,7 @@ router.post('', async (req, res) => {
 
 		
 		// Create association
-		await Association__Users_And_Sessions.create({
+		const association = await Association__Users_And_Sessions.create({
 			UserID, 
 			SessionID: session.id, 
 
@@ -122,9 +116,12 @@ router.post('', async (req, res) => {
 		})
 
 
-		// Save changes to database and send response
+		// Response
 		await transaction.commit()
-		res.json({ SessionID: session.id })
+		res.json(filter_session({
+			...session.dataValues, 
+			Association__Users_And_Sessions: association, 
+		}))
 
 
 	} catch(err) {
@@ -324,6 +321,27 @@ router.delete('', async (req, res) => {
 
 
 
+router.get('/env', (req, res) => {
+
+	const { UserID } = req
+
+	Users.findByPk(UserID).then(user => {
+
+
+		if(!user) return res.status(404).send('User not found.')
+
+		res.json({
+			MAX_COLUMNS,
+			MAX_LENGTH_SESSION_NAME, 
+		})
+
+
+	}).catch(err => {
+		console.error('GET /session\n', err)
+		res.sendStatus(500)
+	})
+
+})
 
 router.get('/all', async (req, res) => {
 
@@ -358,20 +376,17 @@ router.get('/all', async (req, res) => {
 			order: [[ { model: Sessions }, ...getOrder(tmp_user) ]]
 		})
 
-		const List_Sessions = []
+		const list_sessions = []
 		for(const session of user.Sessions) {
 			const tmp_session = filter_session(session)
 			tmp_session.List_Players = sort__list_players(session.Players).map(player => filter_player(player))
-			List_Sessions.push(tmp_session)
+			list_sessions.push({ ...tmp_session, Checkbox_Checked: false })
 		}
 
 
 		await transaction.commit()
 
-		res.json({
-			User: filter_user(user), 
-			List_Sessions, 
-		})
+		res.json(list_sessions)
 
 
 	} catch(err) {

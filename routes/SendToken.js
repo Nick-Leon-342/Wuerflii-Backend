@@ -58,7 +58,7 @@ module.exports = async function sendToken({
 
 
 	// Send refreshtoken as cookie and accesstoken as response in json
-	res.cookie('Kniffel_RefreshToken', refreshToken, { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
+	res.cookie('Wuerflii_RefreshToken', refreshToken, { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 	res.json({ accessToken })
 
 }

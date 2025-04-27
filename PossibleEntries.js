@@ -15,7 +15,7 @@ const possibleEntries_bottomTable = {
     2: [ 0, 25, 50 ], //Full-House
     3: [ 0, 30, 40, 50 ], //Kleine Straße
     4: [ 0, 40, 50  ], //Große Straße
-    5: [ 0, 50  ], //Kniffel
+    5: [ 0, 50  ], //Wuerflii
     6: [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ], //Chance
 }
 

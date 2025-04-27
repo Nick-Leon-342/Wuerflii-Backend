@@ -24,13 +24,15 @@ const {
 router.get('', (req, res) => {
 
 	const { UserID } = req
-	const { session_id } = req.query
+	const SessionID = +req.query.session_id
+
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
 
 
 	Users.findByPk(UserID, { 
 		include: [{
 			model: Sessions, 
-			where: { id: session_id }, 
+			where: { id: SessionID }, 
 			include: [{
 				model: Players, 
 				through: { as: 'asso' }, 
@@ -40,14 +42,9 @@ router.get('', (req, res) => {
 
 
 		if(!user) return res.status(404).send('User not found.')
-		if(session_id && !user.Sessions[0]) return res.status(404).send('Session not found.')
+		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
 
-		res.json({
-			MAX_PLAYERS,
-			MAX_LENGTH_PLAYER_NAME, 
-			User: filter_user(user), 
-			List_Players: sort__list_players(user.Sessions[0].Players).map(player => filter_player(player))
-		})
+		res.json(sort__list_players(user.Sessions[0].Players).map(filter_player))
 
 
 	}).catch(err => {

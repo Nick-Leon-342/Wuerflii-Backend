@@ -1,19 +1,17 @@
 
-# Kniffel - Backend
+# Wuerflii - Backend
 ___
 
 
 Use `npm run backend` to start the dev-server.
 
 Don't forget to set .env file. For some explanation or a template look at .env.sample.
-You could add a docker-compose file like this:
+You could add a docker compose file like this:
 
 ```
-version: '3.8'
-
 services:
-  kniffel-backend:
-    container_name: kniffel-backend
+  wuerflii-backend:
+    container_name: wuerflii-backend
     restart: unless-stopped
     build:
       context: .

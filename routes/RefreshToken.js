@@ -14,8 +14,8 @@ const jwt = require('jsonwebtoken')
 router.get('/', async (req, res) => {
 
     const cookies = req.cookies
-	if (!cookies?.Kniffel_RefreshToken) return res.status(401).send('No cookie found.')				//check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)
-	const refreshToken = cookies.Kniffel_RefreshToken
+	if (!cookies?.Wuerflii_RefreshToken) return res.status(401).send('No cookie found.')				//check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)
+	const refreshToken = cookies.Wuerflii_RefreshToken
 
 	const user = await Users.findOne({ where: { RefreshToken: refreshToken } })
 	if(!user) return res.status(403).send('User not found.')

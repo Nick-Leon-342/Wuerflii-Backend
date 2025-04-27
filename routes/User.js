@@ -208,7 +208,7 @@ router.delete('', async (req, res) => {
 
 
 		await transaction.commit()
-		res.clearCookie('Kniffel_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
+		res.clearCookie('Wuerflii_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
 		res.sendStatus(204)
 
 
