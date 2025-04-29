@@ -4,9 +4,9 @@ const express = require('express')
 const router = express.Router()
 
 const { sort__list_players } = require('../../Functions')
+const { filter_player } = require('../../Filter_DatabaseJSON')
 const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
 const { isArray, isString, isColor, isInt } = require('../../IsDataType')
-const { filter_player, filter_user } = require('../../Filter_DatabaseJSON')
 
 const { 
 	Association__Sessions_And_Players, 
@@ -56,6 +56,8 @@ router.get('', (req, res) => {
 
 router.post('', async (req, res) => {
 
+	// ____________________________________________________________________________________________________ Add players to session (first time) ____________________________________________________________________________________________________
+
 	const { UserID } = req
 	const { SessionID, List_Players } = req.body
 
@@ -70,14 +72,17 @@ router.post('', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, {
 			transaction, 
 			include: [{
 				model: Sessions, 
+				required: false, 
 				where: { id: SessionID }, 
+				include: Players, 
 			}], 
 		})
-
 
 		// Check if user exists
 		if(!user) {
@@ -85,32 +90,47 @@ router.post('', async (req, res) => {
 			return res.status(404).send('User not found.')
 		}
 
-
 		// Check if session exists
 		if(!user.Sessions[0]) {
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
+
+		// Check if session already has players
+		if(user.Sessions[0].Players.length > 0) {
+			await transaction.rollback()
+			return res.status(409).send('Players already exist.')
+		}
 		
 
+		// __________________________________________________ Create players __________________________________________________
+
+		const list_players = []
 		for(let i = 0; List_Players.length > i; i++) {
 			const player = await Players.create({ 
 				Name: List_Players[i].Name, 
 				Color: List_Players[i].Color, 
 			}, { transaction })
 			
-			await Association__Sessions_And_Players.create({
+			const asso = await Association__Sessions_And_Players.create({
 				SessionID: user.Sessions[0].id, 
 				PlayerID: player.id, 
 
 				Gnadenwurf_Used: false, 
 				Order_Index: i, 
 			}, { transaction })
+
+			list_players.push(filter_player({
+				...player.dataValues, 
+				asso, 
+			}))
 		}
 
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
-		res.sendStatus(204)
+		res.json({ List_Players: list_players })
 
 
 	} catch(err) {

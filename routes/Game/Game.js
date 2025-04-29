@@ -29,6 +29,8 @@ const {
 	filter_user,
 } = require('../../Filter_DatabaseJSON')
 
+router.use('/table_columns', require('./Game__Table_Columns'))
+
 
 
 
