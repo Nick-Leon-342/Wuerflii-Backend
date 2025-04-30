@@ -119,6 +119,7 @@ app.use(require('./middleware/verifyJWT'))
 app.use('/user', require('./routes/User'))
 app.use('/player', require('./routes/Player'))
 app.use('/game', require('./routes/Game/Game'))
+app.use('/finalscore', require('./routes/FinalScore'))
 app.use('/session', require('./routes/Session/Session'))
 app.use('/analytics', require('./routes/Analytics/Analytics'))
 
@@ -126,7 +127,7 @@ app.use('/analytics', require('./routes/Analytics/Analytics'))
 
 
 
-// handling page not found (404)
+// handling requested api not found (404)
 app.all('*', (req, res) => {
 	res.sendStatus(404)
 })

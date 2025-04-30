@@ -162,6 +162,8 @@ router.patch('', async (req, res) => {
 	try {
 
 		
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, {
 			transaction, 
 			include: [{
@@ -174,20 +176,17 @@ router.patch('', async (req, res) => {
 			}]
 		})
 
-
 		// Check if user exists
 		if(!user) {
 			await transaction.rollback()
 			return res.status(404).send('User not found.')
 		}
-		
 
 		// Check if session exists
 		if(!user.Sessions[0]){
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
-
 
 		// Check if players exist
 		if(!user.Sessions[0].Players[0]) {
@@ -196,7 +195,7 @@ router.patch('', async (req, res) => {
 		}
 
 
-		// ____________________ Check if every player exists in both lists ____________________
+		// __________________________________________________ Check if every player exists in both lists __________________________________________________
 
 		const tmp_list_players = user.Sessions[0].Players
 		if(
@@ -208,7 +207,7 @@ router.patch('', async (req, res) => {
 		}
 
 
-		// ____________________ Update players ____________________
+		// __________________________________________________ Update players __________________________________________________
 
 		for(let i = 0; List_Players.length > i; i++) {
 			const p = List_Players[i]
@@ -232,6 +231,9 @@ router.patch('', async (req, res) => {
 			}
 		}
 
+
+		// __________________________________________________ Response __________________________________________________
+		
 		await transaction.commit()
 		res.sendStatus(204)
 

@@ -3,7 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
+const { filter_player, filter_session } = require('../../Filter_DatabaseJSON')
 const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
 const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
 const { sort__list_players } = require('../../Functions')
@@ -38,13 +38,14 @@ router.get('', (req, res) => {
 	Users.findByPk(UserID, {
 		include: [{
 			model: Sessions, 
+			required: false, 
 			where: { id: SessionID }, 
 		}]
 	}).then(user => {
 
 
 		// Check if user exists
-		if(!user) return res.sttus(404).send('User not found.')
+		if(!user) return res.status(404).send('User not found.')
 
 		// Check if session exists
 		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
@@ -75,6 +76,8 @@ router.post('', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, { transaction })
 
 		// Check if user exists
@@ -84,7 +87,8 @@ router.post('', async (req, res) => {
 		}
 
 
-		// Create session
+		// __________________________________________________ Create session __________________________________________________
+
 		const session = await Sessions.create({
 			UserID, 
 
@@ -93,10 +97,11 @@ router.post('', async (req, res) => {
 			Columns, 
 			View_List_Years: [], 
 			LastPlayed: date, 
-		})
+		}, { transaction })
 
 		
-		// Create association
+		// __________________________________________________ Create association __________________________________________________
+
 		const association = await Association__Users_And_Sessions.create({
 			UserID, 
 			SessionID: session.id, 
@@ -113,10 +118,11 @@ router.post('', async (req, res) => {
 			Statistics_View: 'statistics_overall', 
 			Statistics_View_Month: date.getMonth() + 1, 
 			Statistics_View_Year: date.getFullYear(), 
-		})
+		}, { transaction })
 
 
-		// Response
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
 		res.json(filter_session({
 			...session.dataValues, 
@@ -321,6 +327,7 @@ router.delete('', async (req, res) => {
 
 
 
+
 router.get('/env', (req, res) => {
 
 	const { UserID } = req
@@ -422,7 +429,7 @@ function getOrder(user) {
 
 // __________________________________________________ New CustomDate __________________________________________________
 
-router.post('/date', async (req, res) => {
+router.patch('/date', async (req, res) => {
 
 	const { UserID } = req
 	const { SessionID, View_CustomDate } = req.body
@@ -435,18 +442,17 @@ router.post('/date', async (req, res) => {
 	try {
 
 
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		// __________________________________________________ User __________________________________________________
+
+		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
+				required: false, 
 				where: { id: SessionID }, 
-				include: [ Players ]
+				include: Players
 			}], 
 		})
-
-
-		// ____________________ Check if everything exists ____________________
 
 		// Check if user exists
 		if(!user) {
@@ -454,13 +460,11 @@ router.post('/date', async (req, res) => {
 			return res.status(404).send('User not found.')
 		}
 
-
 		// Check if session exists
 		if(!user.Sessions[0]) {
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
-
 
 		// Check if players exist
 		if(!user.Sessions[0].Players[0]) {
@@ -469,7 +473,7 @@ router.post('/date', async (req, res) => {
 		}
 
 
-		// ____________________ Update session with customdate ____________________
+		// __________________________________________________ Update session with customdate __________________________________________________
 
 		const session = user.Sessions[0]
 		await Association__Users_And_Sessions.update({ View_CustomDate }, { 
@@ -481,7 +485,7 @@ router.post('/date', async (req, res) => {
 		})
 
 
-		// ____________________ Update scores of finalscores ____________________
+		// __________________________________________________ Update scores of finalscores __________________________________________________
 
 		const list_finalscores = await FinalScores.findAll({
 			include: [{
@@ -551,12 +555,14 @@ router.post('/date', async (req, res) => {
 		}
 
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
 		res.sendStatus(204)
 
 
 	} catch(err) {
-		console.error('POST /session/date\n', err)
+		console.error('PATCH /session/date\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}

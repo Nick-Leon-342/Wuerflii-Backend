@@ -3,16 +3,11 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session, filter_finalscore, filter_user, filter_table_archive } = require('../../Filter_DatabaseJSON')
+const { filter_player, filter_session, filter_user } = require('../../Filter_DatabaseJSON')
 const { sort__list_players } = require('../../Functions')
-const { MAX_FINALSCORES_LIMIT } = require('../../utils')
 const { isInt } = require('../../IsDataType')
 
-const { Op } = require('sequelize')
-
 const { 
-	Association__Players_And_FinalScores_With_Sessions, 
-
 	FinalScores, 
 	Players, 
 	Sessions, 
@@ -31,7 +26,7 @@ router.get('', async (req, res) => {
 	const { UserID } = req
 	const SessionID = +req.query.session_id
 
-	if(!isInt(SessionID)) return res.sendStatus(400)
+	if(!isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 
 
 	Users.findByPk(UserID, { 
@@ -58,7 +53,7 @@ router.get('', async (req, res) => {
 			Session: filter_session(session), 
 			List_Players: sort__list_players(session.Players).map(p => filter_player(p)), 
 			User: filter_user(user), 
-			Exists: Boolean(session.CurrentGameStart), 
+			Exists: Boolean(session.CurrentGameStart), // TODO diese GET-Funktion löschen, aber Exists durch eine Abfrage bei SessionPreview implementieren oder so
 		})
 
 
@@ -68,114 +63,6 @@ router.get('', async (req, res) => {
 	})
 
 })
-
-router.get('/all', async (req, res) => {
-
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const offset_block = +req.query.offset_block
-
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
-	if(!offset_block) return res.status(400).send('Offset invalid.')
-
-
-	const transaction = await sequelize.transaction()
-	try {
-
-
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				where: { id: SessionID }, 
-			}]
-		})
-
-		
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		
-		const list_finalscores = await FinalScores.findAndCountAll({
-			where: getQuery(user.Sessions[0]),  
-			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
-			include: [{
-				model: Players, 
-				required: true, 
-				through: {
-					where: { SessionID }, 
-					as: 'asso', 
-				}
-			}], 
-			transaction, 
-			order: [[ 'End', 'DESC' ]],
-			limit: MAX_FINALSCORES_LIMIT, 
-		}) 
-
-
-		await transaction.commit()
-
-		res.json({ 
-			Has_More: list_finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
-			List: list_finalscores.rows.map(f => filter_finalscore(f)), 
-		})
-
-
-	} catch(err) {
-		console.error('GET /session/preview/all\n', err)
-		await transaction.rollback()
-		res.sendStatus(500)
-	}
-
-})
-
-function getQuery( session ) {
-
-	const asso = session.Association__Users_And_Sessions
-	
-	const year = asso.View_Year
-	const month = asso.View_Month
-	
-	const startOfYear = new Date(`${year}-01-01`)
-	const endOfYear = new Date(`${year}-12-31 23:59:59`)
-
-	const startOfMonth = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
-	const endOfMonth = new Date(year, month, 0, 23, 59, 59)
-
-	switch(asso.View) {
-		case 'show_month':
-			return { End: { [Op.between]: [ startOfMonth, endOfMonth ] } }
-
-		case 'show_year':
-			return { End: { [Op.between]: [ startOfYear, endOfYear ] } }
-
-		case 'show_custom_date':
-			return { End: { [Op.gte]: new Date(asso.View_CustomDate) } }
-
-		default: 
-			return {}
-	}
-
-}
-
-
-
-
-
-
-
-// __________________________________________________ Preview - Table __________________________________________________
 
 router.get('/table', async (req, res) => {
 

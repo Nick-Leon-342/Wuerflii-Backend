@@ -6,6 +6,7 @@ const router = express.Router()
 const { isInt } = require('../../IsDataType')
 const CreateNewGame = require('../../CreateNewGame')
 const { sort__list_players } = require('../../Functions')
+const { filter_table_column } = require('../../Filter_DatabaseJSON')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -19,16 +20,6 @@ const {
 	sequelize, 
 } = require('../../models')
 
-const { 
-	filter_player,
-	filter_session,
-	filter_finalscore,
-
-	filter_table_column, 
-
-	filter_user,
-} = require('../../Filter_DatabaseJSON')
-
 router.use('/table_columns', require('./Game__Table_Columns'))
 
 
@@ -40,14 +31,16 @@ router.get('', async (req, res) => {
 	const { UserID } = req
 	const SessionID = +req.query.session_id
 	
-	if(!SessionID) return res.sendStatus(400)
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
 
 
 	const transaction = await sequelize.transaction()
 	try {
 
 
-		let user = await Users.findOne({ 
+		// __________________________________________________ User __________________________________________________
+
+		const user = await Users.findByPk(UserID, { 
 			where: { id: UserID }, 
 			include: [{
 				model: Sessions, 
@@ -67,13 +60,11 @@ router.get('', async (req, res) => {
 			return res.status(404).send('User not found.')
 		}
 
-
 		// Check if session exists
 		if(!user.Sessions[0]) {
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
-
 
 		// Check if players exist
 		if(!user.Sessions[0].Players[0]) {
@@ -82,11 +73,11 @@ router.get('', async (req, res) => {
 		}
 
 
-		// Create new game if it doesn't exist
-		let list_players
-		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
+		// __________________________________________________ Create new game if it doesn't exist __________________________________________________
 
-			list_players = await CreateNewGame({
+		if(!user.Sessions[0].CurrentGameStart) {
+
+			await CreateNewGame({
 				List_Players: sort__list_players(user.Sessions[0].Players), 
 				Columns: user.Sessions[0].Columns, 
 				Session: user.Sessions[0], 
@@ -97,17 +88,10 @@ router.get('', async (req, res) => {
 		}
 
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
-		res.json({
-			User: filter_user(user), 
-			Session: filter_session(user.Sessions[0]),
-			List_Players: list_players || sort__list_players(user.Sessions[0].Players).map(player => {
-				return {
-					...filter_player(player), 
-					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
-				}
-			}), 
-		})
+		res.json(204)
 
 
 	} catch(err) {
@@ -120,43 +104,35 @@ router.get('', async (req, res) => {
 
 router.post('', async (req, res) => {
 	
+	// ____________________________________________________________________________________________________ Game has been finished or surrendered ____________________________________________________________________________________________________
+
 	const { UserID } = req
 	const { SessionID, Surrendered_PlayerID } = req.body
 	const date = new Date()
 
-	
-	if(
-		!SessionID || !isInt(SessionID) || 
-		(Surrendered_PlayerID && !isInt(Surrendered_PlayerID))
-	) return res.sendStatus(400)
+	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
+	if(Surrendered_PlayerID && !isInt(Surrendered_PlayerID)) return res.status(400).send('Surrendered_PlayerID invalid.')
 
 
 	const transaction = await sequelize.transaction()
 	try {
 
 
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		// __________________________________________________ User __________________________________________________
+
+		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
 				where: { id: SessionID }, 
-				include: [
-					{
-						model: Players, 
-						through: { as: 'asso' }, 
-						include: Table_Columns
-					}, 
-				]
+				include: [{
+					model: Players, 
+					through: { as: 'asso' }, 
+					include: Table_Columns
+				}]
 			}], 
-			order: [
-				[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ], 
-			]
+			order: [[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]], 
 		})
-
-		
-		
-		// __________________________________________________ Check if everything exists __________________________________________________
 
 		// Check if user exists
 		if(!user) {
@@ -164,13 +140,11 @@ router.post('', async (req, res) => {
 			return res.status(404).send('User not found.')
 		}
 
-
 		// Check if session exists
 		if(!user.Sessions[0]) {
 			await transaction.rollback()
 			return res.status(404).send('Session not found.')
 		}
-
 
 		// Check if players exist
 		if(!user.Sessions[0].Players[0]) {
@@ -178,13 +152,11 @@ router.post('', async (req, res) => {
 			return res.status(404).send('Players not found.')
 		}
 
-
 		// Check if table_columns exist
 		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
 			await transaction.rollback()
 			return res.status(404).send('Table_Columns not found.')
 		}
-
 
 
 		// __________________________________________________ Check if some entries are missing __________________________________________________
@@ -212,7 +184,6 @@ router.post('', async (req, res) => {
 				}
 			}], 
 		})
-
 
 
 		// __________________________________________________ Create finalscore and tablearchive __________________________________________________
@@ -245,7 +216,6 @@ router.post('', async (req, res) => {
 			CurrentGameStart: null, 
 			View_List_Years: tmp_view_list_years, 
 		}, { transaction })
-
 
 
 		// __________________________________________________ Calculate scores and winner __________________________________________________
@@ -306,7 +276,6 @@ router.post('', async (req, res) => {
 		}
 
 
-
 		// __________________________________________________ Destroy/Delete current game __________________________________________________
 
 		for(const player of list_players) {
@@ -315,6 +284,8 @@ router.post('', async (req, res) => {
 			}
 		}
 
+
+		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
 		res.json({ FinalScoreID: created_final_score.id })
@@ -333,32 +304,43 @@ router.delete('', async (req, res) => {
 	const { UserID } = req
 	const SessionID = +req.query.session_id
 
-	if(!SessionID) return res.sendStatus(400)
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
 
 
 	const transaction = await sequelize.transaction()
 	try {
 
 
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		// __________________________________________________ User __________________________________________________
+
+		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
+				required: false, 
 				where: { id: SessionID }, 
-				include: [
-					{
-						model: Players, 
-						include: Table_Columns
-					}, 
-				]
+				include: [{
+					model: Players, 
+					required: false, 
+					include: Table_Columns
+				}]
 			}], 
 		})
 
-		if(!user || !user.Sessions[0]) {
+		// Check if user exists
+		if(!user) {
 			await transaction.rollback()
-			return res.sendStatus(404)
+			return res.status(404).send('User not found.')
 		}
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// __________________________________________________ Delete game __________________________________________________
 
 		await user.Sessions[0].update({ CurrentGameStart: null }, { transaction })
 
@@ -369,104 +351,15 @@ router.delete('', async (req, res) => {
 			}
 		}
 
-		await transaction.commit()
 
+		// __________________________________________________ Response __________________________________________________
+
+		await transaction.commit()
 		res.sendStatus(204)
 
 
 	} catch(err) {
 		console.error('DELETE /game\n', err)
-		await transaction.rollback()
-		res.sendStatus(500)
-	}
-
-})
-
-
-
-
-
-router.get('/end', async (req, res) => {
-
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const FinalScoreID = +req.query.finalscore_id
-
-	if(!SessionID || !FinalScoreID) return res.sendStatus(400)
-
-
-	const transaction = await sequelize.transaction()
-	try {
-
-		
-		// Get user and session
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				where: { id: SessionID }, 
-				include: [{
-					model: Players, 
-					through: { 
-						as: 'asso', 
-						attributes: [ 'Order_Index' ], 
-					}, 
-				}]
-			}]
-		})
-
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-
-
-		const finalscore = await FinalScores.findByPk(FinalScoreID, {
-			transaction, 
-			include: [{
-				model: Players, 
-				required: true, 
-				through: {
-					where: { SessionID }, 
-					as: 'asso', 
-				}
-			}], 
-		})
-
-
-		// Check if finalscore exists
-		if(!finalscore) {
-			await transaction.rollback()
-			return res.status(404).send('FinalScore not found.')
-		}
-
-
-		await transaction.commit()
-		res.json({ 
-			User: filter_user(user), 
-			FinalScore: filter_finalscore(finalscore), 
-			List_Players: sort__list_players(user.Sessions[0].Players).map(player => filter_player(player)), 
-		})
-
-
-	} catch(err) {
-		console.error('GET /game/end\n', err)
 		await transaction.rollback()
 		res.sendStatus(500)
 	}
