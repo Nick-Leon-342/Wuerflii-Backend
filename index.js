@@ -141,7 +141,7 @@ async function try_to_connect_to_database_with_retry() {
 		console.log(`Database connection - Try ${i} of ${DB_RETRIES}.`)
         try {
             await sequelize.authenticate()		// Check connection to database
-            console.log('Connected to database!')
+            console.log('Connected to database!\nPlease wait for HTTP-Server to come up...')
             return true
         } catch (err) {
             console.error(`Connection to database failed:`, err.message)
@@ -159,7 +159,7 @@ try_to_connect_to_database_with_retry().then(() => {
     
 	sequelize.sync().then(() => {
 		httpServer.listen(PORT, () => {
-			console.log(`\nListening on port ${PORT}.\n`)
+			console.log(`\nHTTP-Server up!\nListening on port ${PORT}.\n`)
 		})
 	})
 

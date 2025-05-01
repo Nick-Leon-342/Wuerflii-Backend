@@ -12,7 +12,6 @@ const {
 
 	sequelize, 
 } = require('../../models')
-const { filter_user } = require('../../Filter_DatabaseJSON')
 
 router.use('/session', require('./Analytics_Session'))
 
@@ -28,6 +27,8 @@ router.get('', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, {
 			transaction, 
 			include: [{
@@ -38,7 +39,6 @@ router.get('', async (req, res) => {
 				}],  
 			}], 
 		})
-
 
 		// Check if user exists
 		if(!user) {
@@ -119,10 +119,11 @@ router.get('', async (req, res) => {
 		}
 
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
 		res.json({ 
 			Total: total, 
-			User: filter_user(user), 
 			List_Years: list_years, 
 		})
 

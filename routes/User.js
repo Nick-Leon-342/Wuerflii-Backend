@@ -159,6 +159,8 @@ router.delete('', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
@@ -167,7 +169,6 @@ router.delete('', async (req, res) => {
 			}], 
 		})
 
-
 		// Check if user exists
 		if(!user) {
 			await transaction.rollback()
@@ -175,7 +176,8 @@ router.delete('', async (req, res) => {
 		}
 
 
-		// Remove all sessions
+		// __________________________________________________ Remove all sessions __________________________________________________
+		
 		for(const session of user.Sessions) {
 
 			// Get all associations

@@ -223,7 +223,11 @@ router.post('', async (req, res) => {
 		const List_Winner = []
 		let highestScore = 0
 		const PlayerScores = {}
+		let same_year = final_score && new Date(final_score.End).getFullYear() === date.getFullYear() ? true : false
+		let same_month = final_score && same_year && new Date(final_score.End).getMonth() === date.getMonth() ? true : false
 
+
+		// Calculate which player has won (could also be a draw and therefore multiple "winners")
 		for(const p of list_players) {
 
 			let tmp_score = 0
@@ -241,20 +245,26 @@ router.post('', async (req, res) => {
 		}
 
 
-		// If surrendered, initialize winner
+		// If surrendered, initialize that winner and therefore @Override List_Winner
 		if(Surrendered_PlayerID) {
 			List_Winner.length = 0
 			List_Winner.push(Surrendered_PlayerID)
 		}
 
 
+		// Create all associations between newly created final_score and each player with their scores before and after this game
 		for(const player of list_players) {
 			const id = player.id
-			let a	// Association between player and finalscore
-			if(final_score) for(const p of final_score.Players) { if(p.id === id) a = p.asso }
+			const a = final_score?.Players.filter(p => p.id === id)[0]?.asso		// Association between player and finalscore
 
 			const IsWinner = List_Winner.includes(id)
 			const add_win = IsWinner ? 1 : 0
+
+			const Wins__Before = a?.Wins__After || 0
+			const Wins__Before_Year = same_year ? a.Wins__After_Year : 0		// If same_year = true then previous final_score exists
+			const Wins__Before_Month = same_month ? a.Wins__After_Month : 0		// If same_month = true then previous final_score exists
+			const Wins__Before_SinceCustomDate = a?.Wins__After_SinceCustomDate || 0
+
 
 			await Association__Players_And_FinalScores_With_Sessions.create({
 				SessionID, 
@@ -264,14 +274,14 @@ router.post('', async (req, res) => {
 				IsWinner, 
 				Score: PlayerScores[id], 
 
-				Wins__Before: 					0 + 		(!a ? 0 : a.Wins__After), 
-				Wins__After: 					add_win + 	(!a ? 0 : a.Wins__After), 
-				Wins__Before_Year: 				0 + 		(!a ? 0 : a.Wins__After_Year), 
-				Wins__After_Year: 				add_win + 	(!a ? 0 : a.Wins__After_Year), 
-				Wins__Before_Month: 			0 + 		(!a ? 0 : a.Wins__After_Month), 
-				Wins__After_Month: 				add_win + 	(!a ? 0 : a.Wins__After_Month), 
-				Wins__Before_SinceCustomDate: 	0 +			(!a ? 0 : a.Wins__After_SinceCustomDate), 
-				Wins__After_SinceCustomDate: 	add_win + 	(!a ? 0 : a.Wins__After_SinceCustomDate), 
+				Wins__Before, 
+				Wins__After: 					Wins__Before + add_win, 
+				Wins__Before_Year, 
+				Wins__After_Year: 				Wins__Before_Year + add_win, 
+				Wins__Before_Month, 
+				Wins__After_Month: 				Wins__Before_Month + add_win, 
+				Wins__Before_SinceCustomDate, 
+				Wins__After_SinceCustomDate: 	Wins__Before_SinceCustomDate + add_win, 
 			}, { transaction })
 		}
 

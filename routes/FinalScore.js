@@ -146,6 +146,7 @@ router.get('/all', async (req, res) => {
 			transaction, 
 			order: [[ 'End', 'DESC' ]],
 			limit: MAX_FINALSCORES_LIMIT, 
+			distinct: true, 
 		}) 
 
 
@@ -170,7 +171,8 @@ function getQuery( session ) {
 
 	const asso = session.Association__Users_And_Sessions
 	
-	const year = asso.View_Year
+	// const year = asso.View_Year	// TODO remove after fix
+	const year = 2001
 	const month = asso.View_Month
 	
 	const startOfYear = new Date(`${year}-01-01`)
