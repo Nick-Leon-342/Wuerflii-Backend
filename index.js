@@ -185,6 +185,7 @@ try_to_connect_to_database_with_retry().then(() => {
 
 process.on('uncaughtException', async err => {
 	log__error('Server encountered an uncaught error!')
+	console.error(err)
 	await send_email(
 		'Uncaught error!', 
 		`Server encountered an uncaught error. Check it out and restart it.`, 
@@ -195,6 +196,7 @@ process.on('uncaughtException', async err => {
   
 process.on('unhandledRejection', async reason => {
 	log__error('Server encountered an unhandled rejection!')
+	console.error(reason)
 	await send_email(
 		'Unhandled rejection!', 
 		`Server encountered an unhandled rejection. Check it out and restart it.`, 
