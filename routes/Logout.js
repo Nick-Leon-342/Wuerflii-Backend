@@ -13,8 +13,6 @@ const { handle_error } = require('../handle_error')
 
 router.delete('/', async (req, res) => {
 
-	const { UserID } = req
-
     const cookies = req.cookies
 	if (!cookies?.Wuerflii_RefreshToken) return res.status(204).send('Request already has no refresh_cookie.')				// check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)	-->since there is no RefreshToken, the logout request is finished
 	const refreshToken = cookies.Wuerflii_RefreshToken
@@ -26,10 +24,7 @@ router.delete('/', async (req, res) => {
 		// __________________________________________________ User __________________________________________________
 
 		const user = await Users.findOne({ 
-			where: { 
-				RefreshToken: refreshToken, 
-				id: UserID, 
-			}, 
+			where: { RefreshToken: refreshToken }, 
 			transaction, 
 		})
 	
