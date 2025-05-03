@@ -16,7 +16,7 @@ const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
 const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS } = require('./utils')
 
-const { send_email, log__error, log__info } = require('./handle_error')
+const { send_email, log__error, log__info, handle_error } = require('./handle_error')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -177,4 +177,28 @@ try_to_connect_to_database_with_retry().then(() => {
 
 	process.exit(1)
 
+})
+
+
+
+
+
+process.on('uncaughtException', async err => {
+	log__error('Server encountered an uncaught error!')
+	await send_email(
+		'Uncaught error!', 
+		`Server encountered an uncaught error. Check it out and restart it.`, 
+		err, 
+	)
+	process.exit(1)
+})
+  
+process.on('unhandledRejection', async reason => {
+	log__error('Server encountered an unhandled rejection!')
+	await send_email(
+		'Unhandled rejection!', 
+		`Server encountered an unhandled rejection. Check it out and restart it.`, 
+		reason, 
+	)
+	process.exit(1)
 })
