@@ -3,7 +3,8 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_user, filter_session } = require('../../Filter_DatabaseJSON')
+const { handle_error } = require('../../handle_error')
+const { sort__list_players } = require('../../Functions')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -204,20 +205,18 @@ router.get('', async (req, res) => {
 		}
 
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
 		res.json({ 
 			Total: total, 
 			List_Years: list_years, 
-			User: filter_user(user), 
-			Session: filter_session(user.Sessions[0]), 
-			List_Players: user.Sessions[0].Players.map(player => filter_player(player)).sort(((a, b) => a.Order_Index - b.Order_Index))
 		})
 
 
 	} catch(err) {
-		console.error('GET /analytics/session\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /analytics/session')
 	}
 
 })

@@ -1,14 +1,17 @@
 
 
 const express = require('express')
-const bcrypt = require('bcrypt')
 const router = express.Router()
+
+const bcrypt = require('bcrypt')
+const sendToken = require('./SendToken')
+const { isString } = require('../IsDataType')
+const { handle_error } = require('../handle_error')
+
 const { 
 	Users, 
 	sequelize
 } = require('../models')
-const sendToken = require('./SendToken')
-const { isString } = require('../IsDataType')
 
 const {
 	NAME_MIN_CHARACTER, 
@@ -68,6 +71,8 @@ router.post('/login', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findOne(
 			{ where: { Name } }, 
 			transaction, 
@@ -78,6 +83,9 @@ router.post('/login', async (req, res) => {
 			return res.status(409).send('Wrong credentials!')
 		}
 		
+
+		// __________________________________________________ Response __________________________________________________
+
 		await sendToken({
 			UserID: user.id, 
 			transaction, 
@@ -87,8 +95,7 @@ router.post('/login', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.error('POST /auth/login\n', err)
-		res.sendStatus(500)
+		await handle_error(res, err, 'POST /auth/login')
 	}
 
 })
@@ -105,11 +112,19 @@ router.post('/registration', async (req, res) => {
 	try {
 
 
-		const tmp = await Users.findOne({ where: { Name: Name }, transaction })
-		if(tmp) return res.status(409).send('Username already taken.')
+		// __________________________________________________ User __________________________________________________
+
+		const tmp__user = await Users.findOne({ where: { Name: Name }, transaction })
+		if(tmp__user) return res.status(409).send('Username already taken.')
 	
+
+		// __________________________________________________ Hash Password __________________________________________________
+
 		const hashedPassword = await bcrypt.hash(Password, 10)
-	
+
+
+		// __________________________________________________ Create New User __________________________________________________
+
 		const user = await Users.create({
 			Password: hashedPassword, 
 			DarkMode: false, 
@@ -125,6 +140,9 @@ router.post('/registration', async (req, res) => {
 			Statistics_View_Year: new Date().getFullYear(), 
 		}, { transaction })
 
+
+		// __________________________________________________ Response __________________________________________________
+
 		await sendToken({
 			UserID: user.id, 
 			transaction, 
@@ -134,8 +152,7 @@ router.post('/registration', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.error('POST /auth/registration\n', err)
-		res.sendStatus(500)
+		await handle_error(res, err, 'POST /auth/registration')
 	}
 
 })

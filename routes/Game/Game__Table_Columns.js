@@ -3,17 +3,21 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_table_column } = require('../../Filter_DatabaseJSON')
+const { handle_error } = require('../../handle_error')
 const { isInt, isString } = require('../../IsDataType')
+const { sort__list_players } = require('../../Functions')
+const { filter_table_column } = require('../../Filter_DatabaseJSON')
+
 const { 
 	Players, 
 	Sessions,
 	Table_Columns, 
+	Table_Archives, 
+	FinalScores, 
 	Users, 
 
 	sequelize, 
 } = require('../../models')
-const { sort__list_players } = require('../../Functions')
 
 
 
@@ -87,9 +91,8 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('GET /game\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /game/table_columns')
 	}
 
 })
@@ -174,9 +177,8 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('PATCH /player\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /game/table_columns')
 	}
 
 })
@@ -270,6 +272,86 @@ const possible_entries = {
 	Bottom_Table_7: [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],  
 
 }
+
+
+
+
+
+router.get('/archive', async (req, res) => {
+
+	const { UserID } = req
+	const SessionID = +req.query.session_id
+	const FinalScoreID = +req.query.finalscore_id
+
+	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(!FinalScoreID) return res.status(400).send('FinalScoreID invalid.')
+	
+
+	const transaction = await sequelize.transaction()
+	try {
+
+
+		// __________________________________________________ User __________________________________________________
+
+		const user = await Users.findByPk(UserID, {
+			transaction, 
+			include: [{
+				model: Sessions, 
+				required: false, 
+				where: { id: SessionID }, 
+			}]
+		})
+
+		// Check if user exists
+		if(!user) {
+			await transaction.rollback()
+			return res.status(404).send('User not found.')
+		}
+
+		// Check if session exists
+		if(!user.Sessions[0]) {
+			await transaction.rollback()
+			return res.status(404).send('Session not found.')
+		}
+
+
+		// __________________________________________________ FinalScore __________________________________________________
+
+		const finalscore = await FinalScores.findByPk(FinalScoreID, {
+			include: [
+				Table_Archives, 
+				{
+					model: Players, 
+					required: true, 
+					through: {
+						where: { SessionID }, 
+						as: 'asso', 
+					}
+				}
+			], 
+			transaction, 
+		})
+
+		// Check if association exists
+		if(!finalscore) {
+			await association.rollback()
+			return res.status(404).send('FinalScore not found.')
+		}
+
+
+		// __________________________________________________ Response __________________________________________________
+
+		await transaction.commit()
+		res.json(finalscore.Table_Archive.Table)
+
+
+
+	} catch(err) {
+		await transaction.rollback()
+		await handle_error(res, err, 'GET /session/preview/table')
+	}
+
+})
 
 
 

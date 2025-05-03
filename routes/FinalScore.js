@@ -3,6 +3,11 @@
 const express = require('express')
 const router = express.Router()
 
+const { filter_finalscore } = require('../Filter_DatabaseJSON')
+const { MAX_FINALSCORES_LIMIT } = require('../utils')
+const { handle_error } = require('../handle_error')
+const { Op } = require('sequelize')
+
 const { 
 	FinalScores, 
 	Sessions, 
@@ -10,10 +15,6 @@ const {
 	Users, 
 	sequelize, 
 } = require('../models')
-
-const { Op } = require('sequelize')
-const { MAX_FINALSCORES_LIMIT } = require('../utils')
-const { filter_finalscore } = require('../Filter_DatabaseJSON')
 
 
 
@@ -85,9 +86,8 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('GET /finalscore\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /finalscore')
 	}
 
 })
@@ -160,9 +160,8 @@ router.get('/all', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('GET /session/preview/all\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /finalscore/all')
 	}
 
 })
@@ -171,8 +170,7 @@ function getQuery( session ) {
 
 	const asso = session.Association__Users_And_Sessions
 	
-	// const year = asso.View_Year	// TODO remove after fix
-	const year = 2001
+	const year = asso.View_Year
 	const month = asso.View_Month
 	
 	const startOfYear = new Date(`${year}-01-01`)

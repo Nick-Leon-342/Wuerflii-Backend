@@ -5,6 +5,7 @@ const router = express.Router()
 
 const { isInt } = require('../../IsDataType')
 const CreateNewGame = require('../../CreateNewGame')
+const { handle_error } = require('../../handle_error')
 const { sort__list_players } = require('../../Functions')
 const { filter_table_column } = require('../../Filter_DatabaseJSON')
 
@@ -95,9 +96,8 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('GET /game\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /game')
 	}
 
 })
@@ -108,7 +108,11 @@ router.post('', async (req, res) => {
 
 	const { UserID } = req
 	const { SessionID, Surrendered_PlayerID } = req.body
-	const date = new Date()
+	// const date = new Date()
+	const now = new Date()
+	const date = new Date(now)	// TODO
+	date.setMonth(0)
+	date.setDate(1)
 
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(Surrendered_PlayerID && !isInt(Surrendered_PlayerID)) return res.status(400).send('Surrendered_PlayerID invalid.')
@@ -302,9 +306,8 @@ router.post('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('POST /game\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'POST /game')
 	}
 
 })
@@ -369,9 +372,8 @@ router.delete('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('DELETE /game\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'DELETE /game')
 	}
 
 })

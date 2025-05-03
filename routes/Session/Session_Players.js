@@ -3,6 +3,7 @@
 const express = require('express')
 const router = express.Router()
 
+const { handle_error } = require('../../handle_error')
 const { sort__list_players } = require('../../Functions')
 const { filter_player } = require('../../Filter_DatabaseJSON')
 const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
@@ -32,6 +33,7 @@ router.get('', (req, res) => {
 	Users.findByPk(UserID, { 
 		include: [{
 			model: Sessions, 
+			required: false, 
 			where: { id: SessionID }, 
 			include: [{
 				model: Players, 
@@ -47,9 +49,8 @@ router.get('', (req, res) => {
 		res.json(sort__list_players(user.Sessions[0].Players).map(filter_player))
 
 
-	}).catch(err => {
-		console.error('GET /session/players\n', err)
-		res.sendStatus(500)
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /session/players')
 	})
 
 })
@@ -135,8 +136,7 @@ router.post('', async (req, res) => {
 
 	} catch(err) {
 		await transaction.rollback()
-		console.error('POST /session/players\n', err)
-		res.sendStatus(500)
+		await handle_error(res, err, 'POST /session/players')
 	}
 
 })
@@ -239,9 +239,8 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('PATCH /session/players\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /session/players')
 	}
 
 })

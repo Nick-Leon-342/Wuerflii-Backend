@@ -3,11 +3,12 @@
 const express = require('express')
 const router = express.Router()
 
-const { filter_player, filter_session } = require('../../Filter_DatabaseJSON')
-const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
-const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
-const { sort__list_players } = require('../../Functions')
 const { isDate } = require('util/types')
+const { handle_error } = require('../../handle_error')
+const { sort__list_players } = require('../../Functions')
+const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
+const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
+const { filter_player, filter_session } = require('../../Filter_DatabaseJSON')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -54,9 +55,8 @@ router.get('', (req, res) => {
 		res.json(filter_session(user.Sessions[0]))
 
 
-	}).catch(err => {
-		console.error('GET /session\n', err)
-		res.sendStatus(500)
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /session')
 	})
 
 })
@@ -131,9 +131,8 @@ router.post('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('POST /session\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'POST /session')
 	}
 
 })
@@ -181,23 +180,23 @@ router.patch('', async (req, res) => {
 	const transaction = await sequelize.transaction()
 	try {
 		
+
+		// __________________________________________________ User __________________________________________________
 		
-		const user = await Users.findOne({ 
-			where: { id: UserID }, 
+		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
+				required: false, 
 				where: { id: SessionID }, 
 			}]
 		})
-		
 
 		// Check if user exists
 		if(!user) {
 			await transaction.rollback()
 			return res.status(404).send('User not found.')
 		}
-
 
 		// Check if session exists
 		if(!user.Sessions[0]) {
@@ -206,7 +205,8 @@ router.patch('', async (req, res) => {
 		}
 
 
-		// Update session
+		// __________________________________________________ Update session __________________________________________________
+
 		await user.Sessions[0].update({
 			Name, 
 			Color, 
@@ -239,14 +239,15 @@ router.patch('', async (req, res) => {
 		})
 		
 
+		// __________________________________________________ Response __________________________________________________
+
 		await transaction.commit()
 		res.sendStatus(204)
 
 
 	} catch(err) {
-		console.error('PATCH /session\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /session')
 	}
 
 })
@@ -263,22 +264,23 @@ router.delete('', async (req, res) => {
 	try {
 
 
+		// __________________________________________________ User __________________________________________________
+
 		const user = await Users.findByPk(UserID, { 
 			transaction, 
 			include: [{
 				model: Sessions, 
+				required: false, 
 				where: { id: SessionID }, 
 				include: Players, 
 			}], 
 		})
-
 
 		// Check if user exists
 		if(!user) {
 			await transaction.rollback()
 			return res.status(404).send('User not found.')
 		}
-
 
 		// Check if session exists
 		if(!user.Sessions[0]) {
@@ -287,13 +289,18 @@ router.delete('', async (req, res) => {
 		}
 
 
-		// Get all associations
+		// __________________________________________________ Get all associations __________________________________________________
+
 		const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
 			where: { SessionID }, 
 			transaction, 
 		})
 
-		// Remove finalscores through association
+
+		// __________________________________________________ Remove __________________________________________________
+
+		// ____________________ Remove finalscores through association ____________________
+
 		for(const association of list_associations) {
 			await FinalScores.destroy({
 				where: { id: association.FinalScoreID }, 
@@ -302,24 +309,27 @@ router.delete('', async (req, res) => {
 		}
 
 
-		// Remove players 
+		// ____________________ Remove players ____________________
+
 		for(const player of user.Sessions[0].Players) {
 			await player.destroy({ transaction })
 		}
 
 
-		// Remove session
+		// ____________________ Remove session ____________________
+
 		await user.Sessions[0].destroy({ transaction })
 
+
+		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
 		res.sendStatus(204)
 
 
 	} catch(err) {
-		console.error('DELETE /session/select\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'DELETE /session')
 	}
 
 })
@@ -343,9 +353,8 @@ router.get('/env', (req, res) => {
 		})
 
 
-	}).catch(err => {
-		console.error('GET /session\n', err)
-		res.sendStatus(500)
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /session/env')
 	})
 
 })
@@ -358,15 +367,18 @@ router.get('/all', async (req, res) => {
 	try {
 
 
-		const tmp_user = await Users.findByPk(UserID, { transaction })
+		// __________________________________________________ Temporary user to get attributes for 'real' query __________________________________________________
 
+		const tmp__user = await Users.findByPk(UserID, { transaction })
 
 		// Check if user exists
-		if(!tmp_user) {
+		if(!tmp__user) {
 			await transaction.rollback()
 			return res.status(404).send('User not found.')
 		}
 
+
+		// __________________________________________________ Get all sessions __________________________________________________
 
 		const user = await Users.findByPk(UserID, {
 			transaction, 
@@ -380,7 +392,7 @@ router.get('/all', async (req, res) => {
 					}, 
 				}], 
 			}], 
-			order: [[ { model: Sessions }, ...getOrder(tmp_user) ]]
+			order: [[ { model: Sessions }, ...getOrder(tmp__user) ]]
 		})
 
 		const list_sessions = []
@@ -391,15 +403,15 @@ router.get('/all', async (req, res) => {
 		}
 
 
-		await transaction.commit()
+		// __________________________________________________ Response __________________________________________________
 
+		await transaction.commit()
 		res.json(list_sessions)
 
 
 	} catch(err) {
-		console.error('GET /session/all\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /session/all')
 	}
 
 })
@@ -562,9 +574,8 @@ router.patch('/date', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('PATCH /session/date\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /session/date')
 	}
 
 })

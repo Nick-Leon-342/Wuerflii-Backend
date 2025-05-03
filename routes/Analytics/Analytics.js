@@ -3,6 +3,8 @@
 const express = require('express')
 const router = express.Router()
 
+const { handle_error } = require('../../handle_error')
+
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
 
@@ -129,9 +131,8 @@ router.get('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('GET /analytics\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'GET /analytics')
 	}
 
 })

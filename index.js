@@ -14,10 +14,9 @@ const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
-const nodemailer		= require('nodemailer')
-const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS, EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD, EMAIL_OF_ADMIN, EMAIL_SMTP_REPLYTOEMAIL } = require('./utils')
+const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS } = require('./utils')
 
-const { format } = require('date-fns')
+const { send_email, log__error, log__info } = require('./handle_error')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -138,15 +137,16 @@ app.all('*', (req, res) => {
 
 async function try_to_connect_to_database_with_retry() {
     for (let i = 1; i <= DB_RETRIES; i++) {
-		console.log(`Database connection - Try ${i} of ${DB_RETRIES}.`)
+		log__info(`Database connection - Try ${i} of ${DB_RETRIES}.`)
         try {
             await sequelize.authenticate()		// Check connection to database
-            console.log('Connected to database!\nPlease wait for HTTP-Server to come up...')
+            log__info('Connected to database!')
+			log__info('Please wait for HTTP-Server to come up...\n')
             return true
         } catch (err) {
-            console.error(`Connection to database failed:`, err.message)
+            log__error(`Connection to database failed:`, err.message)
             if (i < DB_RETRIES) {
-				console.log(`Waiting ${DB_RETRY_TIMEOUT_IN_SECONDS} second${DB_RETRY_TIMEOUT_IN_SECONDS === 1 ? '' : 's'} for next try...`)
+				log__info(`Waiting ${DB_RETRY_TIMEOUT_IN_SECONDS} second${DB_RETRY_TIMEOUT_IN_SECONDS === 1 ? '' : 's'} for next try...`)
                 await new Promise((resolve) => setTimeout(resolve, DB_RETRY_TIMEOUT_IN_SECONDS * 1000))		// Wait until next try
             } else {
                 throw new Error('Exceeded retry limit.')
@@ -159,38 +159,21 @@ try_to_connect_to_database_with_retry().then(() => {
     
 	sequelize.sync().then(() => {
 		httpServer.listen(PORT, () => {
-			console.log(`\nHTTP-Server up!\nListening on port ${PORT}.\n`)
+			log__info('HTTP-Server up!')
+			log__info(`Listening on port ${PORT}.\n\n`)
 		})
 	})
 
 }).catch(async err => {
 
-	console.error('Failed to start server:', err.message)
+	log__error(`Failed to start server: ${err.message}`)
 
 	// Send error email if all data has been provided
-	if(EMAIL_SMTP_HOST && EMAIL_SMTP_PORT && EMAIL_SMTP_SSL && EMAIL_SMTP_USERNAME && EMAIL_SMTP_PASSWORD && EMAIL_SMTP_REPLYTOEMAIL && EMAIL_OF_ADMIN) {
-		
-		console.error('Sending email.')
-
-		const email_transporter = nodemailer.createTransport({
-			host: EMAIL_SMTP_HOST, 
-			port: EMAIL_SMTP_PORT, 
-			secure: EMAIL_SMTP_SSL, 
-			auth: {
-				user: EMAIL_SMTP_USERNAME, 
-				pass: EMAIL_SMTP_PASSWORD, 
-			}
-		})
-		await email_transporter.sendMail({
-			from: `"Wuerflii Server" <${EMAIL_SMTP_REPLYTOEMAIL}>`, 
-			to: EMAIL_OF_ADMIN, 
-			subject: `Wuerflii - Server can't connect to database.`, 
-			text: `Server couldn't connect to database.\nTimestamp: ${format(new Date(), 'HH:mm dd.MM.yyyy')}`, 
-		}).then(() => {
-			console.error('Done')
-		}).catch(err_email => console.err('Some error occured during sending email:\n', err_email))
-
-	}
+	await send_email(
+		`Server can't connect to database.`, 
+		`Server couldn't connect to database.`, 
+		err, 
+	)
 
 	process.exit(1)
 

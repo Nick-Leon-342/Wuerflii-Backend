@@ -18,6 +18,7 @@ const sendToken = require('./SendToken')
 const { isBoolean, isString, isInt } = require('../IsDataType')
 const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, NAME_REGEX, PASSWORD_REGEX } = require('../utils')
 const { filter_user } = require('../Filter_DatabaseJSON')
+const { handle_error } = require('../handle_error')
 
 
 
@@ -34,9 +35,8 @@ router.get('', (req, res) => {
 
 		res.json(filter_user(user))
 
-	}).catch(err => {
-		console.error('GET /user\n', err)
-		res.sendStatus(500)
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /user')
 	})
 
 })
@@ -78,11 +78,9 @@ router.patch('', async (req, res) => {
 	try {
 
 
-		const user = await Users.findOne({
-			where: { id: UserID }, 
-			transaction
-		})
+		// __________________________________________________ User __________________________________________________
 
+		const user = await Users.findByPk(UserID, { transaction })
 
 		// Check if user exists
 		if(!user) {
@@ -143,9 +141,8 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('PATCH /user\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /user')
 	}
 
 })
@@ -215,9 +212,8 @@ router.delete('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('DELETE /user\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'DELETE /user')
 	}
 
 })

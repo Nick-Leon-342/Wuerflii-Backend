@@ -85,9 +85,8 @@ router.patch('', async (req, res) => {
 
 
 	} catch(err) {
-		console.error('PATCH /player\n', err)
 		await transaction.rollback()
-		res.sendStatus(500)
+		await handle_error(res, err, 'PATCH /player')
 	}
 
 })
