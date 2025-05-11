@@ -108,11 +108,7 @@ router.post('', async (req, res) => {
 
 	const { UserID } = req
 	const { SessionID, Surrendered_PlayerID } = req.body
-	// const date = new Date()
-	const now = new Date()
-	const date = new Date(now)	// TODO
-	date.setMonth(0)
-	date.setDate(1)
+	const date = new Date()
 
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(Surrendered_PlayerID && !isInt(Surrendered_PlayerID)) return res.status(400).send('Surrendered_PlayerID invalid.')
