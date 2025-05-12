@@ -3,11 +3,11 @@
 const express = require('express')
 const router = express.Router()
 
-const { handle_error } = require('../../handle_error')
-const { sort__list_players } = require('../../Functions')
-const { filter_player } = require('../../Filter_DatabaseJSON')
-const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
 const { isArray, isString, isColor, isInt } = require('../../IsDataType')
+const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
+const { filter_player } = require('../../Filter_DatabaseJSON')
+const { sort__list_players } = require('../../Functions')
+const { handle_error } = require('../../handle_error')
 
 const { 
 	Association__Sessions_And_Players, 
@@ -131,7 +131,7 @@ router.post('', async (req, res) => {
 		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
-		res.json({ List_Players: list_players })
+		res.json(list_players)
 
 
 	} catch(err) {

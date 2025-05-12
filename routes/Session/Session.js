@@ -3,12 +3,12 @@
 const express = require('express')
 const router = express.Router()
 
-const { isDate } = require('util/types')
-const { handle_error } = require('../../handle_error')
-const { sort__list_players } = require('../../Functions')
-const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
-const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
 const { filter_player, filter_session } = require('../../Filter_DatabaseJSON')
+const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
+const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
+const { sort__list_players } = require('../../Functions')
+const { handle_error } = require('../../handle_error')
+const { isDate } = require('util/types')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -398,7 +398,7 @@ router.get('/all', async (req, res) => {
 		const list_sessions = []
 		for(const session of user.Sessions) {
 			const tmp_session = filter_session(session)
-			tmp_session.List_Players = sort__list_players(session.Players).map(player => filter_player(player))
+			tmp_session.List_Players = sort__list_players(session.Players).map(filter_player)
 			list_sessions.push({ ...tmp_session, Checkbox_Checked: false })
 		}
 

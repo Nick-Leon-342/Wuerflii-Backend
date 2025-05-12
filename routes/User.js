@@ -4,6 +4,11 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const router = express.Router()
 
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, NAME_REGEX, PASSWORD_REGEX } = require('../utils')
+const { isBoolean, isString, isInt } = require('../IsDataType')
+const { filter_user } = require('../Filter_DatabaseJSON')
+const { handle_error } = require('../handle_error')
+
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
 
@@ -14,13 +19,6 @@ const {
 	sequelize, 
 } = require('../models')
 
-const sendToken = require('./SendToken')
-const { isBoolean, isString, isInt } = require('../IsDataType')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, NAME_REGEX, PASSWORD_REGEX } = require('../utils')
-const { filter_user } = require('../Filter_DatabaseJSON')
-const { handle_error } = require('../handle_error')
-
-
 
 
 
@@ -29,7 +27,7 @@ router.get('', (req, res) => {
 
 	const { UserID } = req
 
-	Users.findOne({ where: { id: UserID } }).then(user => {
+	Users.findByPk(UserID).then(user => {
 
 		if(!user) return res.status(404).send('User not found.')
 
@@ -117,7 +115,7 @@ router.patch('', async (req, res) => {
 				return 
 			}
 
-			updateJSON['Name'] = Name
+			updateJSON.Name = Name
 
 		} 
 		
@@ -126,18 +124,19 @@ router.patch('', async (req, res) => {
 			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.status(400).send('Password invalid.')
 
 			const hashedPassword = await bcrypt.hash(Password, 10)
-			updateJSON['Password'] = hashedPassword
+			updateJSON.Password = hashedPassword
 
 		}
 
 
+
 		await user.update(updateJSON, { transaction })
 
-		await sendToken({
-			transaction, 
-			UserID, 
-			res, 
-		})
+
+		// __________________________________________________ Response __________________________________________________
+
+		await transaction.commit()
+		res.sendStatus(204)
 
 
 	} catch(err) {
