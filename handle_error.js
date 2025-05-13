@@ -27,6 +27,9 @@ const email_client = (
 
 export async function send_email(subject, text, error) {
 
+	// Dont send email in development mode
+	if(process.env.NODE_ENV === 'dev') return
+
 	if(!email_client) {
 		log__error('Some email credential(s) is/are missing, therefore no email is send.\n', error)
 		return 
