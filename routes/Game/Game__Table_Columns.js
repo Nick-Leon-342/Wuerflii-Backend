@@ -70,7 +70,7 @@ router.get('', async (req, res) => {
 			await transaction.rollback()
 			return res.status(404).send('Players not found.')
 		}
-
+		
 		// Check if table_columns exist
 		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
 			await transaction.rollback()
@@ -84,7 +84,7 @@ router.get('', async (req, res) => {
 		res.json(sort__list_players(user.Sessions[0].Players).map(player => {
 				return {
 					PlayerID: player.id, 
-					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
+					List_Table_Columns: player.Table_Columns.map(filter_table_column)
 				}
 			}), 
 		)
@@ -318,24 +318,20 @@ router.get('/archive', async (req, res) => {
 		// __________________________________________________ FinalScore __________________________________________________
 
 		const finalscore = await FinalScores.findByPk(FinalScoreID, {
-			include: [
-				Table_Archives, 
-				{
-					model: Players, 
-					required: true, 
-					through: {
-						where: { SessionID }, 
-						as: 'asso', 
-					}
-				}
-			], 
+			include: Table_Archives,  
 			transaction, 
 		})
 
-		// Check if association exists
+		// Check if finalscore exists
 		if(!finalscore) {
-			await association.rollback()
+			await transaction.rollback()
 			return res.status(404).send('FinalScore not found.')
+		}
+
+		// Check if table_archive exists
+		if(!finalscore.Table_Archive) {
+			await transaction.rollback()
+			return res.status(404).send('Table_Archive not found.')
 		}
 
 

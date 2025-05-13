@@ -1,16 +1,17 @@
 
 # Wuerflii - Backend
+
 ___
 
 
 Use `npm run backend` to start the dev-server.
 
-Don't forget to set .env file. For some explanation or a template look at .env.sample.
+Don't forget to set a _.env_-file. For some explanation or a template look at _.env.example_.
 You could add a docker compose file like this:
 
 ```
 services:
-  wuerflii-backend:
+  backend:
     container_name: wuerflii-backend
     restart: unless-stopped
     build:
