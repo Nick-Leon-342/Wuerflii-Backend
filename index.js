@@ -107,6 +107,9 @@ app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
 
+// Used by frontend for pinging local server address -> e.g. 192.168.1.200
+app.get('/ping', (_, res) => { res.sendStatus(200) })
+
 
 
 
@@ -127,9 +130,7 @@ app.use('/analytics', require('./routes/Analytics/Analytics'))
 
 
 // handling requested api not found (404)
-app.all('*', (req, res) => {
-	res.sendStatus(404)
-})
+app.all('*', (_, res) => { res.sendStatus(404) })
 
 
 
