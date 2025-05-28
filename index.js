@@ -16,7 +16,7 @@ const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
 const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS } = require('./utils')
 
-const { send_email, log__error, log__info, handle_error } = require('./handle_error')
+const { send_email, log__error, log__info } = require('./handle_error')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -106,9 +106,6 @@ Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoreID'})
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
-
-// Used by frontend for pinging local server address -> e.g. 192.168.1.200
-app.get('/ping', (_, res) => { res.sendStatus(200) })
 
 
 
