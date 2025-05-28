@@ -17,6 +17,7 @@ const cookieParser 		= require('cookie-parser')
 const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS } = require('./utils')
 
 const { send_email, log__error, log__info } = require('./handle_error')
+const { version } = require('./package.json')
 
 app.use(express.json())
 app.use(cookieParser())
@@ -106,6 +107,8 @@ Table_Archives.belongsTo(FinalScores, { foreignKey: 'FinalScoreID'})
 app.use('/auth', require('./routes/Auth'))
 app.use('/refreshtoken', require('./routes/RefreshToken'))
 app.use('/logout', require('./routes/Logout'))
+
+app.get('/version', (_, res) => res.json(version))
 
 
 
