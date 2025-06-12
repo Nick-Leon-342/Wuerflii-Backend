@@ -7,10 +7,12 @@ const process = require('process');
 const basename = path.basename(__filename);
 const db = {};
 
+const isProd = process.env.NODE_ENV === 'prod'
+
 const sequelize = new Sequelize(process.env.DB_DATABASE, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
-	host: process.env.DB_HOST,
-	port: process.env.DB_PORT,
-	dialect: process.env.DB_TYPE,
+	host: isProd ? 'postgresql' : process.env.DB_HOST,
+	port: isProd ? 5432 : process.env.DB_PORT,
+	dialect: 'postgresql',
 	logging: process.env.DB_CONSOLE_LOGGING === 'true',
 })
 

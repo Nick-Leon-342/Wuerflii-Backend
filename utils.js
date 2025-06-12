@@ -51,15 +51,6 @@ const MAX_FINALSCORES_LIMIT = +process.env.MAX_FINALSCORES_LIMIT || 10
 
 
 
-// ____________________ Database ____________________
-
-const DB_RETRIES = +process.env.DB_RETRIES || 60
-const DB_RETRY_TIMEOUT_IN_SECONDS = +process.env.DB_RETRY_TIMEOUT_IN_SECONDS || 5
-
-
-
-
-
 // ____________________ Email ____________________
 
 const EMAIL_OF_ADMIN = process.env.EMAIL_OF_ADMIN
@@ -112,12 +103,6 @@ module.exports = {
 	MAX_PLAYERS, 
 	MAX_COLUMNS, 
 	MAX_FINALSCORES_LIMIT, 
-
-
-	// ____________________ Database ____________________
-
-	DB_RETRIES, 
-	DB_RETRY_TIMEOUT_IN_SECONDS, 
 
 
 	// ____________________ Email ____________________

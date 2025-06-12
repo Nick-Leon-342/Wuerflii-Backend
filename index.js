@@ -14,7 +14,7 @@ const http				= require('http')
 const app 				= express()
 const httpServer		= http.createServer(app)
 const cookieParser 		= require('cookie-parser')
-const { PORT, DB_RETRIES, DB_RETRY_TIMEOUT_IN_SECONDS } = require('./utils')
+const { PORT } = require('./utils')
 
 const { send_email, log__error, log__info } = require('./handle_error')
 const { version } = require('./package.json')
@@ -22,8 +22,6 @@ const { version } = require('./package.json')
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors(corsOptions))
-
-
 
 
 
@@ -135,49 +133,12 @@ app.all('*', (_, res) => { res.sendStatus(404) })
 
 
 
-
-async function try_to_connect_to_database_with_retry() {
-    for (let i = 1; i <= DB_RETRIES; i++) {
-		log__info(`Database connection - Try ${i} of ${DB_RETRIES}.`)
-        try {
-            await sequelize.authenticate()		// Check connection to database
-            log__info('Connected to database!')
-			log__info('Please wait for HTTP-Server to come up...\n')
-            return true
-        } catch (err) {
-            log__error(`Connection to database failed:`, err.message)
-            if (i < DB_RETRIES) {
-				log__info(`Waiting ${DB_RETRY_TIMEOUT_IN_SECONDS} second${DB_RETRY_TIMEOUT_IN_SECONDS === 1 ? '' : 's'} for next try...`)
-                await new Promise((resolve) => setTimeout(resolve, DB_RETRY_TIMEOUT_IN_SECONDS * 1000))		// Wait until next try
-            } else {
-                throw new Error('Exceeded retry limit.')
-            }
-        }
-    }
-}
-
-try_to_connect_to_database_with_retry().then(() => {
-    
-	sequelize.sync().then(() => {
-		httpServer.listen(PORT, () => {
-			log__info('HTTP-Server up!')
-			log__info(`Listening on port ${PORT}.\n\n`)
-		})
+  
+sequelize.sync().then(() => {
+	httpServer.listen(PORT, () => {
+		log__info('HTTP-Server up!')
+		log__info(`Listening on port ${PORT}.\n\n`)
 	})
-
-}).catch(async err => {
-
-	log__error(`Failed to start server: ${err.message}`)
-
-	// Send error email if all data has been provided
-	await send_email(
-		`Server can't connect to database.`, 
-		`Server couldn't connect to database.`, 
-		err, 
-	)
-
-	process.exit(1)
-
 })
 
 
