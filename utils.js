@@ -1,6 +1,8 @@
 
 
-const PORT = process.env.PORT || 10001
+const isProd = process.env.NODE_ENV === 'prod'
+
+const PORT = isProd ? 5000 : process.env.PORT || 5000
 
 
 
