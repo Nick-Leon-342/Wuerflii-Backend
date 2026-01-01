@@ -12,6 +12,7 @@ const PORT = isProd ? 5000 : process.env.PORT || 5000
 
 const REFRESH_TOKEN_SAMESITE = process.env.REFRESH_TOKEN_SAMESITE || 'None'
 const REFRESH_TOKEN_SECURE = process.env.REFRESH_TOKEN_SECURE === 'true' || false
+const ACCESS_TOKEN_MAX_AGE_IN_MINUTES = (parseInt(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES) || 15) * 60 * 1000
 const REFRESH_TOKEN_MAX_AGE_IN_MINUTES = (parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES) || 24 * 60) * 60 * 1000
 
 
@@ -76,6 +77,7 @@ module.exports = {
 	REFRESH_TOKEN_SAMESITE, 
 	REFRESH_TOKEN_SECURE, 
 	REFRESH_TOKEN_MAX_AGE_IN_MINUTES, 
+	ACCESS_TOKEN_MAX_AGE_IN_MINUTES, 
 
 
 	// ____________________ User ____________________

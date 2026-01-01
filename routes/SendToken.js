@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken')
 const { Users } = require('../models')
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
+const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, ACCESS_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
 
 
 
@@ -37,7 +37,7 @@ module.exports = async function sendToken({
 	const accessToken = jwt.sign(
 		{ 'id': UserID },
 		process.env.ACCESS_TOKEN_SECRET,
-		{ expiresIn: `${process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
+		{ expiresIn: `${ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
 	)
 	const refreshToken = jwt.sign(
 		{ 'id': UserID },

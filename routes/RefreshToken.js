@@ -5,6 +5,8 @@ const router = express.Router()
 const { Users } = require('../models')
 const jwt = require('jsonwebtoken')
 
+const { ACCESS_TOKEN_MAX_AGE_IN_MINUTES } = require('../utils')
+
 
 
 
@@ -28,7 +30,7 @@ router.get('/', async (req, res) => {
 			const accessToken = jwt.sign(
 				{ 'id': decoded.id },
 				process.env.ACCESS_TOKEN_SECRET,
-				{ expiresIn: `${process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
+				{ expiresIn: `${ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
 			)
 			res.json({ accessToken })
 		}
