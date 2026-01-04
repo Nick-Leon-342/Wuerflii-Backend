@@ -42,7 +42,7 @@ router.delete('/', async (req, res) => {
 		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
-		res.clearCookie('Wuerflii_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
+		res.clearCookie('Wuerflii_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
 		res.status(204).send('Cleared refresh token from user and request.')
 
 
