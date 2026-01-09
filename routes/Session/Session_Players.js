@@ -249,4 +249,29 @@ router.patch('', async (req, res) => {
 
 
 
+router.get('/env', (req, res) => {
+
+	const { UserID } = req
+
+	Users.findByPk(UserID).then(user => {
+
+
+		if(!user) return res.status(404).send('User not found.')
+
+		res.json({
+			MAX_PLAYERS,
+			MAX_LENGTH_PLAYER_NAME, 
+		})
+
+
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /session/player/env')
+	})
+
+})
+
+
+
+
+
 module.exports = router

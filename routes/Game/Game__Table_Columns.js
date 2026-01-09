@@ -84,7 +84,7 @@ router.get('', async (req, res) => {
 		res.json(sort__list_players(user.Sessions[0].Players).map(player => {
 				return {
 					PlayerID: player.id, 
-					List_Table_Columns: player.Table_Columns.map(filter_table_column)
+					List__Table_Columns: player.Table_Columns.map(filter_table_column)
 				}
 			}), 
 		)

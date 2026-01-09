@@ -67,8 +67,8 @@ router.post('', async (req, res) => {
 	const { Name, Color, Columns } = req.body
 	const date = new Date()
 
-	if(!Color || !isColor(Color)) return res.status(400).status('Color invalid.')
-	if(!Name || !isString(Name) || Name.length > MAX_LENGTH_SESSION_NAME) return res.status(400).send('Name invalid.')
+	if(!Color || !isColor(Color)) 											return res.status(400).status('Color invalid.')
+	if(!Name || !isString(Name) || Name.length > MAX_LENGTH_SESSION_NAME) 	return res.status(400).send('Name invalid.')
 	if(!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS) return res.status(400).send('Columns invalid.')
 
 
@@ -160,21 +160,21 @@ router.patch('', async (req, res) => {
 		Statistics_View_Year, 
 	} = req.body
 	
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
-	if(Name && !isString(Name)) return res.status(400).send('Name invalid.')
-	if(Color && !isColor(Color)) return res.status(400).send('Color invalid.')
-	if(Columns && !isInt(Columns)) return res.status(400).send('Columns invalid.')
+	if(!SessionID || !isInt(SessionID)) 	return res.status(400).send('SessionID invalid.')
+	if(Name && !isString(Name)) 			return res.status(400).send('Name invalid.')
+	if(Color && !isColor(Color)) 			return res.status(400).send('Color invalid.')
+	if(Columns && !isInt(Columns)) 			return res.status(400).send('Columns invalid.')
 
-	if(View && (!isString(View) || !['show_month', 'show_year', 'show_custom_date', 'show_all'].includes(View))) return res.status(400).send('View invalid.')
-	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) return res.status(400).send('View_Month invalid.')
-	if(View_Year && !isInt(View_Year)) return res.status(400).send('View_Year invalid.')
-	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) return res.status(400).send('InputType invalid.')
-	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) return res.status(400).send('Scores_Visible invalid.')
+	if(View && (!isString(View) || !['show_month', 'show_year', 'show_custom_date', 'show_all'].includes(View)))	return res.status(400).send('View invalid.')
+	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) 		return res.status(400).send('View_Month invalid.')
+	if(View_Year && !isInt(View_Year)) 																				return res.status(400).send('View_Year invalid.')
+	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) 			return res.status(400).send('InputType invalid.')
+	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) 													return res.status(400).send('Scores_Visible invalid.')
 		
-	if(Statistics_Show_Border !== undefined && !isBoolean(Statistics_Show_Border)) return res.status(400).send('Statistics_Show_Border invalid.')
-	if(Statistics_View && (!isString(Statistics_View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics_View))) return res.status(400).send('Statistics_View invalid.')
-	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) return res.status(400).send('Statistics_View_Month invalid.')
-	if(Statistics_View_Year && !isInt(Statistics_View_Year)) return res.status(400).send('Statistics_View_Year invalid.')
+	if(Statistics_Show_Border !== undefined && !isBoolean(Statistics_Show_Border)) 																		return res.status(400).send('Statistics_Show_Border invalid.')
+	if(Statistics_View && (!isString(Statistics_View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics_View))) 	return res.status(400).send('Statistics_View invalid.')
+	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) 			return res.status(400).send('Statistics_View_Month invalid.')
+	if(Statistics_View_Year && !isInt(Statistics_View_Year)) 																							return res.status(400).send('Statistics_View_Year invalid.')
 
 
 	const transaction = await sequelize.transaction()
