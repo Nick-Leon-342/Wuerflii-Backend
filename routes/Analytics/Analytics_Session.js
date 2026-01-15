@@ -4,7 +4,6 @@ const express = require('express')
 const router = express.Router()
 
 const { handle_error } = require('../../handle_error')
-const { sort__list_players } = require('../../Functions')
 
 const { 
 	Association__Players_And_FinalScores_With_Sessions, 
@@ -71,16 +70,16 @@ router.get('', async (req, res) => {
 			return res.status(404).send('Players not found.')
 		}
 
-		const association = user.Sessions[0].Association__Users_And_Sessions
-		const statistics_view = association.Statistics_View
+		const association 			= user.Sessions[0].Association__Users_And_Sessions
+		const statistics_view 		= association.Statistics_View
 		const statistics_view_month = association.Statistics_View_Month
-		const statistics_view_year = association.Statistics_View_Year
+		const statistics_view_year 	= association.Statistics_View_Year
 
 		
 		// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
 
-		const list_years = []	// List of all the years in which games were played
-		const list_finalscores = []
+		const list_years 		= []	// List of all the years in which games were played
+		const list_finalscores 	= []
 		for(const association of user.Sessions[0].association) {
 			if(list_finalscores.filter(finalscore => finalscore.id === association.FinalScoreID).length > 0) continue
 			const finalscore = await FinalScores.findByPk(association.FinalScoreID, { 
@@ -103,16 +102,16 @@ router.get('', async (req, res) => {
 
 		const json = { Games_Played: 0, Wins: {}, Draws: 0 }
 		const total = {
-			Total_Games_Played: list_finalscores.length, 
-			Total_Wins: {}, 
-			Total_Draws: 0, 
+			Total__Games_Played:	list_finalscores.length, 
+			Total__Wins: 			{},		// Wins of each player
+			Total__Draws: 			0, 
 
-			Scores_Lowest: {}, 		// Lowest scores of each player
-			Scores_Average: {}, 	// Average scores of each player
-			Scores_Highest: {}, 	// Highest scores of each player
-			Scores_Total: {}, 		// Every score of each player combined
+			Scores__Lowest: 		{}, 	// Lowest scores of each player
+			Scores__Average: 		{}, 	// Average scores of each player
+			Scores__Highest: 		{}, 	// Highest scores of each player
+			Scores__Total: 			{}, 	// Every score of each player combined
 			
-			Data: {}, 
+			Data: 					{}, 
 		}
 
 
@@ -138,9 +137,9 @@ router.get('', async (req, res) => {
 		for(const player of user.Sessions[0].Players) {
 			const id = player.id
 
-			total.Scores_Lowest[id] = 0
-			total.Scores_Highest[id] = 0
-			total.Scores_Total[id] = 0
+			total.Scores__Lowest[id] 	= 0
+			total.Scores__Highest[id] 	= 0
+			total.Scores__Total[id] 	= 0
 		}
 
 		
@@ -148,17 +147,17 @@ router.get('', async (req, res) => {
 
 		for(const final_score of list_finalscores) {
 			
-			const date = new Date(final_score.End)
-			const year = date.getFullYear()
+			const date 	= new Date(final_score.End)
+			const year 	= date.getFullYear()
 			const month = date.getMonth() + 1
-			const day = date.getDate()
+			const day 	= date.getDate()
 
 
 			// Init the selected time -> selected year or month or day
 			let time
-			if(statistics_view === 'statistics_overall') time = year
-			if(statistics_view === 'statistics_year') time = month
-			if(statistics_view === 'statistics_month') time = day
+			if(statistics_view === 'statistics_overall'	) time = year
+			if(statistics_view === 'statistics_year'	) time = month
+			if(statistics_view === 'statistics_month'	) time = day
 
 			
 			// Increase games_played count in specific time
@@ -168,7 +167,7 @@ router.get('', async (req, res) => {
 			// Calculate if game was a draw
 			const list_winners = final_score.Players.filter(player => player.asso.IsWinner)
 			if(list_winners.length > 1) {
-				total.Total_Draws++
+				total.Total__Draws++
 				total.Data[time].Draws++
 			}
 
@@ -180,8 +179,8 @@ router.get('', async (req, res) => {
 				// Increase wins of players that won
 				if(player.asso.IsWinner) {
 					// Increase total wins
-					if(!total.Total_Wins[id]) total.Total_Wins[id] = 0
-					total.Total_Wins[id]++
+					if(!total.Total__Wins[id]) total.Total__Wins[id] = 0
+					total.Total__Wins[id]++
 	
 					// Increase wins of the year/month/day
 					if(!total.Data[time].Wins[id]) total.Data[time].Wins[id] = 0
@@ -190,9 +189,9 @@ router.get('', async (req, res) => {
 
 
 				const score = player.asso.Score
-				if(total.Scores_Lowest[id] > score || total.Scores_Lowest[id] === 0) total.Scores_Lowest[id] = score
-				if(total.Scores_Highest[id] < score) total.Scores_Highest[id] = score
-				total.Scores_Total[id] = total.Scores_Total[id] + score
+				if(total.Scores__Lowest[id] > score || total.Scores__Lowest[id] === 0) total.Scores__Lowest[id] = score
+				if(total.Scores__Highest[id] < score) total.Scores__Highest[id] = score
+				total.Scores__Total[id] = total.Scores__Total[id] + score
 
 			})
 
@@ -201,7 +200,7 @@ router.get('', async (req, res) => {
 
 		// Calculate average scores
 		for(const player of user.Sessions[0].Players) {
-			total.Scores_Average[player.id] = Math.round(total.Scores_Total[player.id] / total.Total_Games_Played)
+			total.Scores__Average[player.id] = Math.round(total.Scores__Total[player.id] / total.Total__Games_Played)
 		}
 
 

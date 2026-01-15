@@ -49,15 +49,15 @@ router.get('', async (req, res) => {
 		}
 
 
-		const statistics_view = user.Statistics_View
+		const statistics_view 		= user.Statistics_View
 		const statistics_view_month = user.Statistics_View_Month
-		const statistics_view_year = user.Statistics_View_Year
+		const statistics_view_year 	= user.Statistics_View_Year
 
 		
 		// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
 
-		const list_years = []	// List of all the years in which games were played
-		const list_finalscores = []
+		const list_years 		= []	// List of all the years in which games were played
+		const list_finalscores 	= []
 		for(const session of user.Sessions) {
 			for(const association of session.association) {
 				if(list_finalscores.filter(finalscore => finalscore.id === association.FinalScoreID).length > 0) continue
@@ -73,11 +73,11 @@ router.get('', async (req, res) => {
 
 
 
-		const json = { Games_Played: 0 }
+		const json 	= { Games_Played: 0 }
 		const total = {
-			Total_Sessions: user.Sessions.length, 
-			Total_Games_Played: list_finalscores.length, 
-			Data: {}, 
+			Total__Sessions: 		user.Sessions.length, 
+			Total__Games_Played: 	list_finalscores.length, 
+			Data: 					{}, 
 		}
 
 
@@ -102,17 +102,17 @@ router.get('', async (req, res) => {
 
 		for(const final_score of list_finalscores) {
 			
-			const date = new Date(final_score.End)
-			const year = date.getFullYear()
+			const date 	= new Date(final_score.End)
+			const year 	= date.getFullYear()
 			const month = date.getMonth() + 1
-			const day = date.getDate()
+			const day 	= date.getDate()
 
 
 			// Init the selected time -> selected year or month or day
 			let time
-			if(statistics_view === 'statistics_overall') time = year
-			if(statistics_view === 'statistics_year') time = month
-			if(statistics_view === 'statistics_month') time = day
+			if(statistics_view === 'statistics_overall'	) time = year
+			if(statistics_view === 'statistics_year'	) time = month
+			if(statistics_view === 'statistics_month'	) time = day
 
 			
 			// Increase games_played count in specific time
@@ -125,8 +125,8 @@ router.get('', async (req, res) => {
 
 		await transaction.commit()
 		res.json({ 
-			Total: total, 
-			List_Years: list_years, 
+			Total: 			total, 
+			List__Years:	list_years, 
 		})
 
 

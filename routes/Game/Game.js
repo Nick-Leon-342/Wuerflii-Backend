@@ -200,7 +200,7 @@ router.post('', async (req, res) => {
 			Table: list_players.map(player => {
 				return {
 					PlayerID: player.id, 
-					List_Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
+					List__Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
 				}
 			}), 
 		}, { transaction })
