@@ -95,8 +95,8 @@ router.post('', async (req, res) => {
 			Name, 
 			Color, 
 			Columns, 
-			View_List_Years: [], 
-			LastPlayed: date, 
+			View_List_Years: 	[], 
+			LastPlayed:			date, 
 		}, { transaction })
 
 		
@@ -104,20 +104,20 @@ router.post('', async (req, res) => {
 
 		const association = await Association__Users_And_Sessions.create({
 			UserID, 
-			SessionID: session.id, 
+			SessionID: 				session.id, 
 
-			InputType: 'select',
-			Scores_Visible: true, 
+			InputType: 				'select',
+			Scores_Visible: 		true, 
 	
-			View: 'show_all', 
-			View_Month: date.getMonth() + 1, 
-			View_Year: date.getFullYear(), 
-			View_CustomDate: date, 
+			View: 					'show_all', 
+			View_Month: 			date.getMonth() + 1, 
+			View_Year: 				date.getFullYear(), 
+			View_CustomDate: 		date, 
 
-			Statistics_Show_Border: false, 
-			Statistics_View: 'statistics_overall', 
-			Statistics_View_Month: date.getMonth() + 1, 
-			Statistics_View_Year: date.getFullYear(), 
+			Statistics_Show_Border:	true, 
+			Statistics_View: 		'statistics_overall', 
+			Statistics_View_Month: 	date.getMonth() + 1, 
+			Statistics_View_Year: 	date.getFullYear(), 
 		}, { transaction })
 
 
