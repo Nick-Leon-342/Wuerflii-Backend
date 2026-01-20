@@ -1,6 +1,6 @@
 
 
-FROM node:23.11.0-slim
+FROM node:25.2.1
 
 WORKDIR /wuerflii-backend
 
