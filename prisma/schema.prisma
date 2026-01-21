@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+	provider	= "prisma-client-js"
+	output		= "../generated/prisma"
+	engineType	= "client"
+}
+
+datasource db {
+	provider = "postgresql"
+}
+
+enum Enum___List__Month {
+	JANUARY
+	FEBRUARY
+	MARCH
+	APRIL
+	MAY
+	JUNE
+	JULY
+	AUGUST
+	SEPTEMBER
+	OCTOBER
+	NOVEMBER
+	DECEMBER
+}
+
+enum Enum___Statistics__View {
+	STATISTICS_OVERALL
+	STATISTICS_YEAR
+	STATISTICS_MONTH
+}
+
+
+
+
+
+enum Enum___Users___View__Sessions {
+	LAST_PLAYED
+	CREATED
+	NAME
+}
+
+model Users {
+	id										Int								@id	@default(autoincrement())
+
+	Name									String							@unique
+	Password								String
+	RefreshToken							String?
+	DarkMode								Boolean
+
+	// For session list in /session/select
+	Show__Session_Names						Boolean
+	Show__Session_Date						Boolean
+	View__Sessions							Enum___Users___View__Sessions
+	View__Sessions_Desc						Boolean
+
+	// Values for /analytics
+	Statistics__View						Enum___Statistics__View
+	Statistics__View_Month					Enum___List__Month
+	Statistics__View_Year					Int
+
+	List__Association_Users_And_Sessions	Association__Users_And_Sessions[]
+}
+
+
+
+
+
+enum Enum___Association__Users_And_Sessions___Input_Type {
+	SELECT_AND_TYPE
+	SELECT
+	TYPE
+}
+
+enum Enum___Association__Users_And_Sessions___View {
+	SHOW__CUSTOM_DATE
+	SHOW__MONTH
+	SHOW__YEAR
+	SHOW__ALL
+}
+
+model Association__Users_And_Sessions {
+	id									Int														@id @default(autoincrement())
+
+	Input_Type							Enum___Association__Users_And_Sessions___Input_Type
+	Show_Scores							Boolean
+
+	// Values for /session/preview
+	View								Enum___Association__Users_And_Sessions___View
+	View__Month							Enum___List__Month
+	View__Year							Int
+	View__Custom_Date					DateTime												// A self picked date from which scores are calculated
+
+	// Values for /session/analytics
+	Statistics__Show_Border				Boolean													// If border should be visible
+	Statistics__View					Enum___Statistics__View									// Selected view for statistics
+	Statistics__View_Month				Enum___List__Month										// Which month to view
+	Statistics__View_Year				Int														// Which year to view
+
+	User								Users													@relation(fields: [UserID], references: [id], onDelete: Cascade)
+	UserID								Int
+	Session								Sessions												@relation(fields: [SessionID], references: [id], onDelete: Cascade)
+	SessionID							Int														@unique
+}
+
+
+
+
+
+model Sessions {
+	id					Int			@id @unique @default(autoincrement())
+
+	Name				String
+	Color				String
+	Columns				Int
+
+	View__List_Years	Int			// Which years could be displayed because games were played in them
+	CurrentGameStart	DateTime?
+	LastPlayed			DateTime
+
+
+	Association_Users_And_Sessions							Association__Users_And_Sessions?
+	List__Association__Sessions_And_Players					Association__Sessions_And_Players[]
+	List__Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
+}
+
+
+
+
+
+model Association__Sessions_And_Players {
+	id					Int			@id @default(autoincrement())
+
+	Gnadenwurf_Used		Boolean
+	Order_Index			Int			// Decides which player is the first, second ...
+
+	Session				Sessions	@relation(fields: [SessionID], references: [id], onDelete: Cascade)
+	SessionID			Int
+	Player				Players		@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+	PlayerID			Int			@unique
+}
+
+
+
+
+
+model Players {
+	id		Int		@id @default(autoincrement())
+
+	Name	String
+	Color	String
+
+	Association__Sessions_And_Players 						Association__Sessions_And_Players?
+	List__Association__Players_And_FinalScores_And_Sessions Association__Players_And_FinalScores_And_Sessions[]
+}
+
+
+
+
+
+model Association__Players_And_FinalScores_And_Sessions {
+	id								Int 		@id @default(autoincrement())
+
+	IsWinner						Boolean
+	Score							Int
+
+
+	Wins__Before					Int
+	Wins__After						Int
+	Wins__Before_Year				Int
+	Wins__After_Year				Int
+	Wins__Before_Month				Int
+	Wins__After_Month				Int
+	Wins__Before_SinceCustomDate	Int?
+	Wins__After_SinceCustomDate		Int?
+
+	
+	Session				Sessions		@relation(fields: [SessionID], references: [id], onDelete: Cascade)
+	SessionID			Int
+	Final_Score			Final_Scores	@relation(fields: [Final_ScoreID], references: [id], onDelete: Cascade)
+	Final_ScoreID		Int				@unique
+	List__Players		Players[]
+}
+
+
+
+
+
+model Final_Scores {
+	id			Int			@id @default(autoincrement())
+
+	Start		DateTime
+	End			DateTime	@default(now())
+	Columns		Int
+	Surrendered	Boolean
+
+	Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions?
+}

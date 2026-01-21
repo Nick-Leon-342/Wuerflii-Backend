@@ -1,13 +1,14 @@
 
 
-const jwt = require('jsonwebtoken')
-require('dotenv').config()
+import jwt from 'jsonwebtoken'
+
+import { ACCESS_TOKEN_SECRET } from '../utils.js'
 
 
 
 
 
-module.exports = function verifyJWT(req, res, next) {
+export default function verifyJWT(req, res, next) {
 
 	const authHeader = req.headers['authorization']
 	if (!authHeader) return res.status(401).send('No token')
@@ -15,7 +16,7 @@ module.exports = function verifyJWT(req, res, next) {
 	const token = authHeader.split(' ')[1]
 	jwt.verify(
 		token,
-		process.env.ACCESS_TOKEN_SECRET,
+		ACCESS_TOKEN_SECRET,
 		(err, decoded) => {
 			if (err) return res.status(403).send('Invalid token')
 			req.UserID = decoded.id

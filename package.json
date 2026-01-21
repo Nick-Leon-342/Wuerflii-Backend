@@ -3,6 +3,7 @@
   "version": "1.6.0",
   "description": "To make it easy for you to get started with GitLab, here's a list of recommended next steps.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "backend": "cross-env NODE_ENV=dev nodemon index.js",
     "prod": "cross-env NODE_ENV=prod node index.js"
@@ -10,24 +11,31 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.12",
-    "pg": "^8.11.3",
-    "sequelize": "^6.33.0",
+    "pg": "^8.17.2",
     "sequelize-cli": "^6.6.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.9",
     "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
     "nodemon": "^3.1.11",
+    "prisma": "^7.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

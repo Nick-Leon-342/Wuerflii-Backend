@@ -1,17 +1,12 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const bcrypt = require('bcrypt')
-const sendToken = require('./SendToken')
-const { isString } = require('../IsDataType')
-const { handle_error } = require('../handle_error')
-
-const { 
-	Users, 
-	sequelize
-} = require('../models')
+import bcrypt from 'bcrypt'
+import sendToken from './SendToken.js'
+import { isString } from '../IsDataType.js'
+import { handle_error } from '../handle_error.js'
 
 const {
 	NAME_MIN_CHARACTER, 
@@ -36,7 +31,7 @@ const {
 
 
 
-router.get('/regex', (req, res) => {
+router.get('/regex', (_, res) => {
 
 	res.json({
 		NAME_MIN_CHARACTER, 

@@ -8,26 +8,7 @@ const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_M
 
 
 
-/**
- * 
- * Generates and sends authentication tokens for a user. Creates an access token and a refresh token,
- * saves the refresh token in the database, and sends the tokens in the response.
- * 
- * @module sendToken
- * @async
- * 
- * @param {Object} options - The options object.
- * @param {Object} options.transaction - The transaction object for managing database changes.
- * @param {number} options.UserID - The unique identifier of the user.
- * @param {Object} options.res - The response object to send back to the client.
- * 
- * @returns {Promise<void>} Returns a promise that resolves when the tokens are generated, saved, and sent.
- * 
- * @throws {Error} Throws an error if token generation or database update fails.
- * 
- */
-
-module.exports = async function sendToken({
+export default async function sendToken({
 	transaction, 
 	UserID, 
 	res, 
