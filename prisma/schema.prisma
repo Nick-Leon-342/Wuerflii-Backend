@@ -49,8 +49,8 @@ model Users {
 	id										Int								@id	@default(autoincrement())
 
 	Name									String							@unique
-	Password								String
-	RefreshToken							String?
+	Password								String							@unique
+	Token_Refresh							String?							@unique
 	DarkMode								Boolean
 
 	// For session list in /session/select
@@ -125,6 +125,7 @@ model Sessions {
 
 
 	Association_Users_And_Sessions							Association__Users_And_Sessions?
+	List__Table_Columns										Table_Columns[]
 	List__Association__Sessions_And_Players					Association__Sessions_And_Players[]
 	List__Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
 }
@@ -199,5 +200,66 @@ model Final_Scores {
 	Columns		Int
 	Surrendered	Boolean
 
+	createdAt	DateTime	@default(now())
+	updatedAt	DateTime	@updatedAt
+
 	Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions?
+	Table_Archive										Table_Archives?
+}
+
+
+
+
+
+model Table_Columns {
+	id						Int			@id @default(autoincrement())
+
+	Column					Int
+	Total_Score				Int 		// Hidden but necessary to calculate totalscore in frontend
+
+	// ____________________ Upper-Table ____________________
+
+	Upper_Table_1			Int?
+	Upper_Table_2			Int?
+	Upper_Table_3			Int?
+	Upper_Table_4			Int?
+	Upper_Table_5			Int?
+	Upper_Table_6			Int?
+
+	Upper_Table_Score		Int
+	Upper_Table_Add35		Int?
+	Upper_Table_TotalScore	Int?
+
+
+	// ____________________ Bottom-Table ____________________
+
+	Bottom_Table_1			Int?
+	Bottom_Table_2			Int?
+	Bottom_Table_3			Int?
+	Bottom_Table_4			Int?
+	Bottom_Table_5			Int?
+	Bottom_Table_6			Int?
+	Bottom_Table_7			Int?
+
+	Bottom_Table_Score		Int?
+	Bottom_Table_TotalScore	Int?
+
+	createdAt				DateTime	@default(now())
+	updatedAt				DateTime	@updatedAt
+
+	Session					Sessions	@relation(fields: [SessionID], references: [id], onDelete: Cascade)
+	SessionID				Int
+}
+
+
+
+
+
+model Table_Archives {
+	id			Int		@id @default(autoincrement())
+	
+	Table		Json
+
+	Final_Score		Final_Scores	@relation(fields: [Final_ScoreID], references: [id])
+	Final_ScoreID	Int @unique
 }

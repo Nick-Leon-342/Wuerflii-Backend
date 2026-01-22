@@ -206,7 +206,7 @@ router.delete('', async (req, res) => {
 
 
 		await transaction.commit()
-		res.clearCookie('Wuerflii_RefreshToken', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
+		res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
 		res.sendStatus(204)
 
 

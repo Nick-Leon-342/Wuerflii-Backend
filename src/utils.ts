@@ -1,10 +1,42 @@
 
 
-export const isProd			: boolean	= process.env.NODE_ENV === 'prod'
+import * as dotenv from 'dotenv'
+dotenv.config()
 
+import { Enum___Refresh_Token_Samesite } from './types/Enum___Refresh_Token_Samesite.js'
+
+
+
+
+
+export const isProd			: boolean	= process.env.NODE_ENV === 'prod'
 export const PORT			: number	= isProd ? 5000 : +(process.env.PORT || 5000)
 
-export const DATABASE_URL	: string	= `prisma+postgres://localhost:51213/?api_key=eyJkYXRhYmFzZVVybCI6InBvc3RncmVzOi8vcG9zdGdyZXM6cG9zdGdyZXNAbG9jYWxob3N0OjUxMjE0L3RlbXBsYXRlMT9zc2xtb2RlPWRpc2FibGUmY29ubmVjdGlvbl9saW1pdD0xJmNvbm5lY3RfdGltZW91dD0wJm1heF9pZGxlX2Nvbm5lY3Rpb25fbGlmZXRpbWU9MCZwb29sX3RpbWVvdXQ9MCZzaW5nbGVfdXNlX2Nvbm5lY3Rpb25zPXRydWUmc29ja2V0X3RpbWVvdXQ9MCIsIm5hbWUiOiJkZWZhdWx0Iiwic2hhZG93RGF0YWJhc2VVcmwiOiJwb3N0Z3JlczovL3Bvc3RncmVzOnBvc3RncmVzQGxvY2FsaG9zdDo1MTIxNS90ZW1wbGF0ZTE_c3NsbW9kZT1kaXNhYmxlJmNvbm5lY3Rpb25fbGltaXQ9MSZjb25uZWN0X3RpbWVvdXQ9MCZtYXhfaWRsZV9jb25uZWN0aW9uX2xpZmV0aW1lPTAmcG9vbF90aW1lb3V0PTAmc2luZ2xlX3VzZV9jb25uZWN0aW9ucz10cnVlJnNvY2tldF90aW1lb3V0PTAifQ`
+
+
+
+
+// ____________________ Database ____________________
+
+const {
+	DB_USERNAME,
+	DB_PASSWORD,
+	DB_DATABASE,
+	DB_HOST,
+	DB_PORT,
+	DB_TYPE, 
+} = process.env
+
+if(
+	!DB_USERNAME	||
+	!DB_PASSWORD	||
+	!DB_DATABASE	||
+	!DB_HOST		||
+	!DB_PORT		||
+	!DB_TYPE
+) throw new Error('Missing database environment variables!')
+
+export const DATABASE_URL	: string	= `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`
 
 
 
@@ -12,11 +44,16 @@ export const DATABASE_URL	: string	= `prisma+postgres://localhost:51213/?api_key
 
 // ____________________ JWT-Session-Tokens ____________________
 
-export const ACCESS_TOKEN_SECRET				: string	= process.env.ACCESS_TOKEN_SECRET || '1234'
-export const REFRESH_TOKEN_SAMESITE 			: string	= process.env.REFRESH_TOKEN_SAMESITE || 'None'
-export const REFRESH_TOKEN_SECURE 				: boolean	= process.env.REFRESH_TOKEN_SECURE === 'true' || false
-export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number	= parseInt(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES || '15') * 60 * 1000
-export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number	= parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES || '1440') * 60 * 1000
+export const ACCESS_TOKEN_SECRET				: string						= process.env.ACCESS_TOKEN_SECRET 										|| '1234'
+export const REFRESH_TOKEN_SECRET				: string						= process.env.REFRESH_TOKEN_SECRET 										|| '1234'
+
+export const REFRESH_TOKEN_SAMESITE 			: Enum___Refresh_Token_Samesite	= 
+				Object.values(Enum___Refresh_Token_Samesite).includes(process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
+					? (process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
+					: Enum___Refresh_Token_Samesite.none
+export const REFRESH_TOKEN_SECURE 				: boolean						= process.env.REFRESH_TOKEN_SECURE === 'true' 							|| false
+export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number						= parseInt(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES 					|| '15') * 60 * 1000
+export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 				|| '1440') * 60 * 1000
 
 
 
