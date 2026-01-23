@@ -8,12 +8,15 @@ import sort__list_players from '../../Functions.js'
 import { handle_error } from '../../handle_error.js'
 import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
 import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
-import { filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
+import { filter__association_sessions_and_players, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
 
 import route__session_players from './Session_Players.js'
 import { prisma } from '../../index.js'
-import { List__Months } from '../../types/Type___List__Months.js'
+import { List__Months_Enum } from '../../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { Enum___Association__Users_And_Sessions___Input_Type, Enum___Association__Users_And_Sessions___View, Enum___Statistics__View, type Users } from '../../../generated/prisma/index.js'
+import type { Type__Session } from '../../types/Type__Session.js'
+import type { Type__Player } from '../../types/Type__Player.js'
 router.use('/players', route__session_players)
 
 
@@ -40,20 +43,21 @@ router.get('', (req, res) => {
 		}
 	}).then(user => {
 
+		if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+		if(!user.List__Association_Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 
-		// Check if user exists
-		if(!user) return res.status(404).send('User not found.')
-
-		// Check if session exists
-		console.log(user)
-		if(!user.List__Association_Users_And_Sessions) return res.status(404).send('Session not found.')
-
-		// Response
-		res.json(filter__session(user.Sessions[0]))
+		res.json({
+			...filter__session(user.List__Association_Users_And_Sessions[0].Session), 
+			...filter__association_users_and_sessions(user.List__Association_Users_And_Sessions[0])
+		})
 
 
 	}).catch(async err => {
-		await handle_error(res, err, 'GET /session')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /session')
+		}
 	})
 
 })
@@ -98,13 +102,13 @@ router.post('', async (req, res) => {
 					Show_Scores:	 			true, 
 			
 					View: 						'SHOW__ALL', 
-					View__Month: 				List__Months[date.getMonth()] || 'JANUARY', 
+					View__Month: 				List__Months_Enum[date.getMonth()] || 'JANUARY', 
 					View__Year: 				date.getFullYear(), 
 					View__Custom_Date: 			date, 
 		
 					Statistics__Show_Border:	true, 
 					Statistics__View: 			'STATISTICS_OVERALL', 
-					Statistics__View_Month: 	List__Months[date.getMonth()] || 'JANUARY', 
+					Statistics__View_Month: 	List__Months_Enum[date.getMonth()] || 'JANUARY', 
 					Statistics__View_Year: 		date.getFullYear(), 
 				}
 			})
@@ -136,106 +140,96 @@ router.patch('', async (req, res) => {
 		Columns, 
 
 		View, 
-		View_Month, 
-		View_Year, 
+		View__Month, 
+		View__Year, 
 		
-		InputType, 
-		Scores_Visible, 
+		Input_Type, 
+		Show_Scores, 
 
-		Statistics_Show_Border, 
+		Statistics__Show_Border, 
 		Statistics__View, 
 		Statistics__View_Month, 
 		Statistics__View_Year, 
 	} = req.body
 	
-	if(!SessionID || !isInt(SessionID)) 	return res.status(400).send('SessionID invalid.')
-	if(Name && !isString(Name)) 			return res.status(400).send('Name invalid.')
-	if(Color && !isColor(Color)) 			return res.status(400).send('Color invalid.')
-	if(Columns && !isInt(Columns)) 			return res.status(400).send('Columns invalid.')
+	if(!SessionID || !isInt(SessionID)																										) return res.status(400).send('SessionID invalid.')
+	if(Name && !isString(Name)																												) return res.status(400).send('Name invalid.')
+	if(Color && !isColor(Color)																												) return res.status(400).send('Color invalid.')
+	if(Columns && !isInt(Columns)																											) return res.status(400).send('Columns invalid.')
 
-	if(View && (!isString(View) || !['show_month', 'show_year', 'show_custom_date', 'show_all'].includes(View)))	return res.status(400).send('View invalid.')
-	if(View_Month && (!isInt(View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(View_Month))) 		return res.status(400).send('View_Month invalid.')
-	if(View_Year && !isInt(View_Year)) 																				return res.status(400).send('View_Year invalid.')
-	if(InputType && (!isString(InputType) || !['select', 'select_and_type', 'type'].includes(InputType))) 			return res.status(400).send('InputType invalid.')
-	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) 													return res.status(400).send('Scores_Visible invalid.')
+	if(View && (!isString(View) || !Object.values(Enum___Association__Users_And_Sessions___View).includes(View))							) return res.status(400).send('View invalid.')
+	if(View__Month && (!isString(View__Month) || !Object.values(List__Months_Enum).includes(View__Month))										) return res.status(400).send('View__Month invalid.')
+	if(View__Year && !isInt(View__Year)																										) return res.status(400).send('View__Year invalid.')
+	if(Input_Type && (!isString(Input_Type) || !Object.values(Enum___Association__Users_And_Sessions___Input_Type).includes(Input_Type))	) return res.status(400).send('Input_Type invalid.')
+	if(Show_Scores !== undefined && !isBoolean(Show_Scores)																					) return res.status(400).send('Show_Scores invalid.')
 		
-	if(Statistics_Show_Border !== undefined && !isBoolean(Statistics_Show_Border)) 																		return res.status(400).send('Statistics_Show_Border invalid.')
-	if(Statistics__View && (!isString(Statistics__View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics__View))) 	return res.status(400).send('Statistics__View invalid.')
-	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics__View_Month))) 			return res.status(400).send('Statistics__View_Month invalid.')
-	if(Statistics__View_Year && !isInt(Statistics__View_Year)) 																							return res.status(400).send('Statistics__View_Year invalid.')
+	if(Statistics__Show_Border !== undefined && !isBoolean(Statistics__Show_Border)															) return res.status(400).send('Statistics__Show_Border invalid.')
+	if(Statistics__View && (!isString(Statistics__View) || !Object.values(Enum___Statistics__View).includes(Statistics__View))				) return res.status(400).send('Statistics__View invalid.')
+	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || !Object.values(List__Months_Enum).includes(Statistics__View_Month))			) return res.status(400).send('Statistics__View_Month invalid.')
+	if(Statistics__View_Year && !isInt(Statistics__View_Year)																				) return res.status(400).send('Statistics__View_Year invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
-		
-
-		// __________________________________________________ User __________________________________________________
-		
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
+		await prisma.$transaction(async (tx) => {
+			
+			const user = await tx.users.findUnique({
+				where: { id: UserID },  
+				include: {
+					List__Association_Users_And_Sessions: {
+						where: { id: SessionID }, 
+						include: {
+							Session: true
+						}
+					}
+				}
+			})
+	
+			if(!user										) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List__Association_Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+	
+	
+			// __________________________________________________ Update session __________________________________________________
+	
+			await tx.sessions.update({
 				where: { id: SessionID }, 
-			}]
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// __________________________________________________ Update session __________________________________________________
-
-		await user.Sessions[0].update({
-			Name, 
-			Color, 
-			Columns, 
-			Scores_Visible, 
-		}, { transaction })
-
-
-		// Update association if there are some variables to change
-		const json_updates_association = {
-			InputType, 
-			Scores_Visible, 
-
-			View, 
-			View_Month, 
-			View_Year, 
-
-			Statistics_Show_Border, 
-			Statistics__View, 
-			Statistics__View_Month, 
-			Statistics__View_Year, 
-		}
-
-		await Association__Users_And_Sessions.update(json_updates_association, {
-			where: {
-				SessionID: user.Sessions[0].id, 
-				UserID, 
-			}, 
-			transaction, 
-		})
+				data: {
+					Name:		Name, 
+					Color:		Color, 
+					Columns:	Columns, 
+				}
+			})
+	
+	
+			// Update association if there are some variables to change	
+			await tx.association__Users_And_Sessions.update({
+				where: {
+					SessionID, 
+					UserID, 
+				}, 
+				data: {
+					Input_Type, 
+					Show_Scores, 
 		
+					View, 
+					View__Month, 
+					View__Year, 
+		
+					Statistics__Show_Border, 
+					Statistics__View, 
+					Statistics__View_Month, 
+					Statistics__View_Year, 
+				},
+			})
+			
+			res.sendStatus(204)
 
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'PATCH /session')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'PATCH /session')
+		}
 	}
 
 })
@@ -349,73 +343,74 @@ router.get('/all', async (req, res) => {
 
 	const { UserID } = req
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
+	
+			const user = await tx.users.findUnique({
+				where: { id: UserID },
+				include: {
+					List__Association_Users_And_Sessions: {
+						include: {
+							Session: {
+								include: {
+									List__Association__Sessions_And_Players: {
+										include: {
+											Player: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}, 
+			})
+			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+	
+			const list__sessions: Array<Type__Session> = []
+			for(const association of user.List__Association_Users_And_Sessions) {
 
+				const list__players: Array<Type__Player> = association.Session.List__Association__Sessions_And_Players.map(asso => ({
+					...filter__association_sessions_and_players(asso), 
+					...filter__player(asso.Player), 
+				}))
 
-		// __________________________________________________ Temporary user to get attributes for 'real' query __________________________________________________
+				const session: Type__Session = {
+					...filter__session(association.Session), 
+					...filter__association_users_and_sessions(association), 
+					List__Players: 		sort__list_players(list__players), 
+					Checkbox_Checked:	false, 
+				}
 
-		const tmp__user = await Users.findByPk(UserID, { transaction })
+				list__sessions.push(session)
+			}
+	
+			res.json(sort__list_sessions(user, list__sessions))
 
-		// Check if user exists
-		if(!tmp__user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// __________________________________________________ Get all sessions __________________________________________________
-
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				include: [{
-					model: Players, 
-					through: { 
-						as: 'asso', 
-						attributes: [ 'Gnadenwurf_Used', 'Order_Index' ] 
-					}, 
-				}], 
-			}], 
-			order: [[ { model: Sessions }, ...getOrder(tmp__user) ]]
 		})
-
-		const list_sessions = []
-		for(const session of user.Sessions) {
-			const tmp_session = filter__session(session)
-			tmp_session.List_Players = sort__list_players(session.Players).map(filter__player)
-			list_sessions.push({ ...tmp_session, Checkbox_Checked: false })
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(list_sessions)
-
-
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'GET /session/all')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /session/all')
+		}
 	}
 
 })
 
-function getOrder(user) {
+function sort__list_sessions(user: Users, list__sessions: Array<Type__Session>) {
 
 	const view = user.View__Sessions
 	const desc = user.View__Sessions_Desc
 
 	switch(view) {
-		case 'Created':
-			return [ 'createdAt', desc ? 'ASC' : 'DESC' ]
+		case 'CREATED':
+			return list__sessions.sort((a, b) => desc ? a.createdAt.getTime() - b.createdAt.getTime() : b.createdAt.getTime() - a.createdAt.getTime())
 
-		case 'Name':
-			return [ 'Name', desc ? 'ASC' : 'DESC' ]
+		case 'NAME':
+			return list__sessions.sort((a, b) => desc ? a.Name.localeCompare(b.Name, 'de', { sensitivity: 'base' }) : b.Name.localeCompare(a.Name, 'de', { sensitivity: 'base' }))
 
 		default:
-			return [ 'LastPlayed', desc ? 'DESC' : 'ASC' ]
+			return list__sessions.sort((a, b) => desc ? b.LastPlayed.getTime() - a.LastPlayed.getTime() : a.LastPlayed.getTime() - b.LastPlayed.getTime())
 
 	}
 

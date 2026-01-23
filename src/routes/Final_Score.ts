@@ -161,8 +161,8 @@ function getQuery( session ) {
 
 	const asso = session.Association__Users_And_Sessions
 	
-	const year = asso.View_Year
-	const month = asso.View_Month
+	const year = asso.View__Year
+	const month = asso.View__Month
 	
 	const startOfYear = new Date(`${year}-01-01`)
 	const endOfYear = new Date(`${year}-12-31 23:59:59`)

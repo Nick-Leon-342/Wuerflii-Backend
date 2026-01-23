@@ -54,7 +54,6 @@ export const REFRESH_TOKEN_SAMESITE 			: Enum___Refresh_Token_Samesite	=
 					: Enum___Refresh_Token_Samesite.none
 export const REFRESH_TOKEN_SECURE 				: boolean						= process.env.REFRESH_TOKEN_SECURE === 'true' 		|| false
 export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	|| 15)
-// export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	|| 1440) * 60
 export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	|| 1440) * 60 * 1000
 
 

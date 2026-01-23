@@ -32,6 +32,9 @@ export function filter__user(user: Users) {
 		Statistics__View_Month:	user.Statistics__View_Month, 
 		Statistics__View_Year:	user.Statistics__View_Year, 
 
+		createdAt:				user.createdAt, 
+		updatedAt:				user.updatedAt, 
+
 	}
 }
 
@@ -48,17 +51,18 @@ export function filter__session(session: Sessions) {
 		Color:				session.Color, 
 		Columns:			session.Columns,
 
-		View_List_Years:	session.View__List_Years, 
+		View__List_Years:	session.View__List_Years, 
 		CurrentGameStart:	session.CurrentGameStart, 
 		LastPlayed:			session.LastPlayed,
+
+		createdAt:			session.createdAt, 
+		updatedAt:			session.updatedAt, 
 
 	}
 }
 
 export function filter__association_users_and_sessions(association: Association__Users_And_Sessions) {
 	return {
-
-		id:							association.id,
 
 		Input_Type:					association.Input_Type,
 		Show_Scores:				association.Show_Scores,
@@ -83,9 +87,12 @@ export function filter__association_users_and_sessions(association: Association_
 export function filter__player(player: Players) {
 	return {
 
-		id:					player.id,
-		Name:				player.Name,
-		Color:				player.Color,
+		id:			player.id,
+		Name:		player.Name,
+		Color:		player.Color,
+
+		createdAt:	player.createdAt, 
+		updatedAt:	player.updatedAt, 
 
 	}
 }
@@ -95,6 +102,7 @@ export function filter__association_sessions_and_players(association: Associatio
 		
 		Order_Index:		association.Order_Index, 
 		Gnadenwurf_Used:	association.Gnadenwurf_Used, 
+
 	}
 }
 
@@ -111,6 +119,9 @@ export function filter__final_score(final_score: Final_Scores) {
 		End: 			final_score.End,
 		Columns: 		final_score.Columns,
 		Surrendered: 	final_score.Surrendered,
+
+		createdAt:		final_score.createdAt, 
+		updatedAt:		final_score.updatedAt, 
 
 	}
 }
@@ -196,14 +207,20 @@ export function filter__table_column(table_column: Table_Columns) {
 		Bottom_Table_Score: 		table_column.Bottom_Table_Score, 
 		Bottom_Table_TotalScore: 	table_column.Bottom_Table_TotalScore, 
 
+		createdAt:					table_column.createdAt, 
+		updatedAt:					table_column.updatedAt, 
+
 	}
 }
 
 export function filter__table_archive(table_archive: Table_Archives) {
 	return {
 
-		id:		table_archive.id, 
-		Table:	table_archive.Table, 
+		id:			table_archive.id, 
+		Table:		table_archive.Table, 
+
+		createdAt:	table_archive.createdAt, 
+		updatedAt:	table_archive.updatedAt, 
 
 	}
 }

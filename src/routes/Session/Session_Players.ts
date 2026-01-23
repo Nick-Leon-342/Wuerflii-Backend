@@ -3,9 +3,11 @@
 import express from 'express'
 const router = express.Router()
 
+import { filter__association_sessions_and_players, filter__player } from '../../Filter_DatabaseJSON.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { isArray, isString, isColor, isInt } from '../../IsDataType.js'
 import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
-import { filter__player } from '../../Filter_DatabaseJSON.js'
+import type { Type__Player } from '../../types/Type__Player.js'
 import { handle_error } from '../../handle_error.js'
 import sort__list_players from '../../Functions.js'
 import { prisma } from '../../index.js'
@@ -40,31 +42,39 @@ router.get('', (req, res) => {
 				}
 			}
 		}
+	}).then(user => {
+
+		if(!user) return res.status(404).send('User not found.')
+		if(!user.List__Association_Users_And_Sessions[0]) return res.status(404).send('Session not found.')
+
+		const list__associations_players = user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players
+		const list__players: Array<Type__Player> = list__associations_players.map(asso => ({
+			...filter__association_sessions_and_players(asso), 
+			...filter__player(asso.Player)
+		}))
+		
+		res.json(sort__list_players(list__players))
+
+	}).catch(async err => {
+		await handle_error(res, err, 'GET /session/players')
 	})
-	// Users.findByPk(UserID, { 
-	// 	include: [{
-	// 		model: Sessions, 
-	// 		required: false, 
-	// 		where: { id: SessionID }, 
-	// 		include: [{
-	// 			model: Players, 
-	// 			through: { as: 'asso' }, 
-	// 		}], 
-	// 	}], 
-	// }).then(user => {
-
-
-	// 	if(!user) return res.status(404).send('User not found.')
-	// 	if(!user.Sessions[0]) return res.status(404).send('Session not found.')
-
-	// 	res.json(sort__list_players(user.Sessions[0].Players).map(filter__player))
-
-
-	// }).catch(async err => {
-	// 	await handle_error(res, err, 'GET /session/players')
-	// })
 
 })
+
+
+
+interface Type__POST__Player {
+	Name:	string
+	Color:	string
+}
+
+function is_player_valid__POST(player: any): player is Type__POST__Player {
+	return (
+		player.Name && isString(player.Name) &&
+		player.Name.length <= MAX_LENGTH_PLAYER_NAME && 
+		player.Color && isColor(player.Color)
+	)
+}
 
 router.post('', async (req, res) => {
 
@@ -76,182 +86,177 @@ router.post('', async (req, res) => {
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(
 		!List_Players || !isArray(List_Players) || List_Players.length < 1 || List_Players.length > MAX_PLAYERS || 
-		List_Players.some(player => (!player.Name || !isString(player.Name) || player.Name.length > MAX_LENGTH_PLAYER_NAME || !player.Color || !isColor(player.Color)))
+		!List_Players.every(is_player_valid__POST)
 	) return res.status(400).send('List_Players invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-				include: Players, 
-			}], 
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		// Check if session already has players
-		if(user.Sessions[0].Players.length > 0) {
-			await transaction.rollback()
-			return res.status(409).send('Players already exist.')
-		}
-		
-
-		// __________________________________________________ Create players __________________________________________________
-
-		const list_players = []
-		for(let i = 0; List_Players.length > i; i++) {
-			const player = await Players.create({ 
-				Name: List_Players[i].Name, 
-				Color: List_Players[i].Color, 
-			}, { transaction })
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List__Association_Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List__Association__Sessions_And_Players: {
+										include: {
+											Player: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			})
+	
+			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
+			if(!user.List__Association_Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
+			if(user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
 			
-			const asso = await Association__Sessions_And_Players.create({
-				SessionID: user.Sessions[0].id, 
-				PlayerID: player.id, 
+	
+			// __________________________________________________ Create players __________________________________________________
+	
+			const list_players: Array<Type__Player> = []
+			for(let i = 0; List_Players.length > i; i++) {
+				const player = await tx.players.create({ 
+					data: {
+						Name:	List_Players[i].Name, 
+						Color:	List_Players[i].Color, 
+					}
+				})
+				
+				const association = await tx.association__Sessions_And_Players.create({
+					data: {
+						SessionID:	user.List__Association_Users_And_Sessions[0].id, 
+						PlayerID:	player.id, 
+		
+						Gnadenwurf_Used:	false, 
+						Order_Index: 		i, 
+					}
+				})
+	
+				list_players.push({
+					...filter__player(player), 
+					...filter__association_sessions_and_players(association)
+				})
+			}
+	
+			res.json(list_players)
 
-				Gnadenwurf_Used: false, 
-				Order_Index: i, 
-			}, { transaction })
-
-			list_players.push(filter__player({
-				...player.dataValues, 
-				asso, 
-			}))
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(list_players)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'POST /session/players')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'POST /session/players')
+		}
 	}
 
 })
+
+
+
+interface Type__PATCH__Player {
+	id:		number
+	Name:	string
+	Color:	string
+}
+
+function is_player_valid__PATCH(player: any): player is Type__PATCH__Player {
+	return (
+		player.id && isInt(player.id) &&
+		player.Name && isString(player.Name) &&
+		player.Name.length <= MAX_LENGTH_PLAYER_NAME && 
+		player.Color && isColor(player.Color)
+	)
+}
 
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
 	const { SessionID, List_Players } = req.body
 
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
-	if(
-		!List_Players || 
-		!List_Players.every(p => (
-			p.id && isInt(p.id) && 
-			p.Name && isString(p.Name) &&
-			p.Color && isColor(p.Color)
-		)) ||
-		!List_Players.every(p => p.Name.length > 0 && p.Name.length <= MAX_LENGTH_PLAYER_NAME)
-	) return res.status(400).send('List_Players invalid.')
+	if(!SessionID || !isInt(SessionID)) 														return res.status(400).send('SessionID invalid.')
+	if(!List_Players || !isArray(List_Players) || !List_Players.every(is_player_valid__PATCH)) 	return res.status(400).send('List_Players invalid.')
 
 	
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-		
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				where: { id: SessionID }, 
-				include: [{
-					model: Players, 
-					through: { as: 'asso' }, 
-				}], 
-			}]
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]){
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-
-
-		// __________________________________________________ Check if every player exists in both lists __________________________________________________
-
-		const tmp_list_players = user.Sessions[0].Players
-		if(
-			tmp_list_players.length !== List_Players.length || 
-			!tmp_list_players.every(player => List_Players.some(p => p.id === player.id))
-		) {
-			await transaction.rollback()
-			return res.status(400).send(`List_Players doesn't match.`)
-		}
-
-
-		// __________________________________________________ Update players __________________________________________________
-
-		for(let i = 0; List_Players.length > i; i++) {
-			const p = List_Players[i]
-
-			for(const player of tmp_list_players) {
-				if(player.id === p.id) {
-					await player.update({
-						Name: p.Name, 
-						Color: p.Color, 
-					}, { transaction })
-
-					await Association__Sessions_And_Players.update({ Order_Index: i }, {
-						transaction, 
-						where: {
-							SessionID: user.Sessions[0].id, 
-							PlayerID: player.id, 
-						}, 
-					})
-					continue
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List__Association_Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List__Association__Sessions_And_Players: {
+										include: {
+											Player: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			})
+	
+			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
+			if(!user.List__Association_Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
+			if(user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
+	
+	
+			// __________________________________________________ Check if every player exists in both lists __________________________________________________
+	
+			const tmp_list_players = user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players
+			if(
+				tmp_list_players.length !== List_Players.length || 
+				!tmp_list_players.every(player => List_Players.some((p: Type__PATCH__Player) => p.id === player.id))
+			) throw new Custom__Handled_Error(`List_Players doesn't match.`, 400)
+	
+	
+			// __________________________________________________ Update players __________________________________________________
+	
+			for(let i = 0; List_Players.length > i; i++) {
+				const p = List_Players[i]
+	
+				for(const player of tmp_list_players) {
+					if(player.id === p.id) {
+						await tx.players.update({
+							where: { id: p.id }, 
+							data: {
+								Name:	p.Name, 
+								Color:	p.Color, 
+							}
+						})
+	
+						await tx.association__Sessions_And_Players.update({ 
+							data: { Order_Index: i }, 
+							where: {
+								SessionID:	user.List__Association_Users_And_Sessions[0].SessionID, 
+								PlayerID:	player.id, 	
+							}
+						})
+						continue
+					}
 				}
 			}
-		}
+	
+			res.sendStatus(204)
 
-
-		// __________________________________________________ Response __________________________________________________
-		
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})	
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'PATCH /session/players')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'PATCH /session/players')
+		}
 	}
 
 })

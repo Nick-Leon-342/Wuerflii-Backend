@@ -51,7 +51,6 @@ export default function verifyJWT(
 		next()
 
 	} catch(err) { 
-		console.log(err)
 		res.status(403).send('Invalid token.')
 		return 
 	}

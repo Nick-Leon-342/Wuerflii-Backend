@@ -64,6 +64,9 @@ model Users {
 	Statistics__View_Month					Enum___List__Month
 	Statistics__View_Year					Int
 
+	createdAt								DateTime						@default(now())
+	updatedAt								DateTime						@updatedAt
+
 	List__Association_Users_And_Sessions	Association__Users_And_Sessions[]
 }
 
@@ -123,6 +126,9 @@ model Sessions {
 	CurrentGameStart	DateTime?
 	LastPlayed			DateTime
 
+	createdAt			DateTime	@default(now())
+	updatedAt			DateTime	@updatedAt
+
 
 	Association_Users_And_Sessions							Association__Users_And_Sessions?
 	List__Table_Columns										Table_Columns[]
@@ -151,10 +157,13 @@ model Association__Sessions_And_Players {
 
 
 model Players {
-	id		Int		@id @default(autoincrement())
+	id			Int			@id @default(autoincrement())
 
-	Name	String
-	Color	String
+	Name		String
+	Color		String
+
+	createdAt	DateTime	@default(now())
+	updatedAt	DateTime	@updatedAt
 
 	Association__Sessions_And_Players 						Association__Sessions_And_Players?
 	List__Association__Players_And_FinalScores_And_Sessions Association__Players_And_FinalScores_And_Sessions[]
@@ -257,9 +266,12 @@ model Table_Columns {
 
 
 model Table_Archives {
-	id			Int		@id @default(autoincrement())
+	id			Int			@id @default(autoincrement())
 	
 	Table		Json
+
+	createdAt	DateTime	@default(now())
+	updatedAt	DateTime	@updatedAt
 
 	Final_Score		Final_Scores	@relation(fields: [Final_ScoreID], references: [id])
 	Final_ScoreID	Int @unique

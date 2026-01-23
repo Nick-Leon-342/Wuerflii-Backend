@@ -28,7 +28,7 @@ import {
 	PASSWORD__REGEX_ALLOWEDCHARS, 
 	PASSWORD__REGEX_ALLOWEDSYMBOLS, 
 } from '../utils.js'
-import { List__Months } from '../types/Type___List__Months.js'
+import { List__Months_Enum } from '../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 
 
@@ -136,7 +136,7 @@ router.post('/registration', async (req, res) => {
 					View__Sessions_Desc: 	true, 
 		
 					Statistics__View:		'STATISTICS_OVERALL', 
-					Statistics__View_Month:	List__Months[new Date().getMonth()] || 'JANUARY', 
+					Statistics__View_Month:	List__Months_Enum[new Date().getMonth()] || 'JANUARY', 
 					Statistics__View_Year:	new Date().getFullYear(), 
 				}
 			})
