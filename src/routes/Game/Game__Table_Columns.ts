@@ -1,23 +1,12 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { handle_error } = require('../../handle_error')
-const { isInt, isString } = require('../../IsDataType')
-const { sort__list_players } = require('../../Functions')
-const { filter_table_column } = require('../../Filter_DatabaseJSON')
-
-const { 
-	Players, 
-	Sessions,
-	Table_Columns, 
-	Table_Archives, 
-	FinalScores, 
-	Users, 
-
-	sequelize, 
-} = require('../../models')
+import sort__list_players from '../../Functions.js'
+import { handle_error } from '../../handle_error.js'
+import { isInt, isString } from '../../IsDataType.js'
+import { filter__table_column } from '../../Filter_DatabaseJSON.js'
 
 
 
@@ -84,7 +73,7 @@ router.get('', async (req, res) => {
 		res.json(sort__list_players(user.Sessions[0].Players).map(player => {
 				return {
 					PlayerID: player.id, 
-					List__Table_Columns: player.Table_Columns.map(filter_table_column)
+					List__Table_Columns: player.Table_Columns.map(filter__table_column)
 				}
 			}), 
 		)
@@ -173,7 +162,7 @@ router.patch('', async (req, res) => {
 		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
-		res.json(filter_table_column(table_column_calculated))
+		res.json(filter__table_column(table_column_calculated))
 
 
 	} catch(err) {
@@ -353,4 +342,4 @@ router.get('/archive', async (req, res) => {
 
 
 
-module.exports = router
+export default router

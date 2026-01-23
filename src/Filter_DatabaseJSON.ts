@@ -1,50 +1,121 @@
 
 
-function filter_session(s) {
+import type { 
+	Association__Sessions_And_Players, 
+	Association__Users_And_Sessions, 
+	Final_Scores, 
+	Players, 
+	Sessions, 
+	Table_Archives, 
+	Table_Columns, 
+	Users 
+} from '../generated/prisma/index.js'
 
+
+
+
+
+export function filter__user(user: Users) {
 	return {
-		id:						s.id,
+
+		id:						user.id, 
+		Name:					user.Name, 
+		DarkMode:				user.DarkMode, 
+
+		Show__Session_Names:	user.Show__Session_Names, 
+		Show__Session_Date:		user.Show__Session_Date, 
 		
-		Name:					s.Name,
-		Color:					s.Color, 
-		Columns:				s.Columns,
+		View__Sessions:			user.View__Sessions, 
+		View__Sessions_Desc:	user.View__Sessions_Desc, 
 
-		View_List_Years:		s.View_List_Years, 
-		CurrentGameStart:		s.CurrentGameStart, 
-		LastPlayed:				s.LastPlayed,
+		Statistics__View:		user.Statistics__View, 
+		Statistics__View_Month:	user.Statistics__View_Month, 
+		Statistics__View_Year:	user.Statistics__View_Year, 
 
-
-		InputType:				s.Association__Users_And_Sessions.InputType,
-		Scores_Visible:			s.Association__Users_And_Sessions.Scores_Visible,
-
-		View: 					s.Association__Users_And_Sessions.View, 
-		View_Month: 			s.Association__Users_And_Sessions.View_Month, 
-		View_Year: 				s.Association__Users_And_Sessions.View_Year, 
-		View_CustomDate:		s.Association__Users_And_Sessions.View_CustomDate,
-
-		Statistics_Show_Border: s.Association__Users_And_Sessions.Statistics_Show_Border, 
-		Statistics_View: 		s.Association__Users_And_Sessions.Statistics_View, 
-		Statistics_View_Month:	s.Association__Users_And_Sessions.Statistics_View_Month, 
-		Statistics_View_Year: 	s.Association__Users_And_Sessions.Statistics_View_Year, 
 	}
-
 }
 
-function filter_player(p) {
-	
+
+
+
+
+export function filter__session(session: Sessions) {
 	return {
-		id:					p.id,
+
+		id:					session.id,
 		
-		Name:				p.Name,
-		Color:				p.Color,
+		Name:				session.Name,
+		Color:				session.Color, 
+		Columns:			session.Columns,
 
-		Order_Index:		p.asso.Order_Index, 
-		Gnadenwurf_Used:	p.asso.Gnadenwurf_Used, 
+		View_List_Years:	session.View__List_Years, 
+		CurrentGameStart:	session.CurrentGameStart, 
+		LastPlayed:			session.LastPlayed,
+
 	}
-
 }
 
-function filter_finalscore(f) {
+export function filter__association_users_and_sessions(association: Association__Users_And_Sessions) {
+	return {
+
+		id:							association.id,
+
+		Input_Type:					association.Input_Type,
+		Show_Scores:				association.Show_Scores,
+
+		View: 						association.View, 
+		View__Month: 				association.View__Month, 
+		View__Year: 				association.View__Year, 
+		View__CustomDate:			association.View__Custom_Date,
+
+		Statistics__Show_Border:	association.Statistics__Show_Border, 
+		Statistics__View: 			association.Statistics__View, 
+		Statistics__View_Month:		association.Statistics__View_Month, 
+		Statistics__View_Year: 		association.Statistics__View_Year, 
+
+	}
+}
+
+
+
+
+
+export function filter__player(player: Players) {
+	return {
+
+		id:					player.id,
+		Name:				player.Name,
+		Color:				player.Color,
+
+	}
+}
+
+export function filter__association_sessions_and_players(association: Association__Sessions_And_Players) {
+	return {
+		
+		Order_Index:		association.Order_Index, 
+		Gnadenwurf_Used:	association.Gnadenwurf_Used, 
+	}
+}
+
+
+
+
+
+export function filter__final_score(final_score: Final_Scores) {
+	return {
+
+		id: 			final_score.id, 
+		
+		Start: 			final_score.Start,
+		End: 			final_score.End,
+		Columns: 		final_score.Columns,
+		Surrendered: 	final_score.Surrendered,
+
+	}
+}
+
+export function filter__association__players_and_finalscores_and_sessions(association) {
 
 	const List_Winner = []
 	const PlayerScores = {}
@@ -74,12 +145,7 @@ function filter_finalscore(f) {
 	}
 
 	return {
-		id: 			f.id, 
-
-		Start: 			f.Start,
-		End: 			f.End,
-		Columns: 		f.Columns,
-		Surrendered: 	f.Surrendered,
+		
 
 		List_Winner,
 		PlayerScores,
@@ -92,92 +158,52 @@ function filter_finalscore(f) {
 		Wins__After_Month, 
 		Wins__Before_SinceCustomDate, 
 		Wins__After_SinceCustomDate, 
-	}
 
+	}
 }
 
 
 
 
 
-function filter_table_column(tc) {
-
+export function filter__table_column(table_column: Table_Columns) {
 	return {
-		id: 						tc.id, 
-		Column: 					tc.Column, 
 
-		Upper_Table_1: 				tc.Upper_Table_1, 
-		Upper_Table_2: 				tc.Upper_Table_2, 
-		Upper_Table_3: 				tc.Upper_Table_3, 
-		Upper_Table_4: 				tc.Upper_Table_4, 
-		Upper_Table_5: 				tc.Upper_Table_5, 
-		Upper_Table_6: 				tc.Upper_Table_6, 
+		id: 						table_column.id, 
+		Column: 					table_column.Column, 
+		TotalScore: 				table_column.Total_Score, 
 
-		Upper_Table_Score: 			tc.Upper_Table_Score, 
-		Upper_Table_Add35: 			tc.Upper_Table_Add35, 
-		Upper_Table_TotalScore: 	tc.Upper_Table_TotalScore, 
+		Upper_Table_1: 				table_column.Upper_Table_1, 
+		Upper_Table_2: 				table_column.Upper_Table_2, 
+		Upper_Table_3: 				table_column.Upper_Table_3, 
+		Upper_Table_4: 				table_column.Upper_Table_4, 
+		Upper_Table_5: 				table_column.Upper_Table_5, 
+		Upper_Table_6: 				table_column.Upper_Table_6, 
 
-
-		Bottom_Table_1: 			tc.Bottom_Table_1, 
-		Bottom_Table_2: 			tc.Bottom_Table_2, 
-		Bottom_Table_3: 			tc.Bottom_Table_3, 
-		Bottom_Table_4: 			tc.Bottom_Table_4, 
-		Bottom_Table_5: 			tc.Bottom_Table_5, 
-		Bottom_Table_6: 			tc.Bottom_Table_6, 
-		Bottom_Table_7: 			tc.Bottom_Table_7, 
-
-		Bottom_Table_Score: 		tc.Bottom_Table_Score, 
-		Bottom_Table_TotalScore: 	tc.Bottom_Table_TotalScore, 
+		Upper_Table_Score: 			table_column.Upper_Table_Score, 
+		Upper_Table_Add35: 			table_column.Upper_Table_Add35, 
+		Upper_Table_TotalScore: 	table_column.Upper_Table_TotalScore, 
 
 
-		TotalScore: 				tc.TotalScore, 
+		Bottom_Table_1: 			table_column.Bottom_Table_1, 
+		Bottom_Table_2: 			table_column.Bottom_Table_2, 
+		Bottom_Table_3: 			table_column.Bottom_Table_3, 
+		Bottom_Table_4: 			table_column.Bottom_Table_4, 
+		Bottom_Table_5: 			table_column.Bottom_Table_5, 
+		Bottom_Table_6: 			table_column.Bottom_Table_6, 
+		Bottom_Table_7: 			table_column.Bottom_Table_7, 
+
+		Bottom_Table_Score: 		table_column.Bottom_Table_Score, 
+		Bottom_Table_TotalScore: 	table_column.Bottom_Table_TotalScore, 
+
 	}
-
 }
 
-function filter_table_archive(ta) {
-
+export function filter__table_archive(table_archive: Table_Archives) {
 	return {
-		Table: ta.Table
+
+		id:		table_archive.id, 
+		Table:	table_archive.Table, 
+
 	}
-
-}
-
-
-
-
-
-function filter_user(u) {
-
-	return {
-		id:						u.id, 
-		Name:					u.Name, 
-		DarkMode:				u.DarkMode, 
-
-		Show_Session_Names:		u.Show_Session_Names, 
-		Show_Session_Date:		u.Show_Session_Date, 
-		
-		View_Sessions:			u.View_Sessions, 
-		View_Sessions_Desc:		u.View_Sessions_Desc, 
-
-		Statistics_View:		u.Statistics_View, 
-		Statistics_View_Month:	u.Statistics_View_Month, 
-		Statistics_View_Year:	u.Statistics_View_Year, 
-	}
-
-}
-
-
-
-
-
-module.exports = {
-	filter_session,
-	filter_player,
-	filter_finalscore,
-	
-	filter_table_column, 
-	filter_table_archive, 
-
-	filter_user, 
 }

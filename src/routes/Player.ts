@@ -1,18 +1,9 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { isInt, isBoolean } = require('../IsDataType')
-const { 
-	Association__Sessions_And_Players, 
-
-	Players, 
-	Sessions,
-	Users, 
-
-	sequelize, 
-} = require('../models')
+import { isInt, isBoolean } from '../IsDataType.js'
 
 
 
@@ -95,4 +86,4 @@ router.patch('', async (req, res) => {
 
 
 
-module.exports = router
+export default router

@@ -1,20 +1,11 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { filter_finalscore } = require('../Filter_DatabaseJSON')
-const { MAX_FINALSCORES_LIMIT } = require('../utils')
-const { handle_error } = require('../handle_error')
-const { Op } = require('sequelize')
-
-const { 
-	FinalScores, 
-	Sessions, 
-	Players, 
-	Users, 
-	sequelize, 
-} = require('../models')
+import { handle_error } from '../handle_error.js'
+import { MAX_FINALSCORES_LIMIT } from '../utils.js'
+import { filter__final_score } from '../Filter_DatabaseJSON.js'
 
 
 
@@ -82,7 +73,7 @@ router.get('', async (req, res) => {
 		// __________________________________________________ Response __________________________________________________
 
 		await transaction.commit()
-		res.json(filter_finalscore(finalscore))
+		res.json(filter__final_score(finalscore))
 
 
 	} catch(err) {
@@ -155,7 +146,7 @@ router.get('/all', async (req, res) => {
 		await transaction.commit()
 		res.json({ 
 			Has_More: list_finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
-			List: list_finalscores.rows.map(filter_finalscore), 
+			List: list_finalscores.rows.map(filter__final_score), 
 		})
 
 
@@ -199,4 +190,4 @@ function getQuery( session ) {
 
 
 
-module.exports = router
+export default router

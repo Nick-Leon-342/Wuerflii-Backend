@@ -1,28 +1,20 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { filter_player, filter_session } = require('../../Filter_DatabaseJSON')
-const { isInt, isBoolean, isString, isColor } = require('../../IsDataType')
-const { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } = require('../../utils')
-const { sort__list_players } = require('../../Functions')
-const { handle_error } = require('../../handle_error')
-const { isDate } = require('util/types')
+import { isDate } from 'util/types'
+import sort__list_players from '../../Functions.js'
+import { handle_error } from '../../handle_error.js'
+import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
+import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
+import { filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
 
-const { 
-	Association__Players_And_FinalScores_With_Sessions, 
-	Association__Users_And_Sessions, 
-
-	FinalScores, 
-	Players, 
-	Sessions, 
-	Users,
-	sequelize, 
-} = require('../../models')
-
-router.use('/preview', require('./Session_Preview'))
-router.use('/players', require('./Session_Players'))
+import route__session_players from './Session_Players.js'
+import { prisma } from '../../index.js'
+import { List__Months } from '../../types/Type___List__Months.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+router.use('/players', route__session_players)
 
 
 
@@ -31,17 +23,21 @@ router.use('/players', require('./Session_Players'))
 router.get('', (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = +(req.query.session_id || 0)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
 
 
-	Users.findByPk(UserID, {
-		include: [{
-			model: Sessions, 
-			required: false, 
-			where: { id: SessionID }, 
-		}]
+	prisma.users.findUnique({
+		where: { id: UserID }, 
+		include: {
+			List__Association_Users_And_Sessions: {
+				where: { SessionID: SessionID }, 
+				include: {
+					Session: true
+				}
+			}
+		}
 	}).then(user => {
 
 
@@ -49,10 +45,11 @@ router.get('', (req, res) => {
 		if(!user) return res.status(404).send('User not found.')
 
 		// Check if session exists
-		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
+		console.log(user)
+		if(!user.List__Association_Users_And_Sessions) return res.status(404).send('Session not found.')
 
 		// Response
-		res.json(filter_session(user.Sessions[0]))
+		res.json(filter__session(user.Sessions[0]))
 
 
 	}).catch(async err => {
@@ -64,75 +61,66 @@ router.get('', (req, res) => {
 router.post('', async (req, res) => {
 
 	const { UserID } = req
-	const { Name, Color, Columns } = req.body
 	const date = new Date()
+	const { 
+		Name, 
+		Color, 
+		Columns 
+	} = req.body
 
-	if(!Color || !isColor(Color)) 											return res.status(400).status('Color invalid.')
+	if(!Color || !isColor(Color)) 											return res.status(400).send('Color invalid.')
 	if(!Name || !isString(Name) || Name.length > MAX_LENGTH_SESSION_NAME) 	return res.status(400).send('Name invalid.')
 	if(!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS) return res.status(400).send('Columns invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
-
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { transaction })
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// __________________________________________________ Create session __________________________________________________
-
-		const session = await Sessions.create({
-			UserID, 
-
-			Name, 
-			Color, 
-			Columns, 
-			View_List_Years: 	[], 
-			LastPlayed:			date, 
-		}, { transaction })
-
-		
-		// __________________________________________________ Create association __________________________________________________
-
-		const association = await Association__Users_And_Sessions.create({
-			UserID, 
-			SessionID: 				session.id, 
-
-			InputType: 				'select',
-			Scores_Visible: 		true, 
+		await prisma.$transaction(async (tx) => {
 	
-			View: 					'show_all', 
-			View_Month: 			date.getMonth() + 1, 
-			View_Year: 				date.getFullYear(), 
-			View_CustomDate: 		date, 
+			const user = await tx.users.findUnique({ where: { id: UserID } })
+			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+	
+			const session = await tx.sessions.create({
+				data: {
+					Name:				Name, 
+					Color:				Color, 
+					Columns:			Columns, 
+					View__List_Years: 	[], 
+					LastPlayed:			date, 
+				},
+			})
+	
+			const association = await tx.association__Users_And_Sessions.create({
+				data: {
+					UserID:						user.id, 
+					SessionID: 					session.id, 
+		
+					Input_Type:					'SELECT',
+					Show_Scores:	 			true, 
+			
+					View: 						'SHOW__ALL', 
+					View__Month: 				List__Months[date.getMonth()] || 'JANUARY', 
+					View__Year: 				date.getFullYear(), 
+					View__Custom_Date: 			date, 
+		
+					Statistics__Show_Border:	true, 
+					Statistics__View: 			'STATISTICS_OVERALL', 
+					Statistics__View_Month: 	List__Months[date.getMonth()] || 'JANUARY', 
+					Statistics__View_Year: 		date.getFullYear(), 
+				}
+			})
+	
+			res.json({
+				...filter__session(session), 
+				...filter__association_users_and_sessions(association)
+			})
 
-			Statistics_Show_Border:	true, 
-			Statistics_View: 		'statistics_overall', 
-			Statistics_View_Month: 	date.getMonth() + 1, 
-			Statistics_View_Year: 	date.getFullYear(), 
-		}, { transaction })
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(filter_session({
-			...session.dataValues, 
-			Association__Users_And_Sessions: association, 
-		}))
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'POST /session')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'POST /session')
+		}
 	}
 
 })
@@ -155,9 +143,9 @@ router.patch('', async (req, res) => {
 		Scores_Visible, 
 
 		Statistics_Show_Border, 
-		Statistics_View, 
-		Statistics_View_Month, 
-		Statistics_View_Year, 
+		Statistics__View, 
+		Statistics__View_Month, 
+		Statistics__View_Year, 
 	} = req.body
 	
 	if(!SessionID || !isInt(SessionID)) 	return res.status(400).send('SessionID invalid.')
@@ -172,9 +160,9 @@ router.patch('', async (req, res) => {
 	if(Scores_Visible !== undefined && !isBoolean(Scores_Visible)) 													return res.status(400).send('Scores_Visible invalid.')
 		
 	if(Statistics_Show_Border !== undefined && !isBoolean(Statistics_Show_Border)) 																		return res.status(400).send('Statistics_Show_Border invalid.')
-	if(Statistics_View && (!isString(Statistics_View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics_View))) 	return res.status(400).send('Statistics_View invalid.')
-	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) 			return res.status(400).send('Statistics_View_Month invalid.')
-	if(Statistics_View_Year && !isInt(Statistics_View_Year)) 																							return res.status(400).send('Statistics_View_Year invalid.')
+	if(Statistics__View && (!isString(Statistics__View) || ![ 'statistics_overall', 'statistics_year', 'statistics_month' ].includes(Statistics__View))) 	return res.status(400).send('Statistics__View invalid.')
+	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics__View_Month))) 			return res.status(400).send('Statistics__View_Month invalid.')
+	if(Statistics__View_Year && !isInt(Statistics__View_Year)) 																							return res.status(400).send('Statistics__View_Year invalid.')
 
 
 	const transaction = await sequelize.transaction()
@@ -225,9 +213,9 @@ router.patch('', async (req, res) => {
 			View_Year, 
 
 			Statistics_Show_Border, 
-			Statistics_View, 
-			Statistics_View_Month, 
-			Statistics_View_Year, 
+			Statistics__View, 
+			Statistics__View_Month, 
+			Statistics__View_Year, 
 		}
 
 		await Association__Users_And_Sessions.update(json_updates_association, {
@@ -342,8 +330,7 @@ router.get('/env', (req, res) => {
 
 	const { UserID } = req
 
-	Users.findByPk(UserID).then(user => {
-
+	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
 
 		if(!user) return res.status(404).send('User not found.')
 
@@ -351,7 +338,6 @@ router.get('/env', (req, res) => {
 			MAX_COLUMNS,
 			MAX_LENGTH_SESSION_NAME, 
 		})
-
 
 	}).catch(async err => {
 		await handle_error(res, err, 'GET /session/env')
@@ -397,8 +383,8 @@ router.get('/all', async (req, res) => {
 
 		const list_sessions = []
 		for(const session of user.Sessions) {
-			const tmp_session = filter_session(session)
-			tmp_session.List_Players = sort__list_players(session.Players).map(filter_player)
+			const tmp_session = filter__session(session)
+			tmp_session.List_Players = sort__list_players(session.Players).map(filter__player)
 			list_sessions.push({ ...tmp_session, Checkbox_Checked: false })
 		}
 
@@ -418,8 +404,8 @@ router.get('/all', async (req, res) => {
 
 function getOrder(user) {
 
-	const view = user.View_Sessions
-	const desc = user.View_Sessions_Desc
+	const view = user.View__Sessions
+	const desc = user.View__Sessions_Desc
 
 	switch(view) {
 		case 'Created':
@@ -584,4 +570,4 @@ router.patch('/date', async (req, res) => {
 
 
 
-module.exports = router
+export default router

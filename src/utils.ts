@@ -11,6 +11,7 @@ import { Enum___Refresh_Token_Samesite } from './types/Enum___Refresh_Token_Same
 
 export const isProd			: boolean	= process.env.NODE_ENV === 'prod'
 export const PORT			: number	= isProd ? 5000 : +(process.env.PORT || 5000)
+export const ALLOWED_ORIGIN	: string	= process.env.DOMAIN || 'http://localhost:5173'
 
 
 
@@ -44,16 +45,17 @@ export const DATABASE_URL	: string	= `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}
 
 // ____________________ JWT-Session-Tokens ____________________
 
-export const ACCESS_TOKEN_SECRET				: string						= process.env.ACCESS_TOKEN_SECRET 										|| '1234'
-export const REFRESH_TOKEN_SECRET				: string						= process.env.REFRESH_TOKEN_SECRET 										|| '1234'
+export const ACCESS_TOKEN_SECRET				: string						= process.env.ACCESS_TOKEN_SECRET 					|| '1234'
+export const REFRESH_TOKEN_SECRET				: string						= process.env.REFRESH_TOKEN_SECRET 					|| '1234'
 
 export const REFRESH_TOKEN_SAMESITE 			: Enum___Refresh_Token_Samesite	= 
 				Object.values(Enum___Refresh_Token_Samesite).includes(process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
 					? (process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
 					: Enum___Refresh_Token_Samesite.none
-export const REFRESH_TOKEN_SECURE 				: boolean						= process.env.REFRESH_TOKEN_SECURE === 'true' 							|| false
-export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number						= parseInt(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES 					|| '15') * 60 * 1000
-export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= parseInt(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 				|| '1440') * 60 * 1000
+export const REFRESH_TOKEN_SECURE 				: boolean						= process.env.REFRESH_TOKEN_SECURE === 'true' 		|| false
+export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	|| 15)
+// export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	|| 1440) * 60
+export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	|| 1440) * 60 * 1000
 
 
 
@@ -61,22 +63,22 @@ export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= parseInt(process.
 
 // ____________________ User ____________________
 
-export const NAME_MIN_CHARACTER 			: number	= +(process.env.USER_NAME_MIN_CHARACTER || 4)
-export const NAME_MAX_CHARACTER 			: number	= +(process.env.USER_NAME_MAX_CHARACTER || 64)
+export const NAME__MIN_CHARACTER 			: number	= +(process.env.USER_NAME__MIN_CHARACTER || 4)
+export const NAME__MAX_CHARACTER 			: number	= +(process.env.USER_NAME__MAX_CHARACTER || 64)
 
-export const NAME_REGEX						: RegExp	= new RegExp(`^[A-z][A-z0-9-_]{${NAME_MIN_CHARACTER - 1},${NAME_MAX_CHARACTER - 1}}$`)
-export const NAME_REGEX_MINMAX 				: RegExp	= new RegExp(`^.{${NAME_MIN_CHARACTER},${NAME_MAX_CHARACTER}}$`)
-export const NAME_REGEX_LETTERFIRST 		: RegExp	= new RegExp('^[A-z]')
-export const NAME_REGEX_ALLOWEDCHARS 		: RegExp	= new RegExp('^[a-zA-Z0-9_-]+$')
+export const NAME__REGEX					: string	= `^[A-z][A-z0-9-_]{${NAME__MIN_CHARACTER - 1},${NAME__MAX_CHARACTER - 1}}$`
+export const NAME__REGEX_MINMAX 			: string	= `^.{${NAME__MIN_CHARACTER},${NAME__MAX_CHARACTER}}$`
+export const NAME__REGEX_LETTERFIRST 		: string	= '^[A-z]'
+export const NAME__REGEX_ALLOWEDCHARS 		: string	= '^[a-zA-Z0-9_-]+$'
 
 
-export const PASSWORD_MIN_CHARACTER 		: number	= +(process.env.USER_PASSWORD_MIN_CHARACTER || 8)
-export const PASSWORD_MAX_CHARACTER 		: number	= +(process.env.USER_PASSWORD_MAX_CHARACTER || 128)
+export const PASSWORD__MIN_CHARACTER 		: number	= +(process.env.USER_PASSWORD__MIN_CHARACTER || 8)
+export const PASSWORD__MAX_CHARACTER 		: number	= +(process.env.USER_PASSWORD__MAX_CHARACTER || 128)
 
-export const PASSWORD_REGEX 				: RegExp	= new RegExp(`^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{${PASSWORD_MIN_CHARACTER},${PASSWORD_MAX_CHARACTER}}$`)
-export const PASSWORD_REGEX_MINMAX 			: RegExp	= new RegExp(`^.{${PASSWORD_MIN_CHARACTER},${PASSWORD_MAX_CHARACTER}}$`)
-export const PASSWORD_REGEX_ALLOWEDCHARS 	: RegExp	= new RegExp('[a-zA-Z0-9]+')
-export const PASSWORD_REGEX_ALLOWEDSYMBOLS 	: RegExp	= new RegExp('[-_!#%@$]+')
+export const PASSWORD__REGEX 				: string	= `^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{${PASSWORD__MIN_CHARACTER},${PASSWORD__MAX_CHARACTER}}$`
+export const PASSWORD__REGEX_MINMAX 		: string	= `^.{${PASSWORD__MIN_CHARACTER},${PASSWORD__MAX_CHARACTER}}$`
+export const PASSWORD__REGEX_ALLOWEDCHARS 	: string	= '[a-zA-Z0-9]+'
+export const PASSWORD__REGEX_ALLOWEDSYMBOLS : string	= '[-_!#%@$]+'
 
 
 

@@ -1,22 +1,14 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { isArray, isString, isColor, isInt } = require('../../IsDataType')
-const { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } = require('../../utils')
-const { filter_player } = require('../../Filter_DatabaseJSON')
-const { sort__list_players } = require('../../Functions')
-const { handle_error } = require('../../handle_error')
-
-const { 
-	Association__Sessions_And_Players, 
-
-	Players, 
-	Sessions, 
-	Users,
-	sequelize,
-} = require('../../models')
+import { isArray, isString, isColor, isInt } from '../../IsDataType.js'
+import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
+import { filter__player } from '../../Filter_DatabaseJSON.js'
+import { handle_error } from '../../handle_error.js'
+import sort__list_players from '../../Functions.js'
+import { prisma } from '../../index.js'
 
 
 
@@ -25,33 +17,52 @@ const {
 router.get('', (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = +(req.query.session_id || 0)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
-
-
-	Users.findByPk(UserID, { 
-		include: [{
-			model: Sessions, 
-			required: false, 
-			where: { id: SessionID }, 
-			include: [{
-				model: Players, 
-				through: { as: 'asso' }, 
-			}], 
-		}], 
-	}).then(user => {
+	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
 
 
-		if(!user) return res.status(404).send('User not found.')
-		if(!user.Sessions[0]) return res.status(404).send('Session not found.')
-
-		res.json(sort__list_players(user.Sessions[0].Players).map(filter_player))
-
-
-	}).catch(async err => {
-		await handle_error(res, err, 'GET /session/players')
+	prisma.users.findUnique({
+		where: { id: UserID }, 
+		include: { 
+			List__Association_Users_And_Sessions: {
+				where: { SessionID },
+				include: {
+					Session: {
+						include: {
+							List__Association__Sessions_And_Players: {
+								include: {
+									Player: true
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	})
+	// Users.findByPk(UserID, { 
+	// 	include: [{
+	// 		model: Sessions, 
+	// 		required: false, 
+	// 		where: { id: SessionID }, 
+	// 		include: [{
+	// 			model: Players, 
+	// 			through: { as: 'asso' }, 
+	// 		}], 
+	// 	}], 
+	// }).then(user => {
+
+
+	// 	if(!user) return res.status(404).send('User not found.')
+	// 	if(!user.Sessions[0]) return res.status(404).send('Session not found.')
+
+	// 	res.json(sort__list_players(user.Sessions[0].Players).map(filter__player))
+
+
+	// }).catch(async err => {
+	// 	await handle_error(res, err, 'GET /session/players')
+	// })
 
 })
 
@@ -121,7 +132,7 @@ router.post('', async (req, res) => {
 				Order_Index: i, 
 			}, { transaction })
 
-			list_players.push(filter_player({
+			list_players.push(filter__player({
 				...player.dataValues, 
 				asso, 
 			}))
@@ -253,8 +264,7 @@ router.get('/env', (req, res) => {
 
 	const { UserID } = req
 
-	Users.findByPk(UserID).then(user => {
-
+	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
 
 		if(!user) return res.status(404).send('User not found.')
 
@@ -262,7 +272,6 @@ router.get('/env', (req, res) => {
 			MAX_PLAYERS,
 			MAX_LENGTH_PLAYER_NAME, 
 		})
-
 
 	}).catch(async err => {
 		await handle_error(res, err, 'GET /session/player/env')
@@ -274,4 +283,4 @@ router.get('/env', (req, res) => {
 
 
 
-module.exports = router
+export default router

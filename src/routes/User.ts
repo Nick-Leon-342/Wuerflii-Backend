@@ -1,23 +1,22 @@
 
 
-const express = require('express')
-const bcrypt = require('bcrypt')
+import bcrypt from 'bcrypt'
+import express from 'express'
 const router = express.Router()
 
-const { REFRESH_TOKEN_SAMESITE, REFRESH_TOKEN_SECURE, REFRESH_TOKEN_MAX_AGE_IN_MINUTES, NAME_REGEX, PASSWORD_REGEX } = require('../utils')
-const { isBoolean, isString, isInt } = require('../IsDataType')
-const { filter_user } = require('../Filter_DatabaseJSON')
-const { handle_error } = require('../handle_error')
+import { isBoolean, isString, isInt } from '../IsDataType.js'
+import { filter__user } from '../Filter_DatabaseJSON.js'
+import { handle_error } from '../handle_error.js'
+import { prisma } from '../index.js'
+import { 
+	NAME__REGEX, 
+	PASSWORD__REGEX, 
 
-const { 
-	Association__Players_And_FinalScores_With_Sessions, 
-
-	Users, 
-	Sessions, 
-	Players, 
-	FinalScores, 
-	sequelize, 
-} = require('../models')
+	REFRESH_TOKEN_SAMESITE, 
+	REFRESH_TOKEN_SECURE, 
+} from '../utils.js'
+import { Enum___List__Month, Enum___Statistics__View, Enum___Users___View__Sessions } from '../../generated/prisma/index.js'
+import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 
 
 
@@ -27,11 +26,11 @@ router.get('', (req, res) => {
 
 	const { UserID } = req
 
-	Users.findByPk(UserID).then(user => {
+	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
 
 		if(!user) return res.status(404).send('User not found.')
 
-		res.json(filter_user(user))
+		res.json(filter__user(user))
 
 	}).catch(async err => {
 		await handle_error(res, err, 'GET /user')
@@ -47,101 +46,101 @@ router.patch('', async (req, res) => {
 		Password, 
 		DarkMode, 
 
-		Show_Session_Names, 
-		Show_Session_Date, 
-		View_Sessions, 
-		View_Sessions_Desc, 
+		Show__Session_Names, 
+		Show__Session_Date, 
+		View__Sessions, 
+		View__Sessions_Desc, 
 
-		Statistics_View, 
-		Statistics_View_Month, 
-		Statistics_View_Year, 
+		Statistics__View, 
+		Statistics__View_Month, 
+		Statistics__View_Year, 
 	} = req.body
 
 
-	if(Name && !isString(Name))							return res.status(400).send('Name invalid.')
-	if(Password && !isString(Password))					return res.status(400).send('Password invalid.')
-	if(DarkMode !== undefined && !isBoolean(DarkMode))	return res.status(400).send('DarkMode invalid.')
+	if(Name && !isString(Name))																												return res.status(400).send('Name invalid.')
+	if(Password && !isString(Password))																										return res.status(400).send('Password invalid.')
+	if(DarkMode !== undefined && !isBoolean(DarkMode))																						return res.status(400).send('DarkMode invalid.')
 
-	if(Show_Session_Names !== undefined && !isBoolean(Show_Session_Names)) 													return res.status(400).send('Show_Session_Names invalid.')
-	if(Show_Session_Date !== undefined && !isBoolean(Show_Session_Date)) 													return res.status(400).send('Show_Session_Date invalid.')
-	if(View_Sessions && !isString(View_Sessions) && ['Created', 'Last_Played', 'Name', 'Players'].includes(View_Sessions)) 	return res.status(400).send('View_Sessions invalid.')
-	if(View_Sessions_Desc !== undefined && !isBoolean(View_Sessions_Desc)) 													return res.status(400).send('View_Sessions_Desc invalid.')
+	if(Show__Session_Names !== undefined && !isBoolean(Show__Session_Names)) 																return res.status(400).send('Show__Session_Names invalid.')
+	if(Show__Session_Date !== undefined && !isBoolean(Show__Session_Date)) 																	return res.status(400).send('Show__Session_Date invalid.')
+	if(View__Sessions && !isString(View__Sessions) && !Object.values(Enum___Users___View__Sessions).includes(View__Sessions)) 				return res.status(400).send('View__Sessions invalid.')
+	if(View__Sessions_Desc !== undefined && !isBoolean(View__Sessions_Desc)) 																return res.status(400).send('View__Sessions_Desc invalid.')
 
-	if(Statistics_View && (!isString(Statistics_View) || !['statistics_overall', 'statistics_year', 'statistics_month'].includes(Statistics_View)))	return res.status(400).send('Statistics_View invalid.')
-	if(Statistics_View_Month && (!isInt(Statistics_View_Month) || ![ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ].includes(Statistics_View_Month))) 		return res.status(400).send('Statistics_View_Month invalid.')
-	if(Statistics_View_Year && !isInt(Statistics_View_Year)) 																						return res.status(400).send('Statistics_View_Year invalid.')
+	if(Statistics__View && (!isString(Statistics__View) || !Object.values(Enum___Statistics__View).includes(Statistics__View)))				return res.status(400).send('Statistics__View invalid.')
+	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || !Object.values(Enum___List__Month).includes(Statistics__View_Month)))	return res.status(400).send('Statistics__View_Month invalid.')
+	if(Statistics__View_Year && !isInt(Statistics__View_Year)) 																				return res.status(400).send('Statistics__View_Year invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
-
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { transaction })
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-		
-
-		const updateJSON = {
-			DarkMode, 
-
-			Show_Session_Names, 
-			Show_Session_Date, 
+		await prisma.$transaction(async (tx) => {
+	
+			const user = await tx.users.findUnique({ where: { id: UserID } })
+			if(!user) throw new Custom__Handled_Error('User not found.', 404)
 			
-			View_Sessions, 
-			View_Sessions_Desc, 
+	
+			interface interface__json_update {
+				Name?:						string
+				Password?:					string
+				DarkMode?:					boolean
 
-			Statistics_View, 
-			Statistics_View_Month, 
-			Statistics_View_Year, 
-		}
-
-		if(Name) {
-
-			if(!(new RegExp(NAME_REGEX)).test(Name)) return res.status(400).send('Name invalid.')
-
-			const tmp = await Users.findOne({ 
-				where: { Name }, 
-				transaction, 
-			})
-			if(tmp) {
-				await transaction.rollback()
-				res.status(409).send('Username already taken.')
-				return 
+				Show__Session_Names?:		boolean
+				Show__Session_Date?:		boolean
+				
+				View__Sessions?:			Enum___Users___View__Sessions
+				View__Sessions_Desc?:		boolean
+	
+				Statistics__View?:			Enum___Statistics__View
+				Statistics__View_Month?:	Enum___List__Month
+				Statistics__View_Year?:		number
 			}
+			const json_update: interface__json_update = {
+				DarkMode, 
+	
+				Show__Session_Names, 
+				Show__Session_Date, 
+				
+				View__Sessions, 
+				View__Sessions_Desc, 
+	
+				Statistics__View, 
+				Statistics__View_Month, 
+				Statistics__View_Year, 
+			}
+	
+			if(Name) {
+	
+				if(!(new RegExp(NAME__REGEX)).test(Name)) throw new Custom__Handled_Error('Name invalid.', 400)
+	
+				const already_existing_user = await tx.users.findUnique({ where: { Name } })
+				if(already_existing_user) throw new Custom__Handled_Error('Username already taken.', 409)
+	
+				json_update.Name = Name
+	
+			} 
+			
+			if(Password) {
+	
+				if(!(new RegExp(PASSWORD__REGEX)).test(Password)) throw new Custom__Handled_Error('Password invalid.', 400)
+	
+				const hashedPassword = await bcrypt.hash(Password, 10)
+				json_update.Password = hashedPassword
+	
+			}
+	
+			await tx.users.update({ 
+				where: { id: UserID },
+				data: {...json_update} 
+			})
+	
+			res.sendStatus(204)
 
-			updateJSON.Name = Name
-
-		} 
-		
-		if(Password) {
-
-			if(!(new RegExp(PASSWORD_REGEX)).test(Password)) return res.status(400).send('Password invalid.')
-
-			const hashedPassword = await bcrypt.hash(Password, 10)
-			updateJSON.Password = hashedPassword
-
-		}
-
-
-
-		await user.update(updateJSON, { transaction })
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'PATCH /user')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'PATCH /user')
+		}
 	}
 
 })
@@ -150,69 +149,62 @@ router.delete('', async (req, res) => {
 
 	const { UserID } = req
 
-
-	const transaction = await sequelize.transaction()
 	try {
-
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				include: Players, 
-			}], 
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// __________________________________________________ Remove all sessions __________________________________________________
-		
-		for(const session of user.Sessions) {
-
-			// Get all associations
-			const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
-				where: { SessionID: session.id }, 
-				transaction, 
+		await prisma.$transaction(async (tx) => {
+	
+	
+			// __________________________________________________ User __________________________________________________
+	
+			const user = await tx.users.findUnique({
+				where: { id: UserID },
+				include: { List__Association_Users_And_Sessions: true }
 			})
 	
-			// Remove finalscores through association
-			for(const association of list_associations) {
-				await FinalScores.destroy({
-					where: { id: association.FinalScoreID }, 
-					transaction, 
-				})
-			}
+			if(!user) throw new Custom__Handled_Error('User not found.', 404)
 	
 	
-			// Remove players 
-			for(const player of session.Players) {
-				await player.destroy({ transaction })
-			}
+			// __________________________________________________ Remove all sessions __________________________________________________
+			
+			// for(const session of user.Sessions) {
 	
+			// 	// Get all associations
+			// 	const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
+			// 		where: { SessionID: session.id }, 
+			// 		transaction, 
+			// 	})
+		
+			// 	// Remove finalscores through association
+			// 	for(const association of list_associations) {
+			// 		await FinalScores.destroy({
+			// 			where: { id: association.FinalScoreID }, 
+			// 			transaction, 
+			// 		})
+			// 	}
+		
+		
+			// 	// Remove players 
+			// 	for(const player of session.Players) {
+			// 		await player.destroy({ transaction })
+			// 	}
+		
+		
+			// 	// Remove session
+			// 	await session.destroy({ transaction })
 	
-			// Remove session
-			await session.destroy({ transaction })
+			// }
+	
+			// await user.destroy({ transaction })
+	
+			res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
+			res.sendStatus(204)
 
-		}
-
-		await user.destroy({ transaction })
-
-
-		await transaction.commit()
-		res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
-		res.sendStatus(204)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'DELETE /user')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'DELETE /user')
+		}
 	}
 
 })
@@ -221,4 +213,4 @@ router.delete('', async (req, res) => {
 
 
 
-module.exports = router
+export default router

@@ -2,7 +2,16 @@
 
 import { format } from 'date-fns'
 import nodemailer from 'nodemailer'
-import { EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SSL, EMAIL_SMTP_USERNAME, EMAIL_SMTP_PASSWORD, EMAIL_OF_ADMIN, EMAIL_SMTP_REPLYTOEMAIL } from './utils.js'
+import type { Response } from 'express'
+import { 
+	EMAIL_SMTP_HOST, 
+	EMAIL_SMTP_PORT, 
+	EMAIL_SMTP_SSL, 
+	EMAIL_SMTP_USERNAME, 
+	EMAIL_SMTP_PASSWORD, 
+	EMAIL_OF_ADMIN, 
+	EMAIL_SMTP_REPLYTOEMAIL 
+} from './utils.js'
 
 
 
@@ -25,7 +34,11 @@ const email_client = (
 
 )
 
-export async function send_email(subject, text, error) {
+export async function send_email(
+	subject:	string,
+	text:		string, 
+	error:		unknown
+) {
 
 	// Dont send email in development mode
 	if(process.env.NODE_ENV === 'dev') return
@@ -49,7 +62,7 @@ export async function send_email(subject, text, error) {
 		log__error('Done')
 
 	} catch(err) {
-		log__error('Some error occured during sending email:\n', err)
+		log__error('Some error occured during sending email:\n', error)
 	}
 
 }
@@ -57,14 +70,18 @@ export async function send_email(subject, text, error) {
 function get_current_timestamp() { return format(new Date(), 'HH:mm.ss dd.MM.yyyy') }
 function get_current_timestamp_format() { return `[ ${get_current_timestamp()} ]\t` }
 
-export function log__error(text) { console.error(get_current_timestamp_format(), text) }
-export function log__info(text) { console.log(get_current_timestamp_format(), text) }
+export function log__error(data: string, error?: unknown): void { console.error(get_current_timestamp_format(), data, error) }
+export function log__info(data: string): void { console.log(get_current_timestamp_format(), data) }
 
 
 
 
 
-export async function handle_error(res, error, api_url) {
+export async function handle_error(
+	res:		Response, 
+	error:		unknown,
+	api_url:	string,
+) {
 
 	res.sendStatus(500)
 

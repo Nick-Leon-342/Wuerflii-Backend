@@ -17,35 +17,45 @@ import {
 
 
 
-export default async function token_send({
+export default async function send_token({
 	Transaction_Prisma, 
-	Response, 
 	UserID, 
+	res, 
 }: {
 	Transaction_Prisma:	Prisma.TransactionClient
-	Response:			Response
 	UserID:				number
+	res:				Response
 }) {
 
 	// Create both token
-	const token_access = jwt.sign(
+	const access_token = jwt.sign(
 		{ 'id': UserID },
 		ACCESS_TOKEN_SECRET,
-		{ expiresIn: `${ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` || '15m' }
+		{ expiresIn: `${ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` }
 	)
-	const token_refresh = jwt.sign(
+	const refresh_token = jwt.sign(
 		{ 'id': UserID },
 		REFRESH_TOKEN_SECRET,
+		{ expiresIn: REFRESH_TOKEN_MAX_AGE_IN_MINUTES / 1000 }
 	)
 
 	// Save in database
 	await Transaction_Prisma.users.update({
 		where: 	{ id: UserID }, 
-		data: 	{ Token_Refresh: token_refresh }
+		data: 	{ Refresh_Token: refresh_token }
 	})
 
-	// Send Token_Refresh as cookie and accesstoken as response in json
-	Response.cookie('Wuerflii__Token_Refresh', token_refresh, { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
-	Response.json({ token_access })
+	// Send Refresh_Token as cookie and accesstoken as response in json
+	res.cookie(
+		'Wuerflii__Refresh_Token', 
+		refresh_token, 
+		{ 
+			httpOnly: true, 
+			sameSite: REFRESH_TOKEN_SAMESITE, 
+			maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, 
+			secure: REFRESH_TOKEN_SECURE 
+		}
+	)
+	res.json({ access_token })
 
 }

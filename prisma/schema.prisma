@@ -50,7 +50,7 @@ model Users {
 
 	Name									String							@unique
 	Password								String							@unique
-	Token_Refresh							String?							@unique
+	Refresh_Token							String?							@unique
 	DarkMode								Boolean
 
 	// For session list in /session/select
@@ -119,7 +119,7 @@ model Sessions {
 	Color				String
 	Columns				Int
 
-	View__List_Years	Int			// Which years could be displayed because games were played in them
+	View__List_Years	Int[]			// Which years could be displayed because games were played in them
 	CurrentGameStart	DateTime?
 	LastPlayed			DateTime
 
@@ -185,7 +185,8 @@ model Association__Players_And_FinalScores_And_Sessions {
 	SessionID			Int
 	Final_Score			Final_Scores	@relation(fields: [Final_ScoreID], references: [id], onDelete: Cascade)
 	Final_ScoreID		Int				@unique
-	List__Players		Players[]
+	Player				Players			@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+	PlayerID			Int
 }
 
 

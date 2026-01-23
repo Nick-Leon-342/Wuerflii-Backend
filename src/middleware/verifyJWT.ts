@@ -3,31 +3,57 @@
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 
 import { ACCESS_TOKEN_SECRET } from '../utils.js'
+import type { Request, Response, NextFunction } from 'express'
 
 
 
 
+
+declare global {
+	namespace Express {
+		interface Request {
+			UserID:	number
+		}
+	}
+}
 
 interface JWT_Payload__Token_Access extends JwtPayload {
 	id: string
 }
 
-export default function verifyJWT(req, res, next) {
+export default function verifyJWT(
+	req:	Request, 
+	res:	Response, 
+	next:	NextFunction, 
+): void {
 
 	const authHeader = req.headers['authorization']
-	if (!authHeader) return res.status(401).send('No token')
+	if(!authHeader) {
+		res.status(401).send('No token.')
+		return 
+	}
 
 	const token = authHeader.split(' ')[1]
 	let decoded: JWT_Payload__Token_Access
 	try {
 
 		decoded = jwt.verify(
-			token, 
+			token || '', 
 			ACCESS_TOKEN_SECRET, 
-		) as JWT_Payload__Token_Access
+		) as unknown as JWT_Payload__Token_Access
 
-	} catch { return res.status(403).send('Invalid token.') }
-	req.UserID = decoded.id
-	next()
+		if(!decoded || typeof decoded !== 'object' || !decoded.id || isNaN(+decoded.id) || +decoded.id === 0) {
+			res.status(403).send('Token payload is missing id.')
+			return
+		}
+
+		req.UserID = +decoded.id
+		next()
+
+	} catch(err) { 
+		console.log(err)
+		res.status(403).send('Invalid token.')
+		return 
+	}
 
 }

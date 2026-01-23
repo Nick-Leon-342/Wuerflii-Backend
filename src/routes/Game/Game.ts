@@ -1,27 +1,16 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { isInt } = require('../../IsDataType')
-const CreateNewGame = require('../../CreateNewGame')
-const { handle_error } = require('../../handle_error')
-const { sort__list_players } = require('../../Functions')
-const { filter_table_column } = require('../../Filter_DatabaseJSON')
+import { isInt } from '../../IsDataType.js'
+import CreateNewGame from '../../CreateNewGame.js'
+import { handle_error } from '../../handle_error.js'
+import sort__list_players from '../../Functions.js'
+import { filter__table_column } from '../../Filter_DatabaseJSON.js'
 
-const { 
-	Association__Players_And_FinalScores_With_Sessions, 
-
-	FinalScores, 
-	Sessions, 
-	Players, 
-	Table_Columns, 
-	Table_Archives, 
-	Users, 
-	sequelize, 
-} = require('../../models')
-
-router.use('/table_columns', require('./Game__Table_Columns'))
+import route__table_columns from './Game__Table_Columns.js'
+router.use('/table_columns', route__table_columns)
 
 
 
@@ -200,7 +189,7 @@ router.post('', async (req, res) => {
 			Table: list_players.map(player => {
 				return {
 					PlayerID: player.id, 
-					List__Table_Columns: player.Table_Columns.map(table_column => filter_table_column(table_column))
+					List__Table_Columns: player.Table_Columns.map(table_column => filter__table_column(table_column))
 				}
 			}), 
 		}, { transaction })
@@ -378,4 +367,4 @@ router.delete('', async (req, res) => {
 
 
 
-module.exports = router
+export default router

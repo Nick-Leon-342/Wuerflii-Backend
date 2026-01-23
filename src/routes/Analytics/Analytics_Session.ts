@@ -1,20 +1,9 @@
 
 
-const express = require('express')
+import express from 'express'
 const router = express.Router()
 
-const { handle_error } = require('../../handle_error')
-
-const { 
-	Association__Players_And_FinalScores_With_Sessions, 
-
-	Users, 
-	Players, 
-	Sessions, 
-	FinalScores, 
-
-	sequelize, 
-} = require('../../models')
+import { handle_error } from '../../handle_error.js'
 
 
 
@@ -71,9 +60,9 @@ router.get('', async (req, res) => {
 		}
 
 		const association 			= user.Sessions[0].Association__Users_And_Sessions
-		const statistics_view 		= association.Statistics_View
-		const statistics_view_month = association.Statistics_View_Month
-		const statistics_view_year 	= association.Statistics_View_Year
+		const statistics_view 		= association.Statistics__View
+		const statistics_view_month = association.Statistics__View_Month
+		const statistics_view_year 	= association.Statistics__View_Year
 
 		
 		// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
@@ -224,4 +213,4 @@ router.get('', async (req, res) => {
 
 
 
-module.exports = router
+export default router

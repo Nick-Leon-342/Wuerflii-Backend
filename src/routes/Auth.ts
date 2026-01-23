@@ -11,24 +11,25 @@ import { handle_error } from '../handle_error.js'
 import { prisma } from '../index.js'
 
 import {
-	NAME_MIN_CHARACTER, 
-	NAME_MAX_CHARACTER, 
+	NAME__MIN_CHARACTER, 
+	NAME__MAX_CHARACTER, 
 	
-	NAME_REGEX, 
-	NAME_REGEX_MINMAX, 
-	NAME_REGEX_LETTERFIRST, 
-	NAME_REGEX_ALLOWEDCHARS, 
+	NAME__REGEX, 
+	NAME__REGEX_MINMAX, 
+	NAME__REGEX_LETTERFIRST, 
+	NAME__REGEX_ALLOWEDCHARS, 
 
 
-	PASSWORD_MIN_CHARACTER, 
-	PASSWORD_MAX_CHARACTER, 
+	PASSWORD__MIN_CHARACTER, 
+	PASSWORD__MAX_CHARACTER, 
 
-	PASSWORD_REGEX, 
-	PASSWORD_REGEX_MINMAX, 
-	PASSWORD_REGEX_ALLOWEDCHARS, 
-	PASSWORD_REGEX_ALLOWEDSYMBOLS, 
+	PASSWORD__REGEX, 
+	PASSWORD__REGEX_MINMAX, 
+	PASSWORD__REGEX_ALLOWEDCHARS, 
+	PASSWORD__REGEX_ALLOWEDSYMBOLS, 
 } from '../utils.js'
 import { List__Months } from '../types/Type___List__Months.js'
+import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 
 
 
@@ -37,22 +38,22 @@ import { List__Months } from '../types/Type___List__Months.js'
 router.get('/regex', (_, res) => {
 
 	res.json({
-		NAME_MIN_CHARACTER, 
-		NAME_MAX_CHARACTER, 
+		NAME__MIN_CHARACTER, 
+		NAME__MAX_CHARACTER, 
 		
-		NAME_REGEX, 
-		NAME_REGEX_MINMAX, 
-		NAME_REGEX_LETTERFIRST, 
-		NAME_REGEX_ALLOWEDCHARS, 
+		NAME__REGEX, 
+		NAME__REGEX_MINMAX, 
+		NAME__REGEX_LETTERFIRST, 
+		NAME__REGEX_ALLOWEDCHARS, 
 	
 	
-		PASSWORD_MIN_CHARACTER, 
-		PASSWORD_MAX_CHARACTER, 
+		PASSWORD__MIN_CHARACTER, 
+		PASSWORD__MAX_CHARACTER, 
 	
-		PASSWORD_REGEX, 
-		PASSWORD_REGEX_MINMAX, 
-		PASSWORD_REGEX_ALLOWEDCHARS, 
-		PASSWORD_REGEX_ALLOWEDSYMBOLS, 
+		PASSWORD__REGEX, 
+		PASSWORD__REGEX_MINMAX, 
+		PASSWORD__REGEX_ALLOWEDCHARS, 
+		PASSWORD__REGEX_ALLOWEDSYMBOLS, 
 	})
 
 })
@@ -73,25 +74,24 @@ router.post('/login', async (req, res) => {
 
 			// ____________________ User ____________________
 
-			const user = await tx.users.findUnique({ where: { Name } })
+			const user = await tx.users.findUnique({ where: { Name: Name } })
 
 			if(!user || !(await bcrypt.compare(Password, user.Password)))
-				throw new Error('Wrong credentials!')
+				throw new Custom__Handled_Error('Wrong credentials!', 409)
 
 
 			// ____________________ Response ____________________
 
 			await send_token({
 				UserID: 			user.id, 
-				Response:			res, 
+				res:				res, 
 				Transaction_Prisma:	tx, 
 			})
 
 		})	
 	} catch(err) {
-		// TODO check if this works as expected
-		if(err === 'Wrong credentials!') {
-			res.status(409).send('Wrong credentials!')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
 		} else {
 			await handle_error(res, err, 'POST /auth/login')
 		}
@@ -103,8 +103,8 @@ router.post('/registration', async (req, res) => {
 	
 	const { Name, Password } = req.body
 	
-	if(!Name || !(new RegExp(NAME_REGEX)).test(Name)) return res.status(400).send('Name invalid.')
-	if(!Password || !(new RegExp(PASSWORD_REGEX)).test(Password)) return res.status(400).send('Password invalid.')
+	if(!Name || !(new RegExp(NAME__REGEX)).test(Name)) return res.status(400).send('Name invalid.')
+	if(!Password || !(new RegExp(PASSWORD__REGEX)).test(Password)) return res.status(400).send('Password invalid.')
 
 
 	try {
@@ -113,8 +113,8 @@ router.post('/registration', async (req, res) => {
 	
 			// ____________________ User ____________________
 	
-			const tmp__user = await prisma.users.findUnique({ where: { Name: Name } })
-			if(tmp__user) throw new Error('Username already taken.')
+			const tmp__user = await tx.users.findUnique({ where: { Name: Name } })
+			if(tmp__user) throw new Custom__Handled_Error('Username already taken.', 409)
 		
 	
 			// ____________________ Hash Password ____________________
@@ -124,7 +124,7 @@ router.post('/registration', async (req, res) => {
 	
 			// ____________________ Create New User ____________________
 	
-			const user = await prisma.users.create({
+			const user = await tx.users.create({
 				data: {
 					Name:					Name,
 					DarkMode:				false, 
@@ -146,15 +146,14 @@ router.post('/registration', async (req, res) => {
 	
 			await send_token({
 				UserID:				user.id, 
-				Response:			res, 
+				res:				res, 
 				Transaction_Prisma:	tx, 
 			})
 
 		})
 	} catch(err) {
-		// TODO check if this works as expected
-		if(err === 'Username already taken.') {
-			res.status(409).send('Username already taken.')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
 		} else {
 			await handle_error(res, err, 'POST /auth/registration')
 		}

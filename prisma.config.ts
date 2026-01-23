@@ -1,6 +1,6 @@
 
 
-import { DATABASE_URL } from './utils.js'
+import { DATABASE_URL } from './src/utils.js'
 import { defineConfig } from 'prisma/config'
 
 export default defineConfig({
