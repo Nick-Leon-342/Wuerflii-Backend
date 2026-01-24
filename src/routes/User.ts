@@ -153,7 +153,9 @@ router.delete('', async (req, res) => {
 	
 			const user = await tx.users.findUnique({
 				where: { id: UserID },
-				include: { List___Association__Users_And_Sessions: true }
+				include: { 
+					List___Association__Users_And_Sessions: true 
+				}
 			})
 	
 			if(!user) throw new Custom__Handled_Error('User not found.', 404)
@@ -161,35 +163,31 @@ router.delete('', async (req, res) => {
 	
 			// __________________________________________________ Remove all sessions __________________________________________________
 			
-			// for(const session of user.Sessions) {
+			for(const session of user.List___Association__Users_And_Sessions) {
 	
-			// 	// Get all associations
-			// 	const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
-			// 		where: { SessionID: session.id }, 
-			// 		transaction, 
-			// 	})
-		
-			// 	// Remove finalscores through association
-			// 	for(const association of list_associations) {
-			// 		await FinalScores.destroy({
-			// 			where: { id: association.FinalScoreID }, 
-			// 			transaction, 
-			// 		})
-			// 	}
-		
-		
-			// 	// Remove players 
-			// 	for(const player of session.Players) {
-			// 		await player.destroy({ transaction })
-			// 	}
-		
-		
-			// 	// Remove session
-			// 	await session.destroy({ transaction })
+				await tx.final_Scores.deleteMany({
+				where: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						some: {
+							SessionID: session.id
+						}
+					}
+				}
+			})
+
+			await tx.players.deleteMany({
+				where: {
+					Association__Sessions_And_Players_And_Table_Columns: {
+						SessionID: session.id
+					}
+				}
+			})
+
+			await tx.sessions.delete({ where: { id: session.id } })
 	
-			// }
+			}
 	
-			// await user.destroy({ transaction })
+			await tx.users.delete({ where: { id: UserID } })
 	
 			res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
 			res.sendStatus(204)

@@ -259,7 +259,7 @@ router.delete('', async (req, res) => {
 				where: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
 						some: {
-							SessionID: SessionID
+							SessionID: session.id
 						}
 					}
 				}
@@ -268,7 +268,7 @@ router.delete('', async (req, res) => {
 			await tx.players.deleteMany({
 				where: {
 					Association__Sessions_And_Players_And_Table_Columns: {
-						SessionID: SessionID
+						SessionID: session.id
 					}
 				}
 			})
