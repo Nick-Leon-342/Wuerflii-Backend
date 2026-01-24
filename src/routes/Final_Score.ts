@@ -3,13 +3,13 @@
 import express from 'express'
 const router = express.Router()
 
-import { handle_error } from '../handle_error.js'
-import { MAX_FINALSCORES_LIMIT } from '../utils.js'
 import { filter____list___association__players_and_finalscores_and_sessions, filter__final_score } from '../Filter_DatabaseJSON.js'
-import { prisma } from '../index.js'
-import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import type { Association__Users_And_Sessions, Prisma } from '../../generated/prisma/index.js'
+import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { MAX_FINALSCORES_LIMIT } from '../utils.js'
+import { handle_error } from '../handle_error.js'
+import { prisma } from '../index.js'
 
 
 
@@ -144,11 +144,11 @@ function getQuery(association__users_and_sessions: Association__Users_And_Sessio
 	const year = association__users_and_sessions.View__Year
 	const month = List__Months_Enum.indexOf(association__users_and_sessions.View__Month)
 	
-	const startOfYear = new Date(`${year}-01-01`)
-	const endOfYear = new Date(`${year}-12-31 23:59:59`)
+	const startOfYear	= new Date(Date.UTC(year, 0, 1))
+	const endOfYear		= new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999))
 
-	const startOfMonth = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
-	const endOfMonth = new Date(year, month, 0, 23, 59, 59)
+	const startOfMonth	= new Date(Date.UTC(year, month, 1, 0, 0, 0))
+	const endOfMonth	= new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999))
 
 	switch(association__users_and_sessions.View) {
 		case 'SHOW__MONTH':
