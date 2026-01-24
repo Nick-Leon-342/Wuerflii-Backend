@@ -157,7 +157,7 @@ router.delete('', async (req, res) => {
 	
 			const user = await tx.users.findUnique({
 				where: { id: UserID },
-				include: { List__Association_Users_And_Sessions: true }
+				include: { List___Association__Users_And_Sessions: true }
 			})
 	
 			if(!user) throw new Custom__Handled_Error('User not found.', 404)

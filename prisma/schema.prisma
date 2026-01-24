@@ -67,7 +67,7 @@ model Users {
 	createdAt								DateTime						@default(now())
 	updatedAt								DateTime						@updatedAt
 
-	List__Association_Users_And_Sessions	Association__Users_And_Sessions[]
+	List___Association__Users_And_Sessions	Association__Users_And_Sessions[]
 }
 
 
@@ -130,17 +130,16 @@ model Sessions {
 	updatedAt			DateTime	@updatedAt
 
 
-	Association_Users_And_Sessions							Association__Users_And_Sessions?
-	List__Table_Columns										Table_Columns[]
-	List__Association__Sessions_And_Players					Association__Sessions_And_Players[]
-	List__Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
+	Association__Users_And_Sessions								Association__Users_And_Sessions?
+	List___Association__Sessions_And_Players_And_Table_Columns	Association__Sessions_And_Players_And_Table_Columns[]
+	List___Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
 }
 
 
 
 
 
-model Association__Sessions_And_Players {
+model Association__Sessions_And_Players_And_Table_Columns {
 	id					Int			@id @default(autoincrement())
 
 	Gnadenwurf_Used		Boolean
@@ -150,6 +149,7 @@ model Association__Sessions_And_Players {
 	SessionID			Int
 	Player				Players		@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
 	PlayerID			Int			@unique
+	List__Table_Columns	Table_Columns[]
 }
 
 
@@ -165,8 +165,8 @@ model Players {
 	createdAt	DateTime	@default(now())
 	updatedAt	DateTime	@updatedAt
 
-	Association__Sessions_And_Players 						Association__Sessions_And_Players?
-	List__Association__Players_And_FinalScores_And_Sessions Association__Players_And_FinalScores_And_Sessions[]
+	Association__Sessions_And_Players 							Association__Sessions_And_Players_And_Table_Columns?
+	List___Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
 }
 
 
@@ -193,9 +193,11 @@ model Association__Players_And_FinalScores_And_Sessions {
 	Session				Sessions		@relation(fields: [SessionID], references: [id], onDelete: Cascade)
 	SessionID			Int
 	Final_Score			Final_Scores	@relation(fields: [Final_ScoreID], references: [id], onDelete: Cascade)
-	Final_ScoreID		Int				@unique
+	Final_ScoreID		Int
 	Player				Players			@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
 	PlayerID			Int
+
+	@@unique([Final_ScoreID, PlayerID])
 }
 
 
@@ -213,8 +215,8 @@ model Final_Scores {
 	createdAt	DateTime	@default(now())
 	updatedAt	DateTime	@updatedAt
 
-	Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions?
-	Table_Archive										Table_Archives?
+	List___Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
+	Table_Archive												Table_Archives?
 }
 
 
@@ -257,8 +259,9 @@ model Table_Columns {
 	createdAt				DateTime	@default(now())
 	updatedAt				DateTime	@updatedAt
 
-	Session					Sessions	@relation(fields: [SessionID], references: [id], onDelete: Cascade)
-	SessionID				Int
+	Association__Sessions_And_Players_And_Table_Columns		Association__Sessions_And_Players_And_Table_Columns	@relation(fields: [Association__Sessions_And_Players_And_Table_ColumnsID], references: [id], onDelete: Cascade)
+	Association__Sessions_And_Players_And_Table_ColumnsID	Int
+
 }
 
 

@@ -8,7 +8,7 @@ import sort__list_players from '../../Functions.js'
 import { handle_error } from '../../handle_error.js'
 import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
 import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
-import { filter__association_sessions_and_players, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
+import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
 
 import route__session_players from './Session_Players.js'
 import { prisma } from '../../index.js'
@@ -34,7 +34,7 @@ router.get('', (req, res) => {
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: {
-			List__Association_Users_And_Sessions: {
+			List___Association__Users_And_Sessions: {
 				where: { SessionID: SessionID }, 
 				include: {
 					Session: true
@@ -44,11 +44,11 @@ router.get('', (req, res) => {
 	}).then(user => {
 
 		if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-		if(!user.List__Association_Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+		if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 
 		res.json({
-			...filter__session(user.List__Association_Users_And_Sessions[0].Session), 
-			...filter__association_users_and_sessions(user.List__Association_Users_And_Sessions[0])
+			...filter__session(user.List___Association__Users_And_Sessions[0].Session), 
+			...filter__association_users_and_sessions(user.List___Association__Users_And_Sessions[0])
 		})
 
 
@@ -175,7 +175,7 @@ router.patch('', async (req, res) => {
 			const user = await tx.users.findUnique({
 				where: { id: UserID },  
 				include: {
-					List__Association_Users_And_Sessions: {
+					List___Association__Users_And_Sessions: {
 						where: { id: SessionID }, 
 						include: {
 							Session: true
@@ -185,7 +185,7 @@ router.patch('', async (req, res) => {
 			})
 	
 			if(!user										) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List__Association_Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
 	
 	
 			// __________________________________________________ Update session __________________________________________________
@@ -349,11 +349,11 @@ router.get('/all', async (req, res) => {
 			const user = await tx.users.findUnique({
 				where: { id: UserID },
 				include: {
-					List__Association_Users_And_Sessions: {
+					List___Association__Users_And_Sessions: {
 						include: {
 							Session: {
 								include: {
-									List__Association__Sessions_And_Players: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
 										include: {
 											Player: true
 										}
@@ -367,10 +367,10 @@ router.get('/all', async (req, res) => {
 			if(!user) throw new Custom__Handled_Error('User not found.', 404)
 	
 			const list__sessions: Array<Type__Session> = []
-			for(const association of user.List__Association_Users_And_Sessions) {
+			for(const association of user.List___Association__Users_And_Sessions) {
 
-				const list__players: Array<Type__Player> = association.Session.List__Association__Sessions_And_Players.map(asso => ({
-					...filter__association_sessions_and_players(asso), 
+				const list__players: Array<Type__Player> = association.Session.List___Association__Sessions_And_Players_And_Table_Columns.map(asso => ({
+					...filter__association_sessions_and_players_and_table_columns(asso), 
 					...filter__player(asso.Player), 
 				}))
 

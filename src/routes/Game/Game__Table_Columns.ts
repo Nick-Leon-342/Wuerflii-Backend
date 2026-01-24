@@ -3,10 +3,12 @@
 import express from 'express'
 const router = express.Router()
 
-import sort__list_players from '../../Functions.js'
+import { filter__association_sessions_and_players_and_table_columns, filter__player, filter__table_column } from '../../Filter_DatabaseJSON.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import type { Table_Columns } from '../../../generated/prisma/index.js'
 import { handle_error } from '../../handle_error.js'
 import { isInt, isString } from '../../IsDataType.js'
-import { filter__table_column } from '../../Filter_DatabaseJSON.js'
+import { prisma } from '../../index.js'
 
 
 
@@ -15,73 +17,58 @@ import { filter__table_column } from '../../Filter_DatabaseJSON.js'
 router.get('', async (req, res) => {
 	
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = Number(req.query.session_id)
 	
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-
-		// __________________________________________________ User __________________________________________________
-
-		let user = await Users.findByPk(UserID,{ 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-				include: [{
-					model: Players, 
-					required: false, 
-					through: { as: 'asso' }, 
-					include: Table_Columns, 
-				}]
-			}], 
-			order: [[ { model: Sessions }, { model: Players }, { model: Table_Columns }, 'Column', 'ASC' ]], 
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-		
-		// Check if table_columns exist
-		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Table_Columns not found.')
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(sort__list_players(user.Sessions[0].Players).map(player => {
-				return {
-					PlayerID: player.id, 
-					List__Table_Columns: player.Table_Columns.map(filter__table_column)
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
+										include: {
+											Player: true, 
+											List__Table_Columns: {
+												orderBy: {
+													Column: 'asc'
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
-			}), 
-		)
+			})
+			
+			if(!user																									) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error('Players not found.', 404)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error('Table_Columns not found.', 404)
+	
+			res.json(session.List___Association__Sessions_And_Players_And_Table_Columns.map(association => ({
+				...filter__association_sessions_and_players_and_table_columns(association), 
+				...filter__player(association.Player), 
+				List__Table_Columns: association.List__Table_Columns.map(filter__table_column)
+			})))
 
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'GET /game/table_columns')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /game/table_columns')
+		}
 	}
 
 })
@@ -91,98 +78,83 @@ router.patch('', async (req, res) => {
 	const { UserID } = req
 	const { SessionID, PlayerID, Column, Name, Value } = req.body
 
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
-	if(!PlayerID || !isInt(PlayerID)) return res.status(400).send('PlayerID invalid.')
-	if(!isInt(Column)) return res.status(400).send('Column invalid.')
-	if(!Name || !isString(Name)) return res.status(400).send('Name invalid.')
-	if(Value !== null && !isInt(Value)) return res.status(400).send('Value invalid.')
+	if(!SessionID || !isInt(SessionID)	) return res.status(400).send('SessionID invalid.')
+	if(!PlayerID || !isInt(PlayerID)	) return res.status(400).send('PlayerID invalid.')
+	if(!isInt(Column)					) return res.status(400).send('Column invalid.')
+	if(!Name || !isString(Name)			) return res.status(400).send('Name invalid.')
+	if(Value !== null && !isInt(Value)	) return res.status(400).send('Value invalid.')
 
-	if(!is_valid_input(Name, Value)) return res.status(409).send('Input invalid.')
+	if(!is_valid_input(Name, Value)		) return res.status(409).send('Input invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-		
-		// __________________________________________________ User __________________________________________________
+			const user = await tx.users.findUnique({ 
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
+										where: { PlayerID: PlayerID }, 
+										include: {
+											List__Table_Columns: {
+												where: { Column: Column }
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			})
+			
+			if(!user																							) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0					) throw new Custom__Handled_Error('Players not found.', 404)
+			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns[0]	) throw new Custom__Handled_Error('Table_Column not found.', 404)
 
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-				include: [{
-					model: Players, 
-					required: false, 
-					where: { id: PlayerID }, 
-					include: [{
-						model: Table_Columns, 
-						required: false, 
-						where: { Column }, 
-					}]
-				}]
-			}]
+			const table_column = session.List___Association__Sessions_And_Players_And_Table_Columns[0].List__Table_Columns[0]	
+			const table_column__calculated = calculate_table_column({ ...table_column, [Name]: Value })
+
+			const table_column__updated = await tx.table_Columns.update({
+				where: { id: table_column.id },
+				data: table_column__calculated
+			})
+	
+	
+			res.json(filter__table_column(table_column__updated))
+
 		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-
-		// Check if table_columns exist
-		if(!user.Sessions[0].Players[0].Table_Columns[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Table_Columns not found.')
-		}
-
-
-		// __________________________________________________ Update Table_Column __________________________________________________
-		
-		const table_column = await user.Sessions[0].Players[0].Table_Columns[0].update({
-			[Name]: Value
-		}, { transaction })
-
-		const table_column_calculated = await calculate_table_column(table_column, transaction)
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(filter__table_column(table_column_calculated))
-
-
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'PATCH /game/table_columns')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'PATCH /game/table_columns')
+		}
 	}
 
 })
 
-async function calculate_table_column( tc, transaction ) {
+function calculate_table_column(table_column: Table_Columns ): Table_Columns {
 
-	const tmp = {}
+	const table_column__updated = { ...table_column }
 
 	// ____________________ Upper Table ____________________
 
-	let upper_table_score = 0
+	let upper_table_score: number = 0
 	let upper_table_has_null = false
 
+	type Type__Upper_Table_Key = `Upper_Table_${1 | 2 | 3 | 4 | 5 | 6}`
+
 	for(let i = 1; 6 >= i; i++) {
-		const value = tc[`Upper_Table_${i}`]
+		const key = `Upper_Table_${i}` as Type__Upper_Table_Key
+		const value = table_column[key]
 		if(value || value === 0) {
 			upper_table_score += value
 		} else {
@@ -190,14 +162,14 @@ async function calculate_table_column( tc, transaction ) {
 		}
 	}
 
-	tmp.Upper_Table_Score = upper_table_score
+	table_column__updated.Upper_Table_Score = upper_table_score
 
 	if(!upper_table_has_null) {
-		tmp.Upper_Table_Add35 = upper_table_score >= 63 ? 35 : 0
-		tmp.Upper_Table_TotalScore = tmp.Upper_Table_Score + tmp.Upper_Table_Add35
+		table_column__updated.Upper_Table_Add35 = upper_table_score >= 63 ? 35 : 0
+		table_column__updated.Upper_Table_TotalScore = table_column__updated.Upper_Table_Score + table_column__updated.Upper_Table_Add35
 	} else {
-		tmp.Upper_Table_Add35 = null
-		tmp.Upper_Table_TotalScore = null
+		table_column__updated.Upper_Table_Add35 = null
+		table_column__updated.Upper_Table_TotalScore = null
 	}
 
 
@@ -207,8 +179,11 @@ async function calculate_table_column( tc, transaction ) {
 	let bottom_table_score = 0
 	let bottom_table_has_null = false
 
+	type Type__Bottom_Table_Key = `Bottom_Table_${1 | 2 | 3 | 4 | 5 | 6}`
+
 	for(let i = 1; 7 >= i; i++) {
-		const value = tc[`Bottom_Table_${i}`]
+		const key = `Bottom_Table_${i}` as Type__Bottom_Table_Key
+		const value = table_column[key]
 		if(value || value === 0) {
 			bottom_table_score += value
 		} else {
@@ -217,27 +192,30 @@ async function calculate_table_column( tc, transaction ) {
 	}
 	
 	if(!bottom_table_has_null) {
-		tmp.Bottom_Table_Score = bottom_table_score
-		if(tmp.Upper_Table_TotalScore) {
-			tmp.Bottom_Table_TotalScore = tmp.Upper_Table_TotalScore + tmp.Bottom_Table_Score
+		table_column__updated.Bottom_Table_Score = bottom_table_score
+		if(table_column__updated.Upper_Table_TotalScore) {
+			table_column__updated.Bottom_Table_TotalScore = table_column__updated.Upper_Table_TotalScore + table_column__updated.Bottom_Table_Score
 		}
 	} else {
-		tmp.Bottom_Table_Score = null
-		tmp.Bottom_Table_TotalScore = null
+		table_column__updated.Bottom_Table_Score = null
+		table_column__updated.Bottom_Table_TotalScore = null
 	}
 
-	tmp.TotalScore = (tmp.Upper_Table_TotalScore !== null ? tmp.Upper_Table_TotalScore : upper_table_score) + bottom_table_score
+	table_column__updated.Total_Score = (table_column__updated.Upper_Table_TotalScore !== null ? table_column__updated.Upper_Table_TotalScore : upper_table_score) + bottom_table_score
 
 	
-	return await tc.update(tmp, { transaction })
+	return table_column__updated
 
 }
 
-function is_valid_input( Name, Value ) {
+function is_valid_input( 
+	Name: keyof typeof possible_entries, 
+	Value: number | null 
+): boolean {
 
 	if (possible_entries.hasOwnProperty(Name)) {
 		const validValues = possible_entries[Name]
-		return (validValues.includes(Value) || Value === null)
+		return (Value === null || validValues.includes(Value))
 	}
 	return false
 

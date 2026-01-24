@@ -5,7 +5,11 @@ const router = express.Router()
 
 import { handle_error } from '../handle_error.js'
 import { MAX_FINALSCORES_LIMIT } from '../utils.js'
-import { filter__final_score } from '../Filter_DatabaseJSON.js'
+import { filter____list___association__players_and_finalscores_and_sessions, filter__final_score } from '../Filter_DatabaseJSON.js'
+import { prisma } from '../index.js'
+import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
+import type { Association__Users_And_Sessions, Prisma } from '../../generated/prisma/index.js'
+import { List__Months_Enum } from '../types/Type___List__Months.js'
 
 
 
@@ -13,156 +17,132 @@ import { filter__final_score } from '../Filter_DatabaseJSON.js'
 
 router.get('', async (req, res) => {
 
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const FinalScoreID = +req.query.finalscore_id
+	const { UserID }	= req
+	const SessionID		= Number(req.query.session_id)
+	const FinalScoreID	= Number(req.query.finalscore_id)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
-	if(!FinalScoreID) return res.status(400).send('FinalScoreID invalid.')
+	if(isNaN(SessionID)		|| SessionID <= 0	) return res.status(400).send('SessionID invalid.')
+	if(isNaN(FinalScoreID)	|| FinalScoreID <= 0) return res.status(400).send('FinalScoreID invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-		
-		// __________________________________________________ User __________________________________________________
-		
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-			}]
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// __________________________________________________ FinalScore __________________________________________________
-
-		const finalscore = await FinalScores.findByPk(FinalScoreID, {
-			transaction, 
-			include: [{
-				model: Players, 
-				required: true, 
-				through: {
-					where: { SessionID }, 
-					as: 'asso', 
+			const user = await tx.users.findUnique({
+				where: { id: UserID },
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Players_And_FinalScores_And_Sessions: {
+										where: { Final_ScoreID: FinalScoreID },
+										include: {
+											Final_Score: true
+										}
+									}
+								}
+							}
+						}
+					}
 				}
-			}], 
+			})
+	
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+				
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]	) throw new Custom__Handled_Error('Final_Score not found.', 404)
+			const final_score = session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score	
+	
+			res.json({
+				...filter__final_score(final_score), 
+				...filter____list___association__players_and_finalscores_and_sessions(session.List___Association__Players_And_FinalScores_And_Sessions)
+			})
+
 		})
-
-		// Check if finalscore exists
-		if(!finalscore) {
-			await transaction.rollback()
-			return res.status(404).send('FinalScore not found.')
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(filter__final_score(finalscore))
-
-
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'GET /finalscore')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /finalscore')
+		}
 	}
 
 })
 
 router.get('/all', async (req, res) => {
 
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const offset_block = +req.query.offset_block
+	const { UserID } 	= req
+	const SessionID 	= Number(req.query.session_id)
+	const offset_block 	= Number(req.query.offset_block)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
-	if(!offset_block) return res.status(400).send('Offset invalid.')
+	if(isNaN(SessionID) || SessionID <= 0)	return res.status(400).send('SessionID invalid.')
+	if(isNaN(offset_block))					return res.status(400).send('Offset invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-			}]
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		
-		// __________________________________________________ Get all finalscores __________________________________________________
-
-		const list_finalscores = await FinalScores.findAndCountAll({
-			where: getQuery(user.Sessions[0]),  
-			offset: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
-			include: [{
-				model: Players, 
-				required: true, 
-				through: {
-					where: { SessionID }, 
-					as: 'asso', 
+			// __________________________________________________ User __________________________________________________
+	
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: { 
+							Session: true 
+						}
+					}
 				}
-			}], 
-			transaction, 
-			order: [[ 'End', 'DESC' ]],
-			limit: MAX_FINALSCORES_LIMIT, 
-			distinct: true, 
-		}) 
+			})
+	
+			if(!user)											throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0])	throw new Custom__Handled_Error('Session not found.', 404)
+	
+			
+			// __________________________________________________ Get all finalscores __________________________________________________
+	
+			const list_finalscores = await tx.final_Scores.findMany({
+				where: getQuery(user.List___Association__Users_And_Sessions[0]),  
+				orderBy: { End: 'desc' }, 
+				skip: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
+				take: MAX_FINALSCORES_LIMIT, 
+				include: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Final_Score: true
+						}
+					}
+				}, 
+			}) 
+	
+			res.json({ 
+				Has_More:	list_finalscores.length > offset_block * MAX_FINALSCORES_LIMIT, 
+				List:		list_finalscores.map(final_score => ({
+					...filter__final_score(final_score), 
+					...filter____list___association__players_and_finalscores_and_sessions(final_score.List___Association__Players_And_FinalScores_And_Sessions)
+				})), 
+			})
 
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json({ 
-			Has_More: list_finalscores.count > offset_block * MAX_FINALSCORES_LIMIT, 
-			List: list_finalscores.rows.map(filter__final_score), 
 		})
-
-
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'GET /finalscore/all')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /finalscore/all')
+		}
 	}
 
 })
 
-function getQuery( session ) {
-
-	const asso = session.Association__Users_And_Sessions
+function getQuery(association__users_and_sessions: Association__Users_And_Sessions): Prisma.Final_ScoresWhereInput {
 	
-	const year = asso.View__Year
-	const month = asso.View__Month
+	const year = association__users_and_sessions.View__Year
+	const month = List__Months_Enum.indexOf(association__users_and_sessions.View__Month)
 	
 	const startOfYear = new Date(`${year}-01-01`)
 	const endOfYear = new Date(`${year}-12-31 23:59:59`)
@@ -170,15 +150,25 @@ function getQuery( session ) {
 	const startOfMonth = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
 	const endOfMonth = new Date(year, month, 0, 23, 59, 59)
 
-	switch(asso.View) {
-		case 'show_month':
-			return { End: { [Op.between]: [ startOfMonth, endOfMonth ] } }
+	switch(association__users_and_sessions.View) {
+		case 'SHOW__MONTH':
+			return { 
+				End: { 
+					gte: startOfMonth, 
+					lte: endOfMonth 
+				} 
+			}
 
-		case 'show_year':
-			return { End: { [Op.between]: [ startOfYear, endOfYear ] } }
+		case 'SHOW__YEAR':
+			return { 
+				End: { 
+					gte: startOfYear, 
+					lte: endOfYear 
+				} 
+			}
 
-		case 'show_custom_date':
-			return { End: { [Op.gte]: new Date(asso.View_CustomDate) } }
+		case 'SHOW__CUSTOM_DATE':
+			return { End: { gte: new Date(association__users_and_sessions.View__Custom_Date) } }
 
 		default: 
 			return {}

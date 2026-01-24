@@ -1,7 +1,8 @@
 
 
 import type { 
-	Association__Sessions_And_Players, 
+	Association__Players_And_FinalScores_And_Sessions,
+	Association__Sessions_And_Players_And_Table_Columns, 
 	Association__Users_And_Sessions, 
 	Final_Scores, 
 	Players, 
@@ -97,7 +98,7 @@ export function filter__player(player: Players) {
 	}
 }
 
-export function filter__association_sessions_and_players(association: Association__Sessions_And_Players) {
+export function filter__association_sessions_and_players_and_table_columns(association: Association__Sessions_And_Players_And_Table_Columns) {
 	return {
 		
 		Order_Index:		association.Order_Index, 
@@ -126,38 +127,36 @@ export function filter__final_score(final_score: Final_Scores) {
 	}
 }
 
-export function filter__association__players_and_finalscores_and_sessions(association) {
+export function filter____list___association__players_and_finalscores_and_sessions(List___Association__Players_And_FinalScores_And_Sessions: Array<Association__Players_And_FinalScores_And_Sessions>) {
 
-	const List_Winner = []
-	const PlayerScores = {}
-	const Wins__Before = {}
-	const Wins__After = {}
-	const Wins__Before_Year = {}
-	const Wins__After_Year = {}
-	const Wins__Before_Month = {}
-	const Wins__After_Month = {}
-	const Wins__Before_SinceCustomDate = {}
-	const Wins__After_SinceCustomDate = {}
+	const List_Winner 					: Array<number>				= []
+	const PlayerScores 					: Record<string, number>	= {}
+	const Wins__Before 					: Record<string, number>	= {}
+	const Wins__After 					: Record<string, number>	= {}
+	const Wins__Before_Year 			: Record<string, number>	= {}
+	const Wins__After_Year 				: Record<string, number>	= {}
+	const Wins__Before_Month 			: Record<string, number>	= {}
+	const Wins__After_Month 			: Record<string, number>	= {}
+	const Wins__Before_SinceCustomDate 	: Record<string, number>	= {}
+	const Wins__After_SinceCustomDate 	: Record<string, number>	= {}
 
-	for(const player of f.Players) {
-		const id =	player.id
-		const a =	player.asso		// Association between player and finalscore
+	for(const association of List___Association__Players_And_FinalScores_And_Sessions) {
+		const player_id =	association.PlayerID
 
-		if(a.IsWinner) List_Winner.push(id)
-		PlayerScores[id] = 					a.Score
-		Wins__Before[id] = 					a.Wins__Before
-		Wins__After[id] = 					a.Wins__After
-		Wins__Before_Year[id] = 			a.Wins__Before_Year
-		Wins__After_Year[id] = 				a.Wins__After_Year
-		Wins__Before_Month[id] = 			a.Wins__Before_Month
-		Wins__After_Month[id] = 			a.Wins__After_Month
-		Wins__Before_SinceCustomDate[id] = 	a.Wins__Before_SinceCustomDate
-		Wins__After_SinceCustomDate[id] = 	a.Wins__After_SinceCustomDate
+		if(association.IsWinner) List_Winner.push(player_id)
+		PlayerScores[player_id] 				= association.Score
+		Wins__Before[player_id] 				= association.Wins__Before
+		Wins__After[player_id] 					= association.Wins__After
+		Wins__Before_Year[player_id] 			= association.Wins__Before_Year
+		Wins__After_Year[player_id] 			= association.Wins__After_Year
+		Wins__Before_Month[player_id] 			= association.Wins__Before_Month
+		Wins__After_Month[player_id]			= association.Wins__After_Month
+		Wins__Before_SinceCustomDate[player_id] = association.Wins__Before_SinceCustomDate || 0
+		Wins__After_SinceCustomDate[player_id]	= association.Wins__After_SinceCustomDate || 0
 	}
 
 	return {
 		
-
 		List_Winner,
 		PlayerScores,
 		

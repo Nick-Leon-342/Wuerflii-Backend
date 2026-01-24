@@ -3,7 +3,7 @@
 import express from 'express'
 const router = express.Router()
 
-import { filter__association_sessions_and_players, filter__player } from '../../Filter_DatabaseJSON.js'
+import { filter__association_sessions_and_players_and_table_columns, filter__player } from '../../Filter_DatabaseJSON.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { isArray, isString, isColor, isInt } from '../../IsDataType.js'
 import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
@@ -27,12 +27,12 @@ router.get('', (req, res) => {
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: { 
-			List__Association_Users_And_Sessions: {
+			List___Association__Users_And_Sessions: {
 				where: { SessionID },
 				include: {
 					Session: {
 						include: {
-							List__Association__Sessions_And_Players: {
+							List___Association__Sessions_And_Players_And_Table_Columns: {
 								include: {
 									Player: true
 								}
@@ -45,11 +45,11 @@ router.get('', (req, res) => {
 	}).then(user => {
 
 		if(!user) return res.status(404).send('User not found.')
-		if(!user.List__Association_Users_And_Sessions[0]) return res.status(404).send('Session not found.')
+		if(!user.List___Association__Users_And_Sessions[0]) return res.status(404).send('Session not found.')
 
-		const list__associations_players = user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players
+		const list__associations_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 		const list__players: Array<Type__Player> = list__associations_players.map(asso => ({
-			...filter__association_sessions_and_players(asso), 
+			...filter__association_sessions_and_players_and_table_columns(asso), 
 			...filter__player(asso.Player)
 		}))
 		
@@ -60,6 +60,8 @@ router.get('', (req, res) => {
 	})
 
 })
+
+
 
 
 
@@ -81,12 +83,12 @@ router.post('', async (req, res) => {
 	// ____________________________________________________________________________________________________ Add players to session (first time) ____________________________________________________________________________________________________
 
 	const { UserID } = req
-	const { SessionID, List_Players } = req.body
+	const { SessionID, List__Players } = req.body
 
 	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
 	if(
-		!List_Players || !isArray(List_Players) || List_Players.length < 1 || List_Players.length > MAX_PLAYERS || 
-		!List_Players.every(is_player_valid__POST)
+		!List__Players || !isArray(List__Players) || List__Players.length < 1 || List__Players.length > MAX_PLAYERS || 
+		!List__Players.every(is_player_valid__POST)
 	) return res.status(400).send('List_Players invalid.')
 
 
@@ -96,12 +98,12 @@ router.post('', async (req, res) => {
 			const user = await tx.users.findUnique({
 				where: { id: UserID }, 
 				include: {
-					List__Association_Users_And_Sessions: {
+					List___Association__Users_And_Sessions: {
 						where: { SessionID: SessionID }, 
 						include: {
 							Session: {
 								include: {
-									List__Association__Sessions_And_Players: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
 										include: {
 											Player: true
 										}
@@ -114,24 +116,24 @@ router.post('', async (req, res) => {
 			})
 	
 			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List__Association_Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
+			if(!user.List___Association__Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
+			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
 			
 	
 			// __________________________________________________ Create players __________________________________________________
 	
 			const list_players: Array<Type__Player> = []
-			for(let i = 0; List_Players.length > i; i++) {
+			for(let i = 0; List__Players.length > i; i++) {
 				const player = await tx.players.create({ 
 					data: {
-						Name:	List_Players[i].Name, 
-						Color:	List_Players[i].Color, 
+						Name:	List__Players[i].Name, 
+						Color:	List__Players[i].Color, 
 					}
 				})
 				
-				const association = await tx.association__Sessions_And_Players.create({
+				const association = await tx.association__Sessions_And_Players_And_Table_Columns.create({
 					data: {
-						SessionID:	user.List__Association_Users_And_Sessions[0].id, 
+						SessionID:	user.List___Association__Users_And_Sessions[0].id, 
 						PlayerID:	player.id, 
 		
 						Gnadenwurf_Used:	false, 
@@ -141,7 +143,7 @@ router.post('', async (req, res) => {
 	
 				list_players.push({
 					...filter__player(player), 
-					...filter__association_sessions_and_players(association)
+					...filter__association_sessions_and_players_and_table_columns(association)
 				})
 			}
 	
@@ -157,6 +159,8 @@ router.post('', async (req, res) => {
 	}
 
 })
+
+
 
 
 
@@ -190,12 +194,12 @@ router.patch('', async (req, res) => {
 			const user = await tx.users.findUnique({
 				where: { id: UserID }, 
 				include: {
-					List__Association_Users_And_Sessions: {
+					List___Association__Users_And_Sessions: {
 						where: { SessionID: SessionID }, 
 						include: {
 							Session: {
 								include: {
-									List__Association__Sessions_And_Players: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
 										include: {
 											Player: true
 										}
@@ -208,13 +212,13 @@ router.patch('', async (req, res) => {
 			})
 	
 			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List__Association_Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
+			if(!user.List___Association__Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
+			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
 	
 	
 			// __________________________________________________ Check if every player exists in both lists __________________________________________________
 	
-			const tmp_list_players = user.List__Association_Users_And_Sessions[0].Session.List__Association__Sessions_And_Players
+			const tmp_list_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 			if(
 				tmp_list_players.length !== List_Players.length || 
 				!tmp_list_players.every(player => List_Players.some((p: Type__PATCH__Player) => p.id === player.id))
@@ -236,10 +240,10 @@ router.patch('', async (req, res) => {
 							}
 						})
 	
-						await tx.association__Sessions_And_Players.update({ 
+						await tx.association__Sessions_And_Players_And_Table_Columns.update({ 
 							data: { Order_Index: i }, 
 							where: {
-								SessionID:	user.List__Association_Users_And_Sessions[0].SessionID, 
+								SessionID:	user.List___Association__Users_And_Sessions[0].SessionID, 
 								PlayerID:	player.id, 	
 							}
 						})
