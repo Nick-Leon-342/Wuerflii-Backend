@@ -3,20 +3,20 @@
 import express from 'express'
 const router = express.Router()
 
-import { isDate } from 'util/types'
-import sort__list_players from '../../Functions.js'
-import { handle_error } from '../../handle_error.js'
-import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
-import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
-import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
-
-import route__session_players from './Session_Players.js'
-import { prisma } from '../../index.js'
-import { List__Months_Enum } from '../../types/Type___List__Months.js'
-import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { Enum___Association__Users_And_Sessions___Input_Type, Enum___Association__Users_And_Sessions___View, Enum___Statistics__View, type Users } from '../../../generated/prisma/index.js'
+import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
+import { List__Months_Enum } from '../../types/Type___List__Months.js'
+import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
 import type { Type__Session } from '../../types/Type__Session.js'
 import type { Type__Player } from '../../types/Type__Player.js'
+import { handle_error } from '../../handle_error.js'
+import sort__list_players from '../../Functions.js'
+import { prisma } from '../../index.js'
+import { isDate } from 'util/types'
+
+import route__session_players from './Session_Players.js'
 router.use('/players', route__session_players)
 
 
@@ -270,7 +270,7 @@ router.delete('', async (req, res) => {
 			await tx.final_Scores.deleteMany({
 				where: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						every: {
+						some: {
 							SessionID: SessionID
 						}
 					}
@@ -410,138 +410,113 @@ function sort__list_sessions(user: Users, list__sessions: Array<Type__Session>) 
 router.patch('/date', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, View_CustomDate } = req.body
+	const { SessionID, View__Custom_Date } = req.body
 
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
-	if(!View_CustomDate || !isDate(new Date(View_CustomDate))) return res.status(400).send('CustomDate invalid.')
+	if(!SessionID || !isInt(SessionID)							) return res.status(400).send('SessionID invalid.')
+	if(!View__Custom_Date || !isDate(new Date(View__Custom_Date))	) return res.status(400).send('CustomDate invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
 
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-				include: Players
-			}], 
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-
-
-		// __________________________________________________ Update session with customdate __________________________________________________
-
-		const session = user.Sessions[0]
-		await Association__Users_And_Sessions.update({ View_CustomDate }, { 
-			transaction, 
-			where: {
-				SessionID, 
-				UserID, 
-			}
-		})
-
-
-		// __________________________________________________ Update scores of finalscores __________________________________________________
-
-		const list_finalscores = await FinalScores.findAll({
-			include: [{
-				model: Players, 
-				required: true, 
-				through: {
-					where: { SessionID }, 
-					as: 'asso', 
-					attributes: [ 
-						'IsWinner', 
-						'Wins__Before_SinceCustomDate', 
-						'Wins__After_SinceCustomDate', 
-					], 
-				}
-			}], 
-			transaction, 
-			order: [[ 'End', 'ASC' ]],
-		}) 
-
-
-		let wins_before = {}
-		let wins_after = {}
-		for(const p of session.Players) { wins_after[p.id] = 0 }
-
-		for(const finalscore of list_finalscores) {
-			if(new Date(finalscore.End) >= new Date(View_CustomDate)) {
-
-				wins_before = structuredClone(wins_after)
-
-				// Add wins to wins_after
-
-				for(const player of finalscore.Players) {
-					if(player.asso.IsWinner) wins_after[player.id] = wins_after[player.id] + 1
-
-					await Association__Players_And_FinalScores_With_Sessions.update({
-						Wins__Before_SinceCustomDate: wins_before[player.id], 
-						Wins__After_SinceCustomDate: wins_after[player.id], 
-					}, {
-						transaction, 
-						where: {
-							SessionID, 
-							FinalScoreID: finalscore.id, 
-							PlayerID: player.id, 
+			const user = await tx.users.findUnique({ 
+				where: { id: UserID },
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
+										include: {
+											Player: true
+										}
+									}
+								}
+							}
 						}
-					})
+					}
 				}
+			})
 
-			} else {
-
-				// Finalscore isn't later than customdate, therefore set scores to null
-				for(const player of finalscore.Players) {
-
-					await Association__Players_And_FinalScores_With_Sessions.update({
-						Wins__Before_SinceCustomDate: null, 
-						Wins__After_SinceCustomDate: null, 
-					}, {
-						transaction, 
-						where: {
-							SessionID, 
-							FinalScoreID: finalscore.id, 
-							PlayerID: player.id, 
-						}
-					})
+			if(!user																	) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]							) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]	) throw new Custom__Handled_Error('Players not found.', 404)
+	
+	
+			// __________________________________________________ Update session with customdate __________________________________________________
+	
+			await tx.association__Users_And_Sessions.update({ 
+				where: {
+					SessionID, 
+					UserID, 
+				},
+				data: { View__Custom_Date: View__Custom_Date },
+			})
+	
+	
+			// __________________________________________________ Update scores of finalscores __________________________________________________
+	
+			const list_finalscores = await tx.final_Scores.findMany({
+				include: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						where: { SessionID: SessionID },
+					}
+				},
+				orderBy: { End: 'asc'}, 
+			}) 
+	
+	
+			let wins_before	: Record<string, number> = {}
+			let wins_after	: Record<string, number> = {}
+			for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) { wins_after[association.PlayerID] = 0 }
+	
+			for(const finalscore of list_finalscores) {
+				if(new Date(finalscore.End) >= new Date(View__Custom_Date)) {
+	
+					wins_before = structuredClone(wins_after)
+	
+					// Add wins to wins_after
+	
+					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
+						if(association.IsWinner) wins_after[association.PlayerID] = (wins_after[association.PlayerID] || 0) + 1
+	
+						await tx.association__Players_And_FinalScores_And_Sessions.update({
+							where: { id: association.id },
+							data: {
+								Wins__Before_SinceCustomDate:	wins_before[association.PlayerID] || 0, 
+								Wins__After_SinceCustomDate:	wins_after[association.PlayerID] || 0, 
+							}, 
+						})
+					}
+	
+				} else {
+	
+					// Finalscore isn't later than customdate, therefore set scores to null
+					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
+	
+						await tx.association__Players_And_FinalScores_And_Sessions.update({
+							where: { id: association.id }, 
+							data: {
+								Wins__Before_SinceCustomDate:	null, 
+								Wins__After_SinceCustomDate:	null, 
+							}
+						})
+					}
+	
 				}
-
 			}
-		}
+	
+			res.sendStatus(204)
 
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'PATCH /session/date')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'PATCH /session/date')
+		}
 	}
 
 })
