@@ -237,81 +237,66 @@ router.patch('', async (req, res) => {
 router.delete('', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = Number(req.query.session_id)
 	
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
-
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-				include: Players, 
-			}], 
-		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// __________________________________________________ Get all associations __________________________________________________
-
-		const list_associations = await Association__Players_And_FinalScores_With_Sessions.findAll({
-			where: { SessionID }, 
-			transaction, 
-		})
-
-
-		// __________________________________________________ Remove __________________________________________________
-
-		// ____________________ Remove finalscores through association ____________________
-
-		for(const association of list_associations) {
-			await FinalScores.destroy({
-				where: { id: association.FinalScoreID }, 
-				transaction, 
+		await prisma.$transaction(async (tx) => {
+	
+			const user = await tx.users.findUnique({ 
+				where: { id: UserID}, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Players_And_FinalScores_And_Sessions: true, 
+									List___Association__Sessions_And_Players_And_Table_Columns: true, 
+								}
+							}
+						}	
+					}
+				}
 			})
-		}
+	
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 
+			const session = user.List___Association__Users_And_Sessions[0].Session
 
-		// ____________________ Remove players ____________________
+			await tx.final_Scores.deleteMany({
+				where: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						every: {
+							SessionID: SessionID
+						}
+					}
+				}
+			})
 
-		for(const player of user.Sessions[0].Players) {
-			await player.destroy({ transaction })
-		}
+			await tx.players.deleteMany({
+				where: {
+					Association__Sessions_And_Players_And_Table_Columns: {
+						SessionID: SessionID
+					}
+				}
+			})
 
+			await tx.sessions.delete({ where: { id: session.id } })
+	
+	
+			res.sendStatus(204)
 
-		// ____________________ Remove session ____________________
-
-		await user.Sessions[0].destroy({ transaction })
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'DELETE /session')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'DELETE /session')
+		}
 	}
 
 })

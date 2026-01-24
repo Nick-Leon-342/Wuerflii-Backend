@@ -147,7 +147,7 @@ model Association__Sessions_And_Players_And_Table_Columns {
 
 	Session				Sessions	@relation(fields: [SessionID], references: [id], onDelete: Cascade)
 	SessionID			Int
-	Player				Players		@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+	Player				Players		@relation(fields: [PlayerID], references: [id])
 	PlayerID			Int			@unique
 	List__Table_Columns	Table_Columns[]
 }
@@ -165,7 +165,7 @@ model Players {
 	createdAt	DateTime	@default(now())
 	updatedAt	DateTime	@updatedAt
 
-	Association__Sessions_And_Players 							Association__Sessions_And_Players_And_Table_Columns?
+	Association__Sessions_And_Players_And_Table_Columns 		Association__Sessions_And_Players_And_Table_Columns?
 	List___Association__Players_And_FinalScores_And_Sessions	Association__Players_And_FinalScores_And_Sessions[]
 }
 
@@ -192,9 +192,9 @@ model Association__Players_And_FinalScores_And_Sessions {
 	
 	Session				Sessions		@relation(fields: [SessionID], references: [id], onDelete: Cascade)
 	SessionID			Int
-	Final_Score			Final_Scores	@relation(fields: [Final_ScoreID], references: [id], onDelete: Cascade)
+	Final_Score			Final_Scores	@relation(fields: [Final_ScoreID], references: [id])
 	Final_ScoreID		Int
-	Player				Players			@relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+	Player				Players			@relation(fields: [PlayerID], references: [id])
 	PlayerID			Int
 
 	@@unique([Final_ScoreID, PlayerID])
@@ -276,6 +276,6 @@ model Table_Archives {
 	createdAt	DateTime	@default(now())
 	updatedAt	DateTime	@updatedAt
 
-	Final_Score		Final_Scores	@relation(fields: [Final_ScoreID], references: [id])
+	Final_Score		Final_Scores	@relation(fields: [Final_ScoreID], references: [id], onDelete: Cascade)
 	Final_ScoreID	Int @unique
 }

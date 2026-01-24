@@ -246,72 +246,64 @@ const possible_entries = {
 
 router.get('/archive', async (req, res) => {
 
-	const { UserID } = req
-	const SessionID = +req.query.session_id
-	const FinalScoreID = +req.query.finalscore_id
+	const { UserID } 	= req
+	const SessionID 	= Number(req.query.session_id)
+	const FinalScoreID 	= Number(req.query.finalscore_id)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
-	if(!FinalScoreID) return res.status(400).send('FinalScoreID invalid.')
+	if(isNaN(SessionID)		) return res.status(400).send('SessionID invalid.')
+	if(isNaN(FinalScoreID)	) return res.status(400).send('FinalScoreID invalid.')
 	
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {
+			
+	
+	
+			// __________________________________________________ User __________________________________________________
+	
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Players_And_FinalScores_And_Sessions: {
+										where: { Final_ScoreID: FinalScoreID }, 
+										include: {
+											Final_Score: {
+												include: {
+													Table_Archive: true
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			})
+	
+			// Check if user exists
+			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]) throw new Custom__Handled_Error('Final_Score not found.', 404)
+			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive) throw new Custom__Handled_Error('Table_Archive not found.', 404)
+	
 
+			res.json(session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table)
+	
 
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
-				where: { id: SessionID }, 
-			}]
 		})
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// __________________________________________________ FinalScore __________________________________________________
-
-		const finalscore = await FinalScores.findByPk(FinalScoreID, {
-			include: Table_Archives,  
-			transaction, 
-		})
-
-		// Check if finalscore exists
-		if(!finalscore) {
-			await transaction.rollback()
-			return res.status(404).send('FinalScore not found.')
-		}
-
-		// Check if table_archive exists
-		if(!finalscore.Table_Archive) {
-			await transaction.rollback()
-			return res.status(404).send('Table_Archive not found.')
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json(finalscore.Table_Archive.Table)
-
-
-
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'GET /session/preview/table')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'GET /session/preview/table')
+		}
 	}
 
 })
