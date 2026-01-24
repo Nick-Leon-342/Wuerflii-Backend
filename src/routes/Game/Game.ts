@@ -3,14 +3,13 @@
 import express from 'express'
 const router = express.Router()
 
-import { isInt } from '../../IsDataType.js'
-import { handle_error } from '../../handle_error.js'
-import sort__list_players from '../../Functions.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { filter__table_column } from '../../Filter_DatabaseJSON.js'
+import { handle_error } from '../../handle_error.js'
+import { isInt } from '../../IsDataType.js'
+import { prisma } from '../../index.js'
 
 import route__table_columns from './Game__Table_Columns.js'
-import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import { prisma } from '../../index.js'
 router.use('/table_columns', route__table_columns)
 
 
@@ -57,24 +56,17 @@ router.get('', async (req, res) => {
 
 				await tx.sessions.update({ 
 					where: { id: session.id }, 
-					data: {
-						CurrentGameStart: new Date() 
-					}
+					data: { CurrentGameStart: new Date() }
+				})
+	
+				await tx.association__Sessions_And_Players_And_Table_Columns.updateMany({
+					where: { SessionID: SessionID }, 
+					data: { Gnadenwurf_Used: false }
 				})
 
 				const array_columns = Array.from({ length: session.Columns }, (_, index) => index)
 
 				for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) {
-
-					await tx.association__Sessions_And_Players_And_Table_Columns.update({ 
-						where: { id: association.id },
-						data: { 
-							Gnadenwurf_Used: false, 
-
-						}
-					})
-
-
 					for(const column of array_columns) {
 
 						await tx.table_Columns.create({ 
@@ -88,7 +80,6 @@ router.get('', async (req, res) => {
 						})
 
 					}
-
 				}
 	
 			}
@@ -283,9 +274,13 @@ router.post('', async (req, res) => {
 	
 			// __________________________________________________ Destroy/Delete current game __________________________________________________
 	
-			for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) {
-				await tx.table_Columns.deleteMany({ where: { Association__Sessions_And_Players_And_Table_ColumnsID: association.id} })
-			}
+			await tx.table_Columns.deleteMany({
+				where: {
+					Association__Sessions_And_Players_And_Table_Columns: {
+						SessionID: session.id
+					}
+				}
+			})
 	
 	
 			res.json({ FinalScoreID: final_score__new.id })
@@ -304,65 +299,59 @@ router.post('', async (req, res) => {
 router.delete('', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = Number(req.query.session_id)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
+		await prisma.$transaction(async (tx) => {	
+	
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Sessions_And_Players_And_Table_Columns: true, 
+								}
+							}
+						}
+					}
+				}
+			})
+	
+			if(!user			) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+	
+	
+			// __________________________________________________ Delete game __________________________________________________
 
-
-		// __________________________________________________ User __________________________________________________
-
-		const user = await Users.findByPk(UserID, { 
-			transaction, 
-			include: [{
-				model: Sessions, 
-				required: false, 
+			await tx.sessions.update({
 				where: { id: SessionID }, 
-				include: [{
-					model: Players, 
-					required: false, 
-					include: Table_Columns
-				}]
-			}], 
-		})
+				data: { CurrentGameStart: null }
+			})
 
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
+			await tx.table_Columns.deleteMany({
+				where: {
+					Association__Sessions_And_Players_And_Table_Columns: {
+						SessionID: SessionID
+					}
+				}
+			})
+	
+	
+			res.sendStatus(204)
 
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// __________________________________________________ Delete game __________________________________________________
-
-		await user.Sessions[0].update({ CurrentGameStart: null }, { transaction })
-
-		for(const player of user.Sessions[0].Players) {
-			await player.update({ Gnadenwurf: false }, { transaction })
-			for(const tc of player.Table_Columns) {
-				await tc.destroy({ transaction })
-			}
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.sendStatus(204)
-
-
+		})			
 	} catch(err) {
-		await transaction.rollback()
-		await handle_error(res, err, 'DELETE /game')
+		if(err instanceof Custom__Handled_Error) {
+			res.status(err.status_code).send(err.message)
+		} else {
+			await handle_error(res, err, 'DELETE /game')
+		}
 	}
 
 })
