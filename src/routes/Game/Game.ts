@@ -88,11 +88,7 @@ router.get('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /game')
-		}
+		await handle_error(res, err, 'GET /game')
 	}
 
 })
@@ -287,11 +283,7 @@ router.post('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'POST /game')
-		}
+		await handle_error(res, err, 'POST /game')
 	}
 
 })
@@ -347,11 +339,7 @@ router.delete('', async (req, res) => {
 
 		})			
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'DELETE /game')
-		}
+		await handle_error(res, err, 'DELETE /game')
 	}
 
 })

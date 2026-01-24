@@ -151,11 +151,7 @@ router.post('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'POST /session/players')
-		}
+		await handle_error(res, err, 'POST /session/players')
 	}
 
 })
@@ -256,11 +252,7 @@ router.patch('', async (req, res) => {
 
 		})	
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'PATCH /session/players')
-		}
+		await handle_error(res, err, 'PATCH /session/players')
 	}
 
 })

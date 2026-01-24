@@ -12,6 +12,7 @@ import {
 	EMAIL_OF_ADMIN, 
 	EMAIL_SMTP_REPLYTOEMAIL 
 } from './utils.js'
+import { Custom__Handled_Error } from './types/Class__Custom_Handled_Error.js'
 
 
 
@@ -81,7 +82,12 @@ export async function handle_error(
 	res:		Response, 
 	error:		unknown,
 	api_url:	string,
-) {
+): Promise<void> {
+
+	if(error instanceof Custom__Handled_Error) {
+		res.status(error.status_code).send(error.message)
+		return
+	}
 
 	res.sendStatus(500)
 

@@ -64,11 +64,7 @@ router.get('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /game/table_columns')
-		}
+		await handle_error(res, err, 'GET /game/table_columns')
 	}
 
 })
@@ -132,11 +128,7 @@ router.patch('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'PATCH /game/table_columns')
-		}
+		await handle_error(res, err, 'PATCH /game/table_columns')
 	}
 
 })
@@ -299,11 +291,7 @@ router.get('/archive', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /session/preview/table')
-		}
+		await handle_error(res, err, 'GET /session/preview/table')
 	}
 
 })

@@ -61,11 +61,7 @@ router.patch('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'PATCH /player')
-		}
+		await handle_error(res, err, 'PATCH /player')
 	}
 
 })

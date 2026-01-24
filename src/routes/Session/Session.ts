@@ -53,11 +53,7 @@ router.get('', (req, res) => {
 
 
 	}).catch(async err => {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /session')
-		}
+		await handle_error(res, err, 'GET /session')
 	})
 
 })
@@ -120,11 +116,7 @@ router.post('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'POST /session')
-		}
+		await handle_error(res, err, 'POST /session')
 	}
 
 })
@@ -225,11 +217,7 @@ router.patch('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'PATCH /session')
-		}
+		await handle_error(res, err, 'PATCH /session')
 	}
 
 })
@@ -292,11 +280,7 @@ router.delete('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'DELETE /session')
-		}
+		await handle_error(res, err, 'DELETE /session')
 	}
 
 })
@@ -373,11 +357,7 @@ router.get('/all', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /session/all')
-		}
+		await handle_error(res, err, 'GET /session/all')
 	}
 
 })
@@ -512,11 +492,7 @@ router.patch('/date', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'PATCH /session/date')
-		}
+		await handle_error(res, err, 'PATCH /session/date')
 	}
 
 })

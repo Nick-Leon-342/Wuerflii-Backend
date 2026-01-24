@@ -63,11 +63,7 @@ router.get('', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /finalscore')
-		}
+		await handle_error(res, err, 'GET /finalscore')
 	}
 
 })
@@ -130,11 +126,7 @@ router.get('/all', async (req, res) => {
 
 		})
 	} catch(err) {
-		if(err instanceof Custom__Handled_Error) {
-			res.status(err.status_code).send(err.message)
-		} else {
-			await handle_error(res, err, 'GET /finalscore/all')
-		}
+		await handle_error(res, err, 'GET /finalscore/all')
 	}
 
 })
