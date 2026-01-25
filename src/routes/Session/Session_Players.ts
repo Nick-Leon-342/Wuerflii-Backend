@@ -178,10 +178,10 @@ function is_player_valid__PATCH(player: any): player is Type__PATCH__Player {
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, List_Players } = req.body
+	const { SessionID, List__Players } = req.body
 
-	if(!SessionID || !isInt(SessionID)) 														return res.status(400).send('SessionID invalid.')
-	if(!List_Players || !isArray(List_Players) || !List_Players.every(is_player_valid__PATCH)) 	return res.status(400).send('List_Players invalid.')
+	if(!SessionID || !isInt(SessionID)															) return res.status(400).send('SessionID invalid.')
+	if(!List__Players || !isArray(List__Players) || !List__Players.every(is_player_valid__PATCH)) return res.status(400).send('List_Players invalid.')
 
 	
 	try {
@@ -207,24 +207,25 @@ router.patch('', async (req, res) => {
 				}
 			})
 	
-			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List___Association__Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
+			if(!user																			) throw new Custom__Handled_Error('User not found.', 404)	
+			if(!user.List___Association__Users_And_Sessions[0]									) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0	) throw new Custom__Handled_Error(`Players don't exist.`, 409)
 	
 	
 			// __________________________________________________ Check if every player exists in both lists __________________________________________________
 	
 			const tmp_list_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 			if(
-				tmp_list_players.length !== List_Players.length || 
-				!tmp_list_players.every(player => List_Players.some((p: Type__PATCH__Player) => p.id === player.id))
+				tmp_list_players.length !== List__Players.length || 
+				!tmp_list_players.every(player => List__Players.some((p: Type__PATCH__Player) => p.id === player.id))
 			) throw new Custom__Handled_Error(`List_Players doesn't match.`, 400)
 	
 	
 			// __________________________________________________ Update players __________________________________________________
 	
-			for(let i = 0; List_Players.length > i; i++) {
-				const p = List_Players[i]
+			for(let i = 0; List__Players.length > i; i++) {
+				const p = List__Players[i]
 	
 				for(const player of tmp_list_players) {
 					if(player.id === p.id) {
