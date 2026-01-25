@@ -75,6 +75,8 @@ app.use('/finalscore', route__final_score)
 
 // handling requested api not found (404)
 // app.all('*', (_, res) => { res.sendStatus(404) })
+// import { migrate } from './Migration_from_old_database_to_prisma.js'
+// migrate()
 
 
 

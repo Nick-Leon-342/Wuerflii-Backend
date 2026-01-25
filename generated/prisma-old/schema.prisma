@@ -1,0 +1,203 @@
+generator client_old {
+  provider   = "prisma-client-js"
+  output     = "../generated/prisma-old"
+  engineType = "client"
+}
+
+datasource db_old {
+  provider = "postgresql"
+}
+
+model Users_tmp {
+  id                                     Int                                   @id @default(autoincrement())
+  Name                                   String                                @db_old.VarChar(255)
+  Password                               String                                @db_old.VarChar(255)
+  RefreshToken                           String?                               @db_old.VarChar(255)
+  DarkMode                               Boolean
+  Show_Session_Names                     Boolean
+  Show_Session_Date                      Boolean
+  View_Sessions                          enum_Users_View_Sessions
+  View_Sessions_Desc                     Boolean
+  Statistics_View                        enum_Users_Statistics_View
+  Statistics_View_Month                  Int
+  Statistics_View_Year                   Int
+  createdAt                              DateTime                              @db_old.Timestamptz(6)
+  updatedAt                              DateTime                              @updatedAt @db_old.Timestamptz(6)
+  List___Association__Users_And_Sessions Association__Users_And_Sessions_tmp[]
+}
+
+model Association__Users_And_Sessions_tmp {
+  InputType              enum_Association__Users_And_Sessions_InputType
+  Scores_Visible         Boolean
+  View                   enum_Association__Users_And_Sessions_View
+  View_Month             Int
+  View_Year              Int
+  View_CustomDate        DateTime                                             @db_old.Timestamptz(6)
+  Statistics_Show_Border Boolean
+  Statistics_View        enum_Association__Users_And_Sessions_Statistics_View
+  Statistics_View_Month  Int
+  Statistics_View_Year   Int
+  createdAt              DateTime                                             @db_old.Timestamptz(6)
+  updatedAt              DateTime                                             @db_old.Timestamptz(6)
+  UserID                 Int
+  SessionID              Int
+  Session                Sessions_tmp                                         @relation(fields: [SessionID], references: [id], onDelete: Cascade)
+  User                   Users_tmp                                            @relation(fields: [UserID], references: [id], onDelete: Cascade)
+
+  @@id([UserID, SessionID])
+}
+
+model Sessions_tmp {
+  id                                                     Int                                                      @id @default(autoincrement())
+  Name                                                   String                                                   @db_old.VarChar(255)
+  Color                                                  String                                                   @db_old.VarChar(255)
+  Columns                                                Int
+  View_List_Years                                        Int[]
+  CurrentGameStart                                       DateTime?                                                @db_old.Timestamptz(6)
+  LastPlayed                                             DateTime                                                 @db_old.Timestamptz(6)
+  createdAt                                              DateTime                                                 @db_old.Timestamptz(6)
+  updatedAt                                              DateTime                                                 @updatedAt @db_old.Timestamptz(6)
+  Association__Players_And_FinalScores_With_Sessions_tmp Association__Players_And_FinalScores_With_Sessions_tmp[]
+  Association__Sessions_And_Players_tmp                  Association__Sessions_And_Players_tmp[]
+  Association__Users_And_Sessions_tmp                    Association__Users_And_Sessions_tmp[]
+}
+
+model Players_tmp {
+  id                                                     Int                                                      @id @default(autoincrement())
+  Name                                                   String                                                   @db_old.VarChar(255)
+  Color                                                  String                                                   @db_old.VarChar(255)
+  createdAt                                              DateTime                                                 @db_old.Timestamptz(6)
+  updatedAt                                              DateTime                                                 @updatedAt @db_old.Timestamptz(6)
+  Association__Players_And_FinalScores_With_Sessions_tmp Association__Players_And_FinalScores_With_Sessions_tmp[]
+  Association__Sessions_And_Players_tmp                  Association__Sessions_And_Players_tmp[]
+  Table_Columns_tmp                                      Table_Columns_tmp[]
+}
+
+model Table_Columns_tmp {
+  id                      Int          @id @default(autoincrement())
+  Column                  Int
+  Upper_Table_1           Int?
+  Upper_Table_2           Int?
+  Upper_Table_3           Int?
+  Upper_Table_4           Int?
+  Upper_Table_5           Int?
+  Upper_Table_6           Int?
+  Upper_Table_Score       Int
+  Upper_Table_Add35       Int?
+  Upper_Table_TotalScore  Int?
+  Bottom_Table_1          Int?
+  Bottom_Table_2          Int?
+  Bottom_Table_3          Int?
+  Bottom_Table_4          Int?
+  Bottom_Table_5          Int?
+  Bottom_Table_6          Int?
+  Bottom_Table_7          Int?
+  Bottom_Table_Score      Int?
+  Bottom_Table_TotalScore Int?
+  TotalScore              Int
+  createdAt               DateTime     @db_old.Timestamptz(6)
+  updatedAt               DateTime     @updatedAt @db_old.Timestamptz(6)
+  PlayerID                Int?
+  Players_tmp             Players_tmp? @relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+}
+
+model Table_Archives_tmp {
+  id              Int              @id @default(autoincrement())
+  Table           Json[]           @db_old.Json
+  createdAt       DateTime         @db_old.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @db_old.Timestamptz(6)
+  FinalScoreID    Int?
+  FinalScores_tmp FinalScores_tmp? @relation(fields: [FinalScoreID], references: [id], onDelete: Cascade)
+}
+
+model Association__Players_And_FinalScores_With_Sessions_tmp {
+  IsWinner                     Boolean
+  Score                        Int
+  Wins__Before                 Int
+  Wins__After                  Int
+  Wins__Before_Year            Int
+  Wins__After_Year             Int
+  Wins__Before_Month           Int
+  Wins__After_Month            Int
+  Wins__Before_SinceCustomDate Int?
+  Wins__After_SinceCustomDate  Int?
+  createdAt                    DateTime        @db_old.Timestamptz(6)
+  updatedAt                    DateTime        @db_old.Timestamptz(6)
+  SessionID                    Int?
+  PlayerID                     Int
+  FinalScoreID                 Int
+  FinalScores_tmp              FinalScores_tmp @relation(fields: [FinalScoreID], references: [id], onDelete: Cascade, map: "Association__Players_And_FinalScores_With_Ses_FinalScoreID_fkey")
+  Sessions_tmp                 Sessions_tmp?   @relation(fields: [SessionID], references: [id], onDelete: Cascade, map: "Association__Players_And_FinalScores_With_Sessio_SessionID_fkey")
+  Players_tmp                  Players_tmp     @relation(fields: [PlayerID], references: [id], onDelete: Cascade, map: "Association__Players_And_FinalScores_With_Session_PlayerID_fkey")
+
+  @@id([PlayerID, FinalScoreID])
+}
+
+model Association__Sessions_And_Players_tmp {
+  Gnadenwurf_Used Boolean
+  Order_Index     Int
+  createdAt       DateTime     @db_old.Timestamptz(6)
+  updatedAt       DateTime     @db_old.Timestamptz(6)
+  SessionID       Int
+  PlayerID        Int
+  Players_tmp     Players_tmp  @relation(fields: [PlayerID], references: [id], onDelete: Cascade)
+  Sessions_tmp    Sessions_tmp @relation(fields: [SessionID], references: [id], onDelete: Cascade)
+
+  @@id([SessionID, PlayerID])
+}
+
+model FinalScores_tmp {
+  id                                                     Int                                                      @id @default(autoincrement())
+  Start                                                  DateTime                                                 @db_old.Timestamptz(6)
+  End                                                    DateTime                                                 @db_old.Timestamptz(6)
+  Columns                                                Int
+  Surrendered                                            Boolean
+  createdAt                                              DateTime                                                 @db_old.Timestamptz(6)
+  updatedAt                                              DateTime                                                 @db_old.Timestamptz(6)
+  Association__Players_And_FinalScores_With_Sessions_tmp Association__Players_And_FinalScores_With_Sessions_tmp[]
+  Table_Archives_tmp                                     Table_Archives_tmp[]
+}
+
+enum enum_Association__Users_And_Sessions_InputType {
+  type
+  select
+  select_and_type
+}
+
+enum enum_Association__Users_And_Sessions_Statistics_View {
+  statistics_overall
+  statistics_year
+  statistics_month
+}
+
+enum enum_Association__Users_And_Sessions_View {
+  show_month
+  show_year
+  show_custom_date
+  show_all
+}
+
+enum enum_Sessions_InputType {
+  type
+  select
+  select_and_type
+}
+
+enum enum_Sessions_View {
+  show_month
+  show_year
+  custom_date
+  show_all
+}
+
+enum enum_Users_Statistics_View {
+  statistics_overall
+  statistics_year
+  statistics_month
+}
+
+enum enum_Users_View_Sessions {
+  Last_Played
+  Created
+  Name
+}
