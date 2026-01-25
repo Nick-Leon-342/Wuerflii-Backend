@@ -4,6 +4,10 @@ import express from 'express'
 const router = express.Router()
 
 import { handle_error } from '../../handle_error.js'
+import { prisma } from '../../index.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import type { Final_Scores } from '../../../generated/prisma/index.js'
+import { List__Months_Enum } from '../../types/Type___List__Months.js'
 
 
 
@@ -12,198 +16,194 @@ import { handle_error } from '../../handle_error.js'
 router.get('', async (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +req.query.session_id
+	const SessionID = Number(req.query.session_id)
 
-	if(!SessionID) return res.status(400).send('SessionID invalid.')
+	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
 
 
-	const transaction = await sequelize.transaction()
 	try {
-
-
-		const user = await Users.findByPk(UserID, {
-			transaction, 
-			include: [{
-				model: Sessions, 
-				where: { id: SessionID }, 
-				include: [
-					{
-						model: Players, 
-						through: { as: 'asso' }, 
-					}, {
-						model: Association__Players_And_FinalScores_With_Sessions, 
-						as: 'association', 
-					}
-				],
-			}], 
-		})
-
-
-		// Check if user exists
-		if(!user) {
-			await transaction.rollback()
-			return res.status(404).send('User not found.')
-		}
-
-
-		// Check if session exists
-		if(!user.Sessions[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Session not found.')
-		}
-
-
-		// Check if players exist
-		if(!user.Sessions[0].Players[0]) {
-			await transaction.rollback()
-			return res.status(404).send('Players not found.')
-		}
-
-		const association 			= user.Sessions[0].Association__Users_And_Sessions
-		const statistics_view 		= association.Statistics__View
-		const statistics_view_month = association.Statistics__View_Month
-		const statistics_view_year 	= association.Statistics__View_Year
-
-		
-		// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
-
-		const list_years 		= []	// List of all the years in which games were played
-		const list_finalscores 	= []
-		for(const association of user.Sessions[0].association) {
-			if(list_finalscores.filter(finalscore => finalscore.id === association.FinalScoreID).length > 0) continue
-			const finalscore = await FinalScores.findByPk(association.FinalScoreID, { 
-				transaction, 
-				include: [{
-					model: Players, 
-					through: { as: 'asso' }
-				}]
-			})
-
-			const date = new Date(finalscore.End)
-			if(!list_years.includes(date.getFullYear())) list_years.push(date.getFullYear())
-			if(statistics_view === 'statistics_year' && date.getFullYear() !== statistics_view_year) continue
-			if(statistics_view === 'statistics_month' && (date.getFullYear() !== statistics_view_year || date.getMonth() !== statistics_view_month - 1)) continue
-			list_finalscores.push(finalscore)
-		}
-
-
-		// __________________________________________________ Prepare response JSON __________________________________________________
-
-		const json = { Games_Played: 0, Wins: {}, Draws: 0 }
-		const total = {
-			Total__Games_Played:	list_finalscores.length, 
-			Total__Wins: 			{},		// Wins of each player
-			Total__Draws: 			0, 
-
-			Scores__Lowest: 		{}, 	// Lowest scores of each player
-			Scores__Average: 		{}, 	// Average scores of each player
-			Scores__Highest: 		{}, 	// Highest scores of each player
-			Scores__Total: 			{}, 	// Every score of each player combined
-			
-			Data: 					{}, 
-		}
-
-
-		// __________________________________________________ Init years/months/days of data with zeros __________________________________________________
-
-		if(statistics_view === 'statistics_overall') list_years.forEach(year => total.Data[year] = structuredClone(json))
-		if(statistics_view === 'statistics_year') {
-			for(let month = 0; 12 >= month; month++) {
-				total.Data[month] = structuredClone(json)
-			}
-		}
-		if(statistics_view === 'statistics_month') {
-			const daysInMonth = new Date(statistics_view_year, statistics_view_month, 0).getDate()
-			const list_days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-			for(const day of list_days) {
-				total.Data[day] = structuredClone(json)
-			}
-		}
-
-
-		// __________________________________________________ Init Scores_... for each player with zero __________________________________________________
-
-		for(const player of user.Sessions[0].Players) {
-			const id = player.id
-
-			total.Scores__Lowest[id] 	= 0
-			total.Scores__Highest[id] 	= 0
-			total.Scores__Total[id] 	= 0
-		}
-
-		
-		// __________________________________________________ Iterate through finalscores and calculate scores, wins etc. __________________________________________________
-
-		for(const final_score of list_finalscores) {
-			
-			const date 	= new Date(final_score.End)
-			const year 	= date.getFullYear()
-			const month = date.getMonth() + 1
-			const day 	= date.getDate()
-
-
-			// Init the selected time -> selected year or month or day
-			let time
-			if(statistics_view === 'statistics_overall'	) time = year
-			if(statistics_view === 'statistics_year'	) time = month
-			if(statistics_view === 'statistics_month'	) time = day
-
-			
-			// Increase games_played count in specific time
-			total.Data[time].Games_Played++
-
-
-			// Calculate if game was a draw
-			const list_winners = final_score.Players.filter(player => player.asso.IsWinner)
-			if(list_winners.length > 1) {
-				total.Total__Draws++
-				total.Data[time].Draws++
-			}
-
-
-			//
-			final_score.Players.forEach(player => {
-				const id = player.id
-
-				// Increase wins of players that won
-				if(player.asso.IsWinner) {
-					// Increase total wins
-					if(!total.Total__Wins[id]) total.Total__Wins[id] = 0
-					total.Total__Wins[id]++
+		await prisma.$transaction(async (tx) => {
 	
-					// Increase wins of the year/month/day
-					if(!total.Data[time].Wins[id]) total.Data[time].Wins[id] = 0
-					total.Data[time].Wins[id]++
+			const user = await tx.users.findUnique({
+				where: { id: UserID }, 
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: SessionID }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Players_And_FinalScores_And_Sessions: {
+										include: {
+											Player: true, 
+											Final_Score: {
+												include: {
+													List___Association__Players_And_FinalScores_And_Sessions: true
+												}	
+											},
+										}
+									}
+								}
+							}
+						}
+					}
 				}
+			})
+	
+			if(!user																) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]						) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+	
+			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]	) throw new Custom__Handled_Error('Players not found.', 404)
+	
+			const association__users_and_sessions	= user.List___Association__Users_And_Sessions[0]
+			const statistics__view 					= association__users_and_sessions.Statistics__View
+			const statistics__view_month 			= association__users_and_sessions.Statistics__View_Month
+			const statistics__view_year				= association__users_and_sessions.Statistics__View_Year
+	
+			
+			// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
+	
+			const list__years 		: Array<number>			= []	// List of all the years in which games were played
+			const list__final_scores = []
+			for(const association__users_and_sessions of user.List___Association__Users_And_Sessions) {
+				
+				const session = association__users_and_sessions.Session
+				const list__final_scores__filtered = [...new Map(session.List___Association__Players_And_FinalScores_And_Sessions.map(item => [item.Final_ScoreID, item.Final_Score])).values()] // dedublicate finalscores
 
+				for(const final_score of list__final_scores__filtered) {	
+					const date = new Date(final_score.End)
+					if(!list__years.includes(date.getFullYear())) list__years.push(date.getFullYear())
+					if(statistics__view === 'STATISTICS_YEAR' && date.getFullYear() !== statistics__view_year) continue
+					if(statistics__view === 'STATISTICS_MONTH' && (date.getFullYear() !== statistics__view_year || List__Months_Enum[date.getMonth()] !== statistics__view_month)) continue
+					list__final_scores.push(final_score)
+				}
+			}
+	
+	
+			// __________________________________________________ Prepare response JSON __________________________________________________
+	
+			type Type__Wins 			= Record<string, number>
+			type Type__Json				= { Games_Played: number, Wins: Type__Wins, Draws: number }
+			const json 					: Type__Json					= { Games_Played: 0, Wins: {}, Draws: 0 }
+			let Total__Draws			: number				 		= 0
+			const Total__Games_Played	: number						= list__final_scores.length
+			const Total__Wins			: Record<string, number> 		= {}
+			const Scores__Lowest		: Record<string, number> 		= {}
+			const Scores__Average		: Record<string, number> 		= {}
+			const Scores__Highest		: Record<string, number> 		= {}
+			const Scores__Total			: Record<string, number> 		= {}
+			const Data					: Record<string, typeof json>	= {}
+	
+	
+			// __________________________________________________ Init years/months/days of data with zeros __________________________________________________
+	
+			if(statistics__view === 'STATISTICS_OVERALL') list__years.forEach(year => Data[year] = structuredClone(json))
+			if(statistics__view === 'STATISTICS_YEAR') {
+				for(let month = 0; 12 >= month; month++) {
+					Data[month] = structuredClone(json)
+				}
+			}
+			if(statistics__view === 'STATISTICS_MONTH') {
+				const daysInMonth = new Date(statistics__view_year, List__Months_Enum.indexOf(statistics__view_month) + 1, 0).getDate()
+				const list_days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+				for(const day of list_days) {
+					Data[day] = structuredClone(json)
+				}
+			}
+	
+	
+			// __________________________________________________ Init Scores_... for each player with zero __________________________________________________
+	
+			for(const association of session.List___Association__Players_And_FinalScores_And_Sessions) {
+				const player_id = association.PlayerID
+	
+				Scores__Lowest[player_id] 	= 0
+				Scores__Highest[player_id]	= 0
+				Scores__Total[player_id] 	= 0
+			}
+	
+			
+			// __________________________________________________ Iterate through finalscores and calculate scores, wins etc. __________________________________________________
+	
+			for(const final_score of list__final_scores) {
+				
+				const date 	= new Date(final_score.End)	
+	
+				// Init the selected time -> selected year or month or day
+				let time: number = 0
+				if(statistics__view === 'STATISTICS_OVERALL') time = date.getFullYear()
+				if(statistics__view === 'STATISTICS_YEAR'	) time = date.getMonth() + 1
+				if(statistics__view === 'STATISTICS_MONTH'	) time = date.getDate()
+	
+				
+				// Increase games_played count in specific time
+				const target = Data[time]
+				if(!target || target.Games_Played === undefined) throw new Custom__Handled_Error('Something went wrong while creating statistics.', 500)
+				target.Games_Played++
+	
+	
+				// Calculate if game was a draw
+				if(final_score.List___Association__Players_And_FinalScores_And_Sessions.filter(association => association.IsWinner).length > 1) {
+					Total__Draws++
+					target.Draws++
+				}
+	
+	
+				final_score.List___Association__Players_And_FinalScores_And_Sessions.forEach(association => {
+					const player_id = association.PlayerID
+	
+					// Increase wins of players that won
+					if(association.IsWinner) {
+						// Increase total wins
+						if(!Total__Wins[player_id]) Total__Wins[player_id] = 0
+						Total__Wins[player_id]++
+		
+						// Increase wins of the year/month/day
+						if(!target.Wins[player_id]) target.Wins[player_id] = 0
+						target.Wins[player_id]++
+					}
+	
+	
+					if(Scores__Lowest[player_id] === undefined || Scores__Highest[player_id] === undefined || Scores__Total[player_id] === undefined) throw new Custom__Handled_Error('Something went wrong while creating statistics.', 500)
 
-				const score = player.asso.Score
-				if(total.Scores__Lowest[id] > score || total.Scores__Lowest[id] === 0) total.Scores__Lowest[id] = score
-				if(total.Scores__Highest[id] < score) total.Scores__Highest[id] = score
-				total.Scores__Total[id] = total.Scores__Total[id] + score
-
+					const score = association.Score
+					if(Scores__Lowest[player_id] > score || Scores__Lowest[player_id] === 0) Scores__Lowest[player_id] = score
+					if(Scores__Highest[player_id] < score) Scores__Highest[player_id] = score
+					Scores__Total[player_id] = Scores__Total[player_id] + score
+	
+				})
+	
+			}
+	
+	
+			// Calculate average scores
+			const list__players = list__final_scores[0]?.List___Association__Players_And_FinalScores_And_Sessions.map(association => association.PlayerID)
+			if(list__players) {
+				for(const player_id of list__players) {
+					Scores__Average[player_id] = Math.round((Scores__Total[player_id] || 0) / Total__Games_Played)
+				}
+			}
+			const total = {
+				Total__Games_Played:	Total__Games_Played, 
+				Total__Wins: 			Total__Wins,		// Wins of each player
+				Total__Draws: 			Total__Draws, 
+	
+				Scores__Lowest: 		Scores__Lowest, 	// Lowest scores of each player
+				Scores__Average: 		Scores__Average, 	// Average scores of each player
+				Scores__Highest: 		Scores__Highest, 	// Highest scores of each player
+				Scores__Total: 			Scores__Total,		// Every score of each player combined
+				
+				Data: 					Data, 
+			}
+	
+	
+			res.json({ 
+				Total: total, 
+				list__years: list__years, 
 			})
 
-		}
-
-
-		// Calculate average scores
-		for(const player of user.Sessions[0].Players) {
-			total.Scores__Average[player.id] = Math.round(total.Scores__Total[player.id] / total.Total__Games_Played)
-		}
-
-
-		// __________________________________________________ Response __________________________________________________
-
-		await transaction.commit()
-		res.json({ 
-			Total: total, 
-			List_Years: list_years, 
 		})
-
-
 	} catch(err) {
-		await transaction.rollback()
 		await handle_error(res, err, 'GET /analytics/session')
 	}
 

@@ -57,18 +57,18 @@ router.patch('', async (req, res) => {
 	} = req.body
 
 
-	if(Name && !isString(Name))																												return res.status(400).send('Name invalid.')
-	if(Password && !isString(Password))																										return res.status(400).send('Password invalid.')
-	if(DarkMode !== undefined && !isBoolean(DarkMode))																						return res.status(400).send('DarkMode invalid.')
+	if(Name && !isString(Name)																		) return res.status(400).send('Name invalid.')
+	if(Password && !isString(Password)																) return res.status(400).send('Password invalid.')
+	if(DarkMode !== undefined && !isBoolean(DarkMode)												) return res.status(400).send('DarkMode invalid.')
 
-	if(Show__Session_Names !== undefined && !isBoolean(Show__Session_Names)) 																return res.status(400).send('Show__Session_Names invalid.')
-	if(Show__Session_Date !== undefined && !isBoolean(Show__Session_Date)) 																	return res.status(400).send('Show__Session_Date invalid.')
-	if(View__Sessions && !isString(View__Sessions) && !Object.values(Enum___Users___View__Sessions).includes(View__Sessions)) 				return res.status(400).send('View__Sessions invalid.')
-	if(View__Sessions_Desc !== undefined && !isBoolean(View__Sessions_Desc)) 																return res.status(400).send('View__Sessions_Desc invalid.')
+	if(Show__Session_Names !== undefined && !isBoolean(Show__Session_Names)							) return res.status(400).send('Show__Session_Names invalid.')
+	if(Show__Session_Date !== undefined && !isBoolean(Show__Session_Date)							) return res.status(400).send('Show__Session_Date invalid.')
+	if(View__Sessions && !Object.values(Enum___Users___View__Sessions).includes(View__Sessions)		) return res.status(400).send('View__Sessions invalid.')
+	if(View__Sessions_Desc !== undefined && !isBoolean(View__Sessions_Desc)							) return res.status(400).send('View__Sessions_Desc invalid.')
 
-	if(Statistics__View && (!isString(Statistics__View) || !Object.values(Enum___Statistics__View).includes(Statistics__View)))				return res.status(400).send('Statistics__View invalid.')
-	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || !Object.values(Enum___List__Month).includes(Statistics__View_Month)))	return res.status(400).send('Statistics__View_Month invalid.')
-	if(Statistics__View_Year && !isInt(Statistics__View_Year)) 																				return res.status(400).send('Statistics__View_Year invalid.')
+	if(Statistics__View && !Object.values(Enum___Statistics__View).includes(Statistics__View)		) return res.status(400).send('Statistics__View invalid.')
+	if(Statistics__View_Month && !Object.values(Enum___List__Month).includes(Statistics__View_Month)) return res.status(400).send('Statistics__View_Month invalid.')
+	if(Statistics__View_Year && !isInt(Statistics__View_Year)										) return res.status(400).send('Statistics__View_Year invalid.')
 
 
 	try {
