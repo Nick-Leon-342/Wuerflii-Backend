@@ -71,7 +71,7 @@ export function filter__association_users_and_sessions(association: Association_
 		View: 						association.View, 
 		View__Month: 				association.View__Month, 
 		View__Year: 				association.View__Year, 
-		View__CustomDate:			association.View__Custom_Date,
+		View__Custom_Date:			association.View__Custom_Date,
 
 		Statistics__Show_Border:	association.Statistics__Show_Border, 
 		Statistics__View: 			association.Statistics__View, 
