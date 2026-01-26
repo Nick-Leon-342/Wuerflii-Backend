@@ -61,8 +61,8 @@ router.get('', async (req, res) => {
 				for(const final_score of list__final_scores__filtered) {	
 					const date = new Date(final_score.End)
 					if(!list__years.includes(date.getFullYear())) list__years.push(date.getFullYear())
-					if(statistics__view === 'STATISTICS_YEAR' && date.getFullYear() !== statistics__view_year) continue
-					if(statistics__view === 'STATISTICS_MONTH' && (date.getFullYear() !== statistics__view_year || List__Months_Enum[date.getMonth()] !== statistics__view_month)) continue
+					if(statistics__view === 'STATISTICS_YEAR' && date.getFullYear() !== statistics__view_year) break
+					if(statistics__view === 'STATISTICS_MONTH' && (date.getFullYear() !== statistics__view_year || List__Months_Enum[date.getMonth()] !== statistics__view_month)) break
 					list__final_scores.push(final_score)
 				}
 			}

@@ -101,24 +101,33 @@ router.get('/all', async (req, res) => {
 			
 			// __________________________________________________ Get all finalscores __________________________________________________
 	
-			const list_finalscores = await tx.final_Scores.findMany({
-				where: getQuery(user.List___Association__Users_And_Sessions[0]),  
+			const json__where = {
+				...getQuery(user.List___Association__Users_And_Sessions[0]), 
+				List___Association__Players_And_FinalScores_And_Sessions: {
+					every: {
+						SessionID: SessionID
+					}
+				}
+			}
+
+			const count = await tx.final_Scores.count({ where: json__where })
+			const list__final_scores = await tx.final_Scores.findMany({
+				where: json__where,  
 				orderBy: { End: 'desc' }, 
 				skip: (offset_block - 1) * MAX_FINALSCORES_LIMIT,
 				take: MAX_FINALSCORES_LIMIT, 
 				include: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						where: { SessionID: SessionID }, 
 						include: {
 							Final_Score: true
 						}
 					}
 				}, 
-			}) 
+			})
 	
 			res.json({ 
-				Has_More:	list_finalscores.length > offset_block * MAX_FINALSCORES_LIMIT, 
-				List:		list_finalscores.map(final_score => ({
+				Has_More:	count > offset_block * MAX_FINALSCORES_LIMIT, 
+				List:		list__final_scores.map(final_score => ({
 					...filter__final_score(final_score), 
 					...filter____list___association__players_and_finalscores_and_sessions(final_score.List___Association__Players_And_FinalScores_And_Sessions)
 				})), 

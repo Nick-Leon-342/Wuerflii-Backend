@@ -144,21 +144,21 @@ router.patch('', async (req, res) => {
 		Statistics__View_Year, 
 	} = req.body
 	
-	if(!SessionID || !isInt(SessionID)																										) return res.status(400).send('SessionID invalid.')
-	if(Name && !isString(Name)																												) return res.status(400).send('Name invalid.')
-	if(Color && !isColor(Color)																												) return res.status(400).send('Color invalid.')
-	if(Columns && !isInt(Columns)																											) return res.status(400).send('Columns invalid.')
+	if(!SessionID || !isInt(SessionID)																			) return res.status(400).send('SessionID invalid.')
+	if(Name && !isString(Name)																					) return res.status(400).send('Name invalid.')
+	if(Color && !isColor(Color)																					) return res.status(400).send('Color invalid.')
+	if(Columns && !isInt(Columns)																				) return res.status(400).send('Columns invalid.')
 
-	if(View && (!isString(View) || !Object.values(Enum___Association__Users_And_Sessions___View).includes(View))							) return res.status(400).send('View invalid.')
-	if(View__Month && (!isString(View__Month) || !Object.values(List__Months_Enum).includes(View__Month))										) return res.status(400).send('View__Month invalid.')
-	if(View__Year && !isInt(View__Year)																										) return res.status(400).send('View__Year invalid.')
-	if(Input_Type && (!isString(Input_Type) || !Object.values(Enum___Association__Users_And_Sessions___Input_Type).includes(Input_Type))	) return res.status(400).send('Input_Type invalid.')
-	if(Show_Scores !== undefined && !isBoolean(Show_Scores)																					) return res.status(400).send('Show_Scores invalid.')
+	if(View && !Object.values(Enum___Association__Users_And_Sessions___View).includes(View)						) return res.status(400).send('View invalid.')
+	if(View__Month && !Object.values(List__Months_Enum).includes(View__Month)									) return res.status(400).send('View__Month invalid.')
+	if(View__Year && !isInt(View__Year)																			) return res.status(400).send('View__Year invalid.')
+	if(Input_Type && !Object.values(Enum___Association__Users_And_Sessions___Input_Type).includes(Input_Type)	) return res.status(400).send('Input_Type invalid.')
+	if(Show_Scores !== undefined && !isBoolean(Show_Scores)														) return res.status(400).send('Show_Scores invalid.')
 		
-	if(Statistics__Show_Border !== undefined && !isBoolean(Statistics__Show_Border)															) return res.status(400).send('Statistics__Show_Border invalid.')
-	if(Statistics__View && (!isString(Statistics__View) || !Object.values(Enum___Statistics__View).includes(Statistics__View))				) return res.status(400).send('Statistics__View invalid.')
-	if(Statistics__View_Month && (!isInt(Statistics__View_Month) || !Object.values(List__Months_Enum).includes(Statistics__View_Month))			) return res.status(400).send('Statistics__View_Month invalid.')
-	if(Statistics__View_Year && !isInt(Statistics__View_Year)																				) return res.status(400).send('Statistics__View_Year invalid.')
+	if(Statistics__Show_Border !== undefined && !isBoolean(Statistics__Show_Border)								) return res.status(400).send('Statistics__Show_Border invalid.')
+	if(Statistics__View && !Object.values(Enum___Statistics__View).includes(Statistics__View)					) return res.status(400).send('Statistics__View invalid.')
+	if(Statistics__View_Month && !Object.values(List__Months_Enum).includes(Statistics__View_Month)				) return res.status(400).send('Statistics__View_Month invalid.')
+	if(Statistics__View_Year && !isInt(Statistics__View_Year)													) return res.status(400).send('Statistics__View_Year invalid.')
 
 
 	try {
@@ -168,16 +168,16 @@ router.patch('', async (req, res) => {
 				where: { id: UserID },  
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { id: SessionID }, 
+						where: { SessionID: SessionID }, 
 						include: {
 							Session: true
 						}
 					}
 				}
 			})
-	
-			if(!user										) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+			
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 	
 	
 			// __________________________________________________ Update session __________________________________________________

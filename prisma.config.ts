@@ -10,6 +10,5 @@ export default defineConfig({
 	},
 	datasource: {
 		url: DATABASE_URL,
-		// url: 'postgresql://wuerflii-old:mappel342@localhost:5432/wuerflii-old',
 	},
 })

@@ -115,9 +115,10 @@ router.post('', async (req, res) => {
 				}
 			})
 	
-			if(!user) 																									throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List___Association__Users_And_Sessions[0]) 															throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0)	throw new Custom__Handled_Error('Players already exist.', 409)
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)	
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0) new Custom__Handled_Error('Players already exist.', 409)
 			
 	
 			// __________________________________________________ Create players __________________________________________________
@@ -133,7 +134,7 @@ router.post('', async (req, res) => {
 				
 				const association = await tx.association__Sessions_And_Players_And_Table_Columns.create({
 					data: {
-						SessionID:	user.List___Association__Users_And_Sessions[0].id, 
+						SessionID:	session.id, 
 						PlayerID:	player.id, 
 		
 						Gnadenwurf_Used:	false, 
@@ -195,11 +196,7 @@ router.patch('', async (req, res) => {
 						include: {
 							Session: {
 								include: {
-									List___Association__Sessions_And_Players_And_Table_Columns: {
-										include: {
-											Player: true
-										}
-									}
+									List___Association__Sessions_And_Players_And_Table_Columns: true
 								}
 							}
 						}
@@ -215,25 +212,25 @@ router.patch('', async (req, res) => {
 	
 			// __________________________________________________ Check if every player exists in both lists __________________________________________________
 	
-			const tmp_list_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
+			const tmp__list_associations = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 			if(
-				tmp_list_players.length !== List__Players.length || 
-				!tmp_list_players.every(player => List__Players.some((p: Type__PATCH__Player) => p.id === player.id))
-			) throw new Custom__Handled_Error(`List_Players doesn't match.`, 400)
+				tmp__list_associations.length !== List__Players.length || 
+				!tmp__list_associations.every(association => List__Players.some((p: Type__PATCH__Player) => p.id === association.PlayerID))
+			) throw new Custom__Handled_Error(`List__Players doesn't match.`, 400)
 	
 	
 			// __________________________________________________ Update players __________________________________________________
 	
 			for(let i = 0; List__Players.length > i; i++) {
-				const p = List__Players[i]
+				const player = List__Players[i]
 	
-				for(const player of tmp_list_players) {
-					if(player.id === p.id) {
+				for(const association of tmp__list_associations) {
+					if(association.PlayerID === player.id) {
 						await tx.players.update({
-							where: { id: p.id }, 
+							where: { id: player.id }, 
 							data: {
-								Name:	p.Name, 
-								Color:	p.Color, 
+								Name:	player.Name, 
+								Color:	player.Color, 
 							}
 						})
 	
@@ -241,10 +238,10 @@ router.patch('', async (req, res) => {
 							data: { Order_Index: i }, 
 							where: {
 								SessionID:	user.List___Association__Users_And_Sessions[0].SessionID, 
-								PlayerID:	player.id, 	
+								PlayerID:	association.PlayerID, 	
 							}
 						})
-						continue
+						break
 					}
 				}
 			}
