@@ -1,5 +1,8 @@
+
+
 Dockerfile
 .dockerignore
 node_modules
 .env
 README.md
+generated

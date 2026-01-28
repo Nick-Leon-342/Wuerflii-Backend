@@ -3,11 +3,13 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-import express 			from 'express'
-import http				from 'http'
-const app 				= express()
-const httpServer		= http.createServer(app)
-import cookieParser 	from 'cookie-parser'
+import express 				from 'express'
+import http					from 'http'
+const app 					= express()
+const httpServer			= http.createServer(app)
+import cookieParser 		from 'cookie-parser'
+import swaggerUi			from  'swagger-ui-express'
+import { swagger__options } from './swagger.js'
 
 import { ALLOWED_ORIGIN, DATABASE_URL, PORT } from './utils.js'
 import package_json from '../package.json' with { type: 'json' }
@@ -28,6 +30,7 @@ const corsOptions = {
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors(corsOptions))
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swagger__options))
 
 
 
