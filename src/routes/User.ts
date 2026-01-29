@@ -166,24 +166,24 @@ router.delete('', async (req, res) => {
 			for(const session of user.List___Association__Users_And_Sessions) {
 	
 				await tx.final_Scores.deleteMany({
-				where: {
-					List___Association__Players_And_FinalScores_And_Sessions: {
-						some: {
+					where: {
+						List___Association__Players_And_FinalScores_And_Sessions: {
+							some: {
+								SessionID: session.id
+							}
+						}
+					}
+				})
+
+				await tx.players.deleteMany({
+					where: {
+						Association__Sessions_And_Players_And_Table_Columns: {
 							SessionID: session.id
 						}
 					}
-				}
-			})
+				})
 
-			await tx.players.deleteMany({
-				where: {
-					Association__Sessions_And_Players_And_Table_Columns: {
-						SessionID: session.id
-					}
-				}
-			})
-
-			await tx.sessions.delete({ where: { id: session.id } })
+				await tx.sessions.delete({ where: { id: session.id } })
 	
 			}
 	
