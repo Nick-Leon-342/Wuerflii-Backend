@@ -18,7 +18,6 @@ ARG DB_DATABASE=dummy
 ARG DB_HOST=localhost
 ARG DB_PORT=5432
 ARG DB_TYPE=postgresql
-# ARG DATABASE_URL=''
 
 RUN npx prisma generate
 RUN npm run build
