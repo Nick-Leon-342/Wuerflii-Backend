@@ -1,7 +1,7 @@
 
 
 # ____________________ Build ____________________
-FROM node:25.2.1-slim AS builder
+FROM node:25.5 AS builder
 
 WORKDIR /wuerflii-backend
 
@@ -23,7 +23,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ____________________ Production ____________________
-FROM node:25.2.1-slim AS runner
+FROM node:25.5 AS runner
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
