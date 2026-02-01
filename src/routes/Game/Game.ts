@@ -147,18 +147,23 @@ router.post('', async (req, res) => {
 	
 			// Get latest finalscore
 			const final_score__latest_found = await tx.final_Scores.findFirst({
+				where: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						every: { SessionID: SessionID }, 
+					}
+				}, 
 				orderBy: { createdAt: 'desc' }, 
 				include: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						// where: { SessionID: SessionID }, 
 						include: {
 							Player: true
 						}
 					}
 				}
 			})
-	
-	
+
+
 			// __________________________________________________ Create finalscore and tablearchive __________________________________________________
 	
 			const final_score__new = await tx.final_Scores.create({ 
@@ -231,11 +236,11 @@ router.post('', async (req, res) => {
 				List_Winner.push(Surrendered_PlayerID)
 			}
 	
-	
+
 			// Create all associations between newly created final_score and each player with their scores before and after this game
 			for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) {
 				const player_id = association.PlayerID
-				const a			= final_score__latest_found?.List___Association__Players_And_FinalScores_And_Sessions.filter(p => p.id === player_id)[0]		// Association of player and finalscore
+				const a			= final_score__latest_found?.List___Association__Players_And_FinalScores_And_Sessions.filter(association__players_and_finalscores_and_sessions => association__players_and_finalscores_and_sessions.PlayerID === player_id)[0]		// Association of player and finalscore
 	
 				const IsWinner	= List_Winner.includes(player_id)
 				const add_win	= IsWinner ? 1 : 0

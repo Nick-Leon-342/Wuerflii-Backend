@@ -162,29 +162,30 @@ router.delete('', async (req, res) => {
 	
 	
 			// __________________________________________________ Remove all sessions __________________________________________________
-			
-			for(const session of user.List___Association__Users_And_Sessions) {
-	
-				await tx.final_Scores.deleteMany({
-					where: {
-						List___Association__Players_And_FinalScores_And_Sessions: {
-							some: {
-								SessionID: session.id
-							}
-						}
+
+			const list___association__users_and_sessions = await tx.association__Users_And_Sessions.findMany({
+				where: 	{ UserID: 		UserID }, 
+				select: { SessionID: 	true }, 
+			})
+			const list__session_ids = list___association__users_and_sessions.map(association => association.SessionID)
+
+			if(list__session_ids.length > 0) {
+
+				const list___association__players_and_finalscores_and_sessions = await tx.association__Players_And_FinalScores_And_Sessions.findMany({
+					where: { SessionID: { in: list__session_ids } }, 
+					select: { 
+						Final_ScoreID: 	true, 
+						PlayerID: 		true, 
 					}
 				})
+				const list__finalscore_ids = [ ...new Set(list___association__players_and_finalscores_and_sessions.map(association => association.Final_ScoreID)) ]
+				const list__player_ids = [ ...new Set(list___association__players_and_finalscores_and_sessions.map(association => association.PlayerID)) ]
 
-				await tx.players.deleteMany({
-					where: {
-						Association__Sessions_And_Players_And_Table_Columns: {
-							SessionID: session.id
-						}
-					}
-				})
+				await tx.final_Scores.deleteMany({ where: { id: { in: list__finalscore_ids } }})
+				await tx.players.deleteMany({ where: { id: { in: list__player_ids } }})
 
-				await tx.sessions.delete({ where: { id: session.id } })
-	
+				await tx.sessions.deleteMany({ where: { id: { in: list__session_ids } } })
+
 			}
 	
 			await tx.users.delete({ where: { id: UserID } })
