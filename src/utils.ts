@@ -13,6 +13,8 @@ export const isProd			: boolean	= process.env.NODE_ENV === 'prod'
 export const PORT			: number	= isProd ? 5000 : +(process.env.PORT || 5000)
 export const ALLOWED_ORIGIN	: string	= process.env.DOMAIN || 'http://localhost:5173'
 
+export const DISABLE_REGISTRATION_OF_NEW_USERS: boolean = process.env.DISABLE_REGISTRATION_OF_NEW_USERS === 'true'
+
 
 
 

@@ -26,7 +26,8 @@ import {
 	PASSWORD__REGEX, 
 	PASSWORD__REGEX_MINMAX, 
 	PASSWORD__REGEX_ALLOWEDCHARS, 
-	PASSWORD__REGEX_ALLOWEDSYMBOLS, 
+	PASSWORD__REGEX_ALLOWEDSYMBOLS,
+	DISABLE_REGISTRATION_OF_NEW_USERS, 
 } from '../utils.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
@@ -96,6 +97,8 @@ router.post('/login', async (req, res) => {
 })
 
 router.post('/registration', async (req, res) => {
+
+	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 	
 	const { Name, Password } = req.body
 	
