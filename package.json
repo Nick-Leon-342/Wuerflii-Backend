@@ -1,31 +1,49 @@
 {
   "name": "wuerflii-backend",
-  "version": "1.5.0",
+  "version": "2.0.3",
   "description": "To make it easy for you to get started with GitLab, here's a list of recommended next steps.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
-    "backend": "cross-env NODE_ENV=dev nodemon index.js",
-    "prod": "cross-env NODE_ENV=prod node index.js"
+    "dev": "cross-env NODE_ENV=dev nodemon --watch 'src/**/*.ts' --exec npx tsx src/index.ts",
+    "build": "tsc",
+    "prod": "cross-env NODE_ENV=prod node dist/src/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "express": "^5.2.1",
     "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
-    "nodemailer": "^6.9.16",
-    "pg": "^8.11.3",
-    "sequelize": "^6.33.0",
+    "nodemailer": "^7.0.12",
+    "pg": "^8.17.2",
     "sequelize-cli": "^6.6.1",
-    "uuid": "^9.0.1"
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "nodemon": "^3.0.1"
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.0.9",
+    "@types/nodemailer": "^7.0.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.2.3",
+    "nodemon": "^3.1.11",
+    "prisma": "^7.3.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
