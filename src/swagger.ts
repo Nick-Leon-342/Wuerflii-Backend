@@ -1,30 +1,22 @@
 
 
-import swaggerJSDoc from 'swagger-jsdoc'
-import package_json from '../package.json' with { type: 'json' }
+import fs 					from 'fs'
+import path 				from 'path'
+import YAML 				from 'yamljs'
+import { fileURLToPath } 	from 'url'
 
-export const swagger__options: swaggerJSDoc.Options = {
-	definition: {
-		// openapi: '3.1.0', 
-		swagger: '2.0', 
-		info: {
-			title: 'Wuerflii Docs', 
-			version: package_json.version, 
-		},
-		components: {
-			securitySchemas: {
-				brearerAuth: {
-					type: 'http', 
-					scheme: 'brearer', 
-					brearerFormat: 'JWT', 
-				}
-			}
-		},
-		security: [
-			{
-				brearerAuth: [], 
-			}
-		]
-	},
-	apis: [ './routes/*.ts' ]
-}
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+
+const packageJsonPath = path.join(__dirname, '../package.json')
+const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
+
+
+const openapiPath = path.join(__dirname, './openapi.yaml')
+const swaggerDocument = YAML.load(openapiPath)
+
+
+swaggerDocument.info.version = pkg.version
+
+export default swaggerDocument

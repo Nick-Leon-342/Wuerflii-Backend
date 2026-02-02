@@ -1,0 +1,218 @@
+
+
+openapi: 3.0.0
+info:
+  title: Wuerflii API
+  version: 0.0.0
+  description: Swagger documentation for wuerflii API
+
+paths:
+  /auth/registration:
+    post:
+      summary: Register a new user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Name
+                - Password
+              properties:
+                Name:
+                  type: string
+                  example: Nick
+                Password:
+                  type: string
+                  format: password
+                  example: Pass123!
+      responses:
+        "200":
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accessToken
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT access token
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              examples:
+                invalidName:
+                  summary: Name invalid.
+                  value:
+                    message: Name invalid.
+                invalidPassword:
+                  summary: Password invalid.
+                  value:
+                    message: Password invalid.
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              examples:
+                user_registration_is_disabled:
+                  summary: User registration is disabled.
+                  value:
+                    message: User registration is disabled.
+                username_already_taken:
+                  summary: Username already taken.
+                  value:
+                    message: Username already taken.
+        "500":
+          description: Internal Server Error
+
+  /auth/login:
+    post:
+      summary: Login as a user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Name
+                - Password
+              properties:
+                Name:
+                  type: string
+                  example: Nick
+                Password:
+                  type: string
+                  format: password
+                  example: Pass123!
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - accessToken
+                properties:
+                  accessToken:
+                    type: string
+                    description: JWT access token
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              examples:
+                invalidName:
+                  summary: Name invalid.
+                  value:
+                    message: Name invalid.
+                invalidPassword:
+                  summary: Password invalid.
+                  value:
+                    message: Password invalid.
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              examples:
+                wrong_credentials:
+                  summary: Wrong credentials!
+                  value:
+                    message: Wrong credentials!
+        "500":
+          description: Internal Server Error
+
+  /auth/regex:
+    get:
+      summary: Get regex for credentials to create a new user
+      tags: 
+        - Auth
+        - Regex
+      responses:
+        "200":
+          description: Regex
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - NAME__MIN_CHARACTER
+                  - NAME__MAX_CHARACTER
+                  
+                  - NAME__REGEX
+                  - NAME__REGEX_MINMAX
+                  - NAME__REGEX_LETTERFIRST
+                  - NAME__REGEX_ALLOWEDCHARS
+                
+                
+                  - PASSWORD__MIN_CHARACTER
+                  - PASSWORD__MAX_CHARACTER
+                
+                  - PASSWORD__REGEX
+                  - PASSWORD__REGEX_MINMAX
+                  - PASSWORD__REGEX_ALLOWEDCHARS
+                  - PASSWORD__REGEX_ALLOWEDSYMBOL
+                properties:
+                  NAME__MIN_CHARACTER:
+                    type: number
+                    description: Minimum amount of characters for username
+                    example: 4
+                  NAME__MAX_CHARACTER:
+                    type: number
+                    description: Maximum amount of characters for username
+                    example: 64
+
+                  NAME__REGEX:
+                    type: string
+                    description: Regex string for testing username
+                    example: ^[A-z][A-z0-9-_]{3,63}$
+                  NAME__REGEX_MINMAX:
+                    type: string
+                    description: Regex string for testing length of username
+                    example: ^.{4,64}$
+                  NAME__REGEX_LETTERFIRST:
+                    type: string
+                    description: Regex string for testing first character of username
+                    example: ^[A-z]
+                  NAME__REGEX_ALLOWEDCHARS:
+                    type: string
+                    description: Regex string for testing if characters of username are valid
+                    example: '^[a-zA-Z0-9_-]+$'
+
+
+                  PASSWORD__MIN_CHARACTER:
+                    type: number
+                    description: Minimum amount of characters for password
+                    example: 8
+                  PASSWORD__MAX_CHARACTER:
+                    type: number
+                    description: Maximum amount of characters for password
+                    example: 128
+
+                  PASSWORD__REGEX:
+                    type: string
+                    description: Regex string for testing password
+                    example: ^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{8,128}$
+                  PASSWORD__REGEX_MINMAX:
+                    type: string
+                    description: Regex string for testing length of password
+                    example: ^.{8,128}$
+                  PASSWORD__REGEX_ALLOWEDCHARS:
+                    type: string
+                    description: Regex string for testing if characters of password are valid
+                    example: '[a-zA-Z0-9]+'
+                  PASSWORD__REGEX_ALLOWEDSYMBOL:
+                    type: string
+                    description: Regex string for testing if password contains some of the allowed symbols
+                    example: '[-_!#%@$]+'
