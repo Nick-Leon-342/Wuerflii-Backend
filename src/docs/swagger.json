@@ -1,0 +1,20 @@
+
+
+{
+	"openapi": "3.0.0", 
+	"security": [
+		{
+			"bearerAuth": []
+		}
+	], 
+	"info": {
+		"title": "Wuerflii API", 
+		"version": "0.0.0",
+		"description": "Swagger documentation for wuerflii API"
+	},
+	"paths": {
+		"/auth/regex": 			{ "$ref": "./paths/auth/regex.json" }, 
+		"/auth/registration": 	{ "$ref": "./paths/auth/registration.json" }, 
+		"/auth/login": 			{ "$ref": "./paths/auth/login.json" }
+	}
+}

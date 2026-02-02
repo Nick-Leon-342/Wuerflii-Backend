@@ -41,7 +41,8 @@ export const prisma = new PrismaClient({ adapter })
 // __________________________________________________ Swagger API-Documentation __________________________________________________
 
 import swaggerUi			from  'swagger-ui-express'
-import swaggerDocument		from './swagger.js'
+import getSwaggerDocument	from './docs/swagger.js'
+const swaggerDocument 		= await getSwaggerDocument()
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 
