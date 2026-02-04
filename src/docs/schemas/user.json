@@ -1,0 +1,81 @@
+
+{
+	"User": {
+		"type": "object",
+		"description": "User entity",
+		"required": [
+			"id",
+			"Name",
+			"Password",
+			"DarkMode",
+			"Show__Session_Names",
+			"Show__Session_Date",
+			"View__Sessions",
+			"View__Sessions_Desc",
+			"Statistics__View",
+			"Statistics__View_Month",
+			"Statistics__View_Year",
+			"createdAt",
+			"updatedAt"
+		],
+		"properties": {
+			"id": {
+				"type": "integer",
+				"example": 2
+			},
+			"Name": {
+				"type": "string",
+				"example": "nick"
+			},
+			"Password": {
+				"type": "string",
+				"format": "password",
+				"example": "Pass123!"
+			},
+			"Refresh_Token": {
+				"type": "string",
+				"nullable": true,
+				"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+			},
+			"DarkMode": {
+				"type": "boolean",
+				"example": true
+			},
+			"Show__Session_Names": {
+				"type": "boolean",
+				"example": true
+			},
+			"Show__Session_Date": {
+				"type": "boolean",
+				"example": false
+			},
+			"View__Sessions": {
+				"$ref": "./view__sessions.json#/View__Sessions"
+			},
+			"View__Sessions_Desc": {
+				"type": "boolean",
+				"example": true
+			},
+			"Statistics__View": {
+				"$ref": "./statistics__view.json#/Statistics__View"
+			},
+			"Statistics__View_Month": {
+				"$ref": "./list__months.json#/List__Months"
+			},
+			"Statistics__View_Year": {
+				"type": "integer",
+				"example": 2025
+			},
+			"createdAt": {
+				"type": "string",
+				"format": "date-time",
+				"example": "2025-01-01T12:00:00Z"
+			},
+			"updatedAt": {
+				"type": "string",
+				"format": "date-time",
+				"example": "2025-01-02T12:00:00Z"
+			}
+		}
+	}
+}

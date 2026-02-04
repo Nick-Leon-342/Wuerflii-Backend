@@ -15,6 +15,17 @@
 	"paths": {
 		"/auth/regex": 			{ "$ref": "./paths/auth/regex.json" }, 
 		"/auth/registration": 	{ "$ref": "./paths/auth/registration.json" }, 
-		"/auth/login": 			{ "$ref": "./paths/auth/login.json" }
+		"/auth/login": 			{ "$ref": "./paths/auth/login.json" }, 
+
+		"/user": 				{ "$ref": "./paths/user/user.json" }
+	}, 
+	"components": {
+		"securitySchemes": {
+			"bearerAuth": {
+				"type": "http", 
+				"scheme": "bearer", 
+				"bearerFormat": "JWT"
+			}
+		}
 	}
 }

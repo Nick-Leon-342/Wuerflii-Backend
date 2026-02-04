@@ -1,0 +1,12 @@
+
+
+{
+	"Statistics__View": {
+		"type": "string",
+		"enum": [
+			"STATISTICS_OVERALL",
+			"STATISTICS_YEAR",
+			"STATISTICS_MONTH"
+		]
+	}
+}

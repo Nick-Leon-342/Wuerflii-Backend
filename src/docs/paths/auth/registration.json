@@ -57,13 +57,13 @@
 				"content": {
 					"application/json": {
 						"examples": {
-							"invalidName": {
+							"name_invalid": {
 								"summary": "Name invalid.", 
 								"value": {
 									"message": "Name invalid."
 								}
 							}, 
-							"invalidPassword": {
+							"password_invalid": {
 								"summary": "Password invalid.", 
 								"value": {
 									"message": "Password invalid."

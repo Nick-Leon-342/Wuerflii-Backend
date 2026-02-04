@@ -1,0 +1,254 @@
+
+
+{
+	"get": {
+		"summary": "Get user", 
+		"tags": [
+			"User"
+		], 
+		"responses": {
+			"200": {
+				"description": "User", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "../../schemas/user.json#/User"
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"patch": {
+		"summary": "Edit user", 
+		"tags": [
+			"User"
+		],
+		"requestBody": {
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "object", 
+						"properties": {
+							"Name": {
+								"type": "string", 
+								"example": "nick_edited"
+							}, 
+							"Password": {
+								"type": "string", 
+								"format": "password", 
+								"example": "#Pass123"
+							}, 
+							"DarkMode": {
+								"type": "boolean", 
+								"example": true
+							}, 
+	
+							"Show__Session_Names": {
+								"type": "boolean",
+								"example": true
+							},
+							"Show__Session_Date": {
+								"type": "boolean",
+								"example": false
+							},
+							"View__Sessions": {
+								"$ref": "../../schemas/view__sessions.json#/View__Sessions"
+							},
+							"View__Sessions_Desc": {
+								"type": "boolean",
+								"example": true
+							},
+	
+							"Statistics__View": {
+								"$ref": "../../schemas/statistics__view.json#/Statistics__View"
+							},
+							"Statistics__View_Month": {
+								"$ref": "../../schemas/list__months.json#/List__Months"
+							},
+							"Statistics__View_Year": {
+								"type": "integer",
+								"example": 2025
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"204": {
+				"description": "Successfully edited user"
+			}, 
+			"400": {
+				"description": "Invalid input", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"name_invalid": {
+								"summary": "Name invalid.", 
+								"value": {
+									"message": "Name invalid."
+								}
+							}, 
+							"password_invalid": {
+								"summary": "Password invalid.", 
+								"value": {
+									"message": "Password invalid."
+								}
+							},
+							"darkmode_invalid": {
+								"summary": "DarkMode invalid.", 
+								"value": {
+									"message": "DarkMode invalid."
+								}
+							},
+							"show__session_names_invalid": {
+								"summary": "Show__Session_Names invalid.", 
+								"value": {
+									"message": "Show__Session_Names invalid."
+								}
+							},
+							"show__session_date_invalid": {
+								"summary": "Show__Session_Date invalid.", 
+								"value": {
+									"message": "Show__Session_Date invalid."
+								}
+							},
+							"view__sessions_invalid": {
+								"summary": "View__Sessions invalid.", 
+								"value": {
+									"message": "View__Sessions invalid."
+								}
+							},
+							"view__sessions_desc_invalid": {
+								"summary": "View__Sessions_Desc invalid.", 
+								"value": {
+									"message": "View__Sessions_Desc invalid."
+								}
+							},
+							"statistics__view_invalid": {
+								"summary": "Statistics__View invalid.", 
+								"value": {
+									"message": "Statistics__View invalid."
+								}
+							},
+							"statistics__view_month_invalid": {
+								"summary": "Statistics__View_Month invalid.", 
+								"value": {
+									"message": "Statistics__View_Month invalid."
+								}
+							},
+							"statistics__view_year_invalid": {
+								"summary": "Statistics__View_Year invalid.", 
+								"value": {
+									"message": "Statistics__View_Year invalid."
+								}
+							}
+						}
+					}
+				}
+			},
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "User not found."
+			},
+			"409": {
+				"description": "Username already taken."
+			},
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"delete": {
+		"summary": "Delete user", 
+		"tags": [
+			"User"
+		], 
+		"responses": {
+			"204": {
+				"description": "Successfully deleted user."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "User not found."
+			},
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}
