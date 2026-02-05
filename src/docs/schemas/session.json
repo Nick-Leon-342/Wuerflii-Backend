@@ -61,16 +61,16 @@
 				"format": "date-time" 
 			},
 			"Input_Type": { 
-				"$ref": "./input_type.json#/Input_Type" 
+				"$ref": "./enum/input_type.json#/Input_Type" 
 			},
 			"Show_Scores": { 
 				"type": "boolean" 
 			},
 			"View": { 
-				"$ref": "./view.json#/View" 
+				"$ref": "./enum/view.json#/View" 
 			},
 			"View__Month": { 
-				"$ref": "./list__months.json#/List__Months" 
+				"$ref": "./enum/list__months.json#/List__Months" 
 			},
 			"View__Year": { 
 				"type": "integer", 
@@ -84,10 +84,10 @@
 				"type": "boolean" 
 			},
 			"Statistics__View": { 
-				"$ref": "./statistics__view.json#/Statistics__View" 
+				"$ref": "./enum/statistics__view.json#/Statistics__View" 
 			},
 			"Statistics__View_Month": { 
-				"$ref": "./list__months.json#/List__Months" 
+				"$ref": "./enum/list__months.json#/List__Months" 
 			},
 			"Statistics__View_Year": { 
 				"type": "integer", 

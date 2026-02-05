@@ -80,7 +80,7 @@
 								"example": false
 							},
 							"View__Sessions": {
-								"$ref": "../schemas/view__sessions.json#/View__Sessions"
+								"$ref": "../schemas/enum/view__sessions.json#/View__Sessions"
 							},
 							"View__Sessions_Desc": {
 								"type": "boolean",
@@ -88,10 +88,10 @@
 							},
 	
 							"Statistics__View": {
-								"$ref": "../schemas/statistics__view.json#/Statistics__View"
+								"$ref": "../schemas/enum/statistics__view.json#/Statistics__View"
 							},
 							"Statistics__View_Month": {
-								"$ref": "../schemas/list__months.json#/List__Months"
+								"$ref": "../schemas/enum/list__months.json#/List__Months"
 							},
 							"Statistics__View_Year": {
 								"type": "integer",

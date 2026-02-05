@@ -53,17 +53,17 @@
 				"example": false
 			},
 			"View__Sessions": {
-				"$ref": "./view__sessions.json#/View__Sessions"
+				"$ref": "./enum/view__sessions.json#/View__Sessions"
 			},
 			"View__Sessions_Desc": {
 				"type": "boolean",
 				"example": true
 			},
 			"Statistics__View": {
-				"$ref": "./statistics__view.json#/Statistics__View"
+				"$ref": "./enum/statistics__view.json#/Statistics__View"
 			},
 			"Statistics__View_Month": {
-				"$ref": "./list__months.json#/List__Months"
+				"$ref": "./enum/list__months.json#/List__Months"
 			},
 			"Statistics__View_Year": {
 				"type": "integer",
