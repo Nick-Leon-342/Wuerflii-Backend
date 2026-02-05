@@ -2,10 +2,9 @@
 
 {
 	"get": {
-		"summary": "Get regex for credentials to create a new user", 
+		"summary": "Get regex for credentials to create a new user.", 
 		"tags": [
-			"Auth", 
-			"Regex"
+			"Auth"
 		], 
 		"responses": {
 			"200": {

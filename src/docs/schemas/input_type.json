@@ -1,0 +1,12 @@
+
+
+{
+	"Input_Type": {
+		"type": "string", 
+		"enum": [
+			"SELECT_AND_TYPE", 
+			"SELECT", 
+			"TYPE"
+		]
+	}
+}

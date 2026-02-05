@@ -1,0 +1,13 @@
+
+
+{
+	"View": {
+		"type": "string", 
+		"enum": [
+			"SHOW__CUSTOM_DATE", 
+			"SHOW__MONTH", 
+			"SHOW__YEAR", 
+			"SHOW__ALL"
+		]
+	}
+}

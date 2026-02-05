@@ -1,0 +1,477 @@
+
+
+{
+	"get": {
+		"summary": "Get a specific session", 
+		"tags": [
+			"Session"
+		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
+		"responses": {
+			"200": {
+				"description": "Session", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "../../schemas/session.json#/Session"
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "SessionID invalid."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"post": {
+		"summary": "Create a new session.", 
+		"tags": [
+			"Session"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "object", 
+						"required": [
+							"Color", 
+							"Name", 
+							"Columns"
+						], 
+						"properties": {
+							"Name": {
+								"type": "string", 
+								"example": "A new Homiesession"
+							}, 
+							"Color": { 
+								"type": "string", 
+								"example": "#FF5733" 
+							},
+							"Columns": { 
+								"type": "integer", 
+								"example": 3 
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"200": {
+				"description": "Successfully created session.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "../../schemas/session.json#/Session"
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"color_invalid": {
+								"summary": "Color invalid.", 
+								"value": {
+									"message": "Color invalid."
+								}
+							}, 
+							"name_invalid": {
+								"summary": "Name invalid.", 
+								"value": {
+									"message": "Name invalid."
+								}
+							}, 
+							"columns_invalid": {
+								"summary": "Columns invalid.", 
+								"value": {
+									"message": "Columns invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "User not found."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"patch": {
+		"summary": "Edit a session.", 
+		"tags": [
+			"Session"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "object", 
+						"required": [
+							"Color", 
+							"Name", 
+							"Columns"
+						], 
+						"properties": {
+							"SessionID": { 
+								"type": "integer", 
+								"example": 1 
+							},
+							"Name": { 
+								"type": "string", 
+								"example": "The Homies" 
+							},
+							"Color": { 
+								"type": "string", 
+								"example": "#FF5733" 
+							},
+							"Columns": { 
+								"type": "integer", 
+								"example": 3 
+							},
+
+							"Input_Type": { 
+								"$ref": "../../schemas/input_type.json#/Input_Type" 
+							},
+							"Show_Scores": { 
+								"type": "boolean" 
+							},
+
+							"View": { 
+								"$ref": "../../schemas/view.json#/View" 
+							},
+							"View__Month": { 
+								"$ref": "../../schemas/list__months.json#/List__Months" 
+							},
+							"View__Year": { 
+								"type": "integer", 
+								"example": 2026
+							},
+							
+							"Statistics__Show_Border": { 
+								"type": "boolean" 
+							},
+							"Statistics__View": { 
+								"$ref": "../../schemas/statistics__view.json#/Statistics__View" 
+							},
+							"Statistics__View_Month": { 
+								"$ref": "../../schemas/list__months.json#/List__Months" 
+							},
+							"Statistics__View_Year": { 
+								"type": "integer", 
+								"example": 2026
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"204": {
+				"description": "Successfully edited session."
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID invalid."
+								}
+							}, 
+							"color_invalid": {
+								"summary": "Color invalid.", 
+								"value": {
+									"message": "Color invalid."
+								}
+							}, 
+							"name_invalid": {
+								"summary": "Name invalid.", 
+								"value": {
+									"message": "Name invalid."
+								}
+							}, 
+							"columns_invalid": {
+								"summary": "Columns invalid.", 
+								"value": {
+									"message": "Columns invalid."
+								}
+							}, 
+
+							"view_invalid": {
+								"summary": "View invalid.", 
+								"value": {
+									"message": "View invalid."
+								}
+							}, 
+							"view__month_invalid": {
+								"summary": "View__Month invalid.", 
+								"value": {
+									"message": "View__Month invalid."
+								}
+							}, 
+							"view__year_invalid": {
+								"summary": "View__Year invalid.", 
+								"value": {
+									"message": "View__Year invalid."
+								}
+							}, 
+
+							"input_type_invalid": {
+								"summary": "Input_Type invalid.", 
+								"value": {
+									"message": "Input_Type invalid."
+								}
+							}, 
+							"show_scores_invalid": {
+								"summary": "Show_Scores invalid.", 
+								"value": {
+									"message": "Show_Scores invalid."
+								}
+							}, 
+
+							"statistics__show_border_invalid": {
+								"summary": "Statistics__Show_Border invalid.", 
+								"value": {
+									"message": "Statistics__Show_Border invalid."
+								}
+							}, 
+							"statistics__view_invalid": {
+								"summary": "Statistics__View invalid.", 
+								"value": {
+									"message": "Statistics__View invalid."
+								}
+							}, 
+							"statistics__view_month_invalid": {
+								"summary": "Statistics__View_Month invalid.", 
+								"value": {
+									"message": "Statistics__View_Month invalid."
+								}
+							}, 
+							"statistics__view_year_invalid": {
+								"summary": "Statistics__View_Year invalid.", 
+								"value": {
+									"message": "Statistics__View_Year invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"delete": {
+		"summary": "Delete a specific session.", 
+		"tags": [
+			"Session"
+		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that should be deleted.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
+		"responses": {
+			"204": {
+				"description": "Successfully deleted session."
+			}, 
+			"400": {
+				"description": "SessionID invalid."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

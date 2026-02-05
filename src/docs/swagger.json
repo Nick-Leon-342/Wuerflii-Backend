@@ -17,7 +17,8 @@
 		"/auth/registration": 	{ "$ref": "./paths/auth/registration.json" }, 
 		"/auth/login": 			{ "$ref": "./paths/auth/login.json" }, 
 
-		"/user": 				{ "$ref": "./paths/user/user.json" }
+		"/user": 				{ "$ref": "./paths/user.json" }, 
+		"/session": 			{ "$ref": "./paths/session/session.json" } 
 	}, 
 	"components": {
 		"securitySchemes": {

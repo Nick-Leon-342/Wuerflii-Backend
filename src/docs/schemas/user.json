@@ -2,19 +2,22 @@
 {
 	"User": {
 		"type": "object",
-		"description": "User entity",
+		"description": "User",
 		"required": [
 			"id",
 			"Name",
 			"Password",
 			"DarkMode",
+			
 			"Show__Session_Names",
 			"Show__Session_Date",
 			"View__Sessions",
 			"View__Sessions_Desc",
+			
 			"Statistics__View",
 			"Statistics__View_Month",
 			"Statistics__View_Year",
+
 			"createdAt",
 			"updatedAt"
 		],

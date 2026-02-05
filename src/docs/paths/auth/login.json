@@ -2,7 +2,7 @@
 
 {
 	"post": {
-		"summary": "Login as a user", 
+		"summary": "Login with your user.", 
 		"tags": [
 			"Auth"
 		], 

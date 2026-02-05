@@ -2,7 +2,7 @@
 
 {
 	"get": {
-		"summary": "Get user", 
+		"summary": "Get your own user.", 
 		"tags": [
 			"User"
 		], 
@@ -12,7 +12,7 @@
 				"content": {
 					"application/json": {
 						"schema": {
-							"$ref": "../../schemas/user.json#/User"
+							"$ref": "../schemas/user.json#/User"
 						}
 					}
 				}
@@ -47,7 +47,7 @@
 		}
 	}, 
 	"patch": {
-		"summary": "Edit user", 
+		"summary": "Patch your own user.", 
 		"tags": [
 			"User"
 		],
@@ -80,7 +80,7 @@
 								"example": false
 							},
 							"View__Sessions": {
-								"$ref": "../../schemas/view__sessions.json#/View__Sessions"
+								"$ref": "../schemas/view__sessions.json#/View__Sessions"
 							},
 							"View__Sessions_Desc": {
 								"type": "boolean",
@@ -88,10 +88,10 @@
 							},
 	
 							"Statistics__View": {
-								"$ref": "../../schemas/statistics__view.json#/Statistics__View"
+								"$ref": "../schemas/statistics__view.json#/Statistics__View"
 							},
 							"Statistics__View_Month": {
-								"$ref": "../../schemas/list__months.json#/List__Months"
+								"$ref": "../schemas/list__months.json#/List__Months"
 							},
 							"Statistics__View_Year": {
 								"type": "integer",
@@ -211,7 +211,7 @@
 		}
 	}, 
 	"delete": {
-		"summary": "Delete user", 
+		"summary": "Delete your own user.", 
 		"tags": [
 			"User"
 		], 

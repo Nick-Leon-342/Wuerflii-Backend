@@ -2,7 +2,7 @@
 
 {
 	"post": {
-		"summary": "Register a new user", 
+		"summary": "Register as a new user.", 
 		"tags": [
 			"Auth"
 		], 
