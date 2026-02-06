@@ -2,9 +2,9 @@
 
 {
 	"get": {
-		"summary": "Get a specific session", 
+		"summary": "Get a specific session.", 
 		"tags": [
-			"Session"
+			"/session"
 		], 
 		"parameters": [
 			{
@@ -85,7 +85,7 @@
 	"post": {
 		"summary": "Create a new session.", 
 		"tags": [
-			"Session"
+			"/session"
 		], 
 		"requestBody": {
 			"required": "true", 
@@ -189,7 +189,7 @@
 	"patch": {
 		"summary": "Edit a session.", 
 		"tags": [
-			"Session"
+			"/session"
 		], 
 		"requestBody": {
 			"required": "true", 
@@ -198,9 +198,7 @@
 					"schema": {
 						"type": "object", 
 						"required": [
-							"Color", 
-							"Name", 
-							"Columns"
+							"SessionID"
 						], 
 						"properties": {
 							"SessionID": { 
@@ -403,7 +401,7 @@
 	"delete": {
 		"summary": "Delete a specific session.", 
 		"tags": [
-			"Session"
+			"/session"
 		], 
 		"parameters": [
 			{

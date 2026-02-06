@@ -4,7 +4,7 @@
 	"post": {
 		"summary": "Login with your user.", 
 		"tags": [
-			"Auth"
+			"/auth"
 		], 
 		"requestBody": {
 			"required": "true", 

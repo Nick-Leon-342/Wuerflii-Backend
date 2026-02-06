@@ -4,7 +4,7 @@
 	"post": {
 		"summary": "Register as a new user.", 
 		"tags": [
-			"Auth"
+			"/auth"
 		], 
 		"requestBody": {
 			"required": "true", 

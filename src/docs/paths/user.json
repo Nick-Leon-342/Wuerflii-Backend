@@ -4,7 +4,7 @@
 	"get": {
 		"summary": "Get your own user.", 
 		"tags": [
-			"User"
+			"/user"
 		], 
 		"responses": {
 			"200": {
@@ -49,7 +49,7 @@
 	"patch": {
 		"summary": "Patch your own user.", 
 		"tags": [
-			"User"
+			"/user"
 		],
 		"requestBody": {
 			"content": {
@@ -213,7 +213,7 @@
 	"delete": {
 		"summary": "Delete your own user.", 
 		"tags": [
-			"User"
+			"/user"
 		], 
 		"responses": {
 			"204": {

@@ -18,7 +18,10 @@
 		"/auth/login": 			{ "$ref": "./paths/auth/login.json" }, 
 
 		"/user": 				{ "$ref": "./paths/user.json" }, 
-		"/session": 			{ "$ref": "./paths/session/session.json" } 
+		"/session": 			{ "$ref": "./paths/session/session.json" }, 
+		"/session/env": 		{ "$ref": "./paths/session/session_env.json" },
+		"/session/all": 		{ "$ref": "./paths/session/session_all.json" },
+		"/session/date": 		{ "$ref": "./paths/session/session_date.json" }
 	}, 
 	"components": {
 		"securitySchemes": {
