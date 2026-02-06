@@ -3,10 +3,10 @@
 import express from 'express'
 const router = express.Router()
 
-import { isInt, isBoolean } from '../IsDataType.js'
-import { prisma } from '../index.js'
-import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
-import { handle_error } from '../handle_error.js'
+import { isInt, isBoolean } from '../../IsDataType.js'
+import { prisma } from '../../index.js'
+import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { handle_error } from '../../handle_error.js'
 
 
 
@@ -61,7 +61,7 @@ router.patch('', async (req, res) => {
 
 		})
 	} catch(err) {
-		await handle_error(res, err, 'PATCH /player')
+		await handle_error(res, err, 'PATCH /game/gnadenwurf')
 	}
 
 })

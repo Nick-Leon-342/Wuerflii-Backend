@@ -71,17 +71,13 @@ import verifyJWT from './middleware/verifyJWT.js'
 app.use(verifyJWT)
 
 import route__user from './routes/User.js'
-import route__player from './routes/Player.js'
 import route__game from './routes/Game/Game.js'
 import route__final_score from './routes/Final_Score.js'
 import route__session from './routes/Session/Session.js'
 import route__analytics from './routes/Analytics/Analytics.js'
-import swaggerJSDoc from 'swagger-jsdoc'
-import path from 'path'
 
 app.use('/user', route__user)
 app.use('/game', route__game)
-app.use('/player', route__player)
 app.use('/session', route__session)
 app.use('/analytics', route__analytics)
 app.use('/finalscore', route__final_score)

@@ -10,7 +10,9 @@ import { isInt } from '../../IsDataType.js'
 import { prisma } from '../../index.js'
 
 import route__table_columns from './Game__Table_Columns.js'
+import route__gnadenwurf from './Gnadenwurf.js'
 router.use('/table_columns', route__table_columns)
+router.use('/gnadenwurf', route__gnadenwurf)
 
 
 
