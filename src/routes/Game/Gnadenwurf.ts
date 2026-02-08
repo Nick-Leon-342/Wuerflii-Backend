@@ -3,10 +3,10 @@
 import express from 'express'
 const router = express.Router()
 
-import { isInt, isBoolean } from '../../IsDataType.js'
-import { prisma } from '../../index.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { isInt, isBoolean } from '../../IsDataType.js'
 import { handle_error } from '../../handle_error.js'
+import { prisma } from '../../index.js'
 
 
 
@@ -18,6 +18,7 @@ router.patch('', async (req, res) => {
 	const { SessionID, PlayerID, Gnadenwurf_Used } = req.body
 
 	if(!SessionID || !isInt(SessionID)	) return res.status(400).send('SessionID invalid')
+	if(!PlayerID || !isInt(PlayerID)	) return res.status(400).send('PlayerID invalid')
 	if(!isBoolean(Gnadenwurf_Used)		) return res.status(400).send('Gnadenwurf_Used invalid.')
 
 	
@@ -44,7 +45,7 @@ router.patch('', async (req, res) => {
 	
 			if(!user																									) throw new Custom__Handled_Error('User not found.', 404)
 			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error('Player not found.', 404)
+			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error('Players not found.', 404)
 	
 	
 			// __________________________________________________ Update Gnadenwurf __________________________________________________

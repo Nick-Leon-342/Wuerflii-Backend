@@ -44,8 +44,8 @@ router.get('', (req, res) => {
 		}
 	}).then(user => {
 
-		if(!user) return res.status(404).send('User not found.')
-		if(!user.List___Association__Users_And_Sessions[0]) return res.status(404).send('Session not found.')
+		if(!user											) return res.status(404).send('User not found.')
+		if(!user.List___Association__Users_And_Sessions[0]	) return res.status(404).send('Session not found.')
 
 		const list__associations_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 		const list__players: Array<Type__Player> = list__associations_players.map(asso => ({
@@ -273,7 +273,7 @@ router.get('/env', (req, res) => {
 		})
 
 	}).catch(async err => {
-		await handle_error(res, err, 'GET /session/player/env')
+		await handle_error(res, err, 'GET /session/players/env')
 	})
 
 })

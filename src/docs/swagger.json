@@ -21,7 +21,12 @@
 		"/session": 			{ "$ref": "./paths/session/session.json" }, 
 		"/session/env": 		{ "$ref": "./paths/session/session_env.json" },
 		"/session/all": 		{ "$ref": "./paths/session/session_all.json" },
-		"/session/date": 		{ "$ref": "./paths/session/session_date.json" }
+		"/session/date": 		{ "$ref": "./paths/session/session_date.json" }, 
+
+		"/session/players": 	{ "$ref": "./paths/session/players/players.json" }, 
+		"/session/players/env":	{ "$ref": "./paths/session/players/players_env.json" }, 
+
+		"/game/gnadenwurf": 	{ "$ref": "./paths/game/gnadenwurf.json" } 
 	}, 
 	"components": {
 		"securitySchemes": {

@@ -2,26 +2,34 @@
 
 {
 	"get": {
-		"summary": "Get all sessions.", 
+		"summary": "Get variables to create players.", 
 		"tags": [
-			"/session/all"
+			"/session/players/env"
 		], 
 		"responses": {
 			"200": {
-				"description": "All sessions of the user.", 
+				"description": "Variables for creating players.", 
 				"content": {
 					"application/json": {
 						"schema": {
-							"type": "array", 
-							"items": {
-								"$ref": "../../schemas/session.json#/Session"
+							"type": "object", 
+							"required": [
+								"MAX_PLAYERS", 
+								"MAX_LENGTH_PLAYER_NAME"
+							], 
+							"properties": {
+								"MAX_PLAYERS": {
+									"type": "integer", 
+									"example": 16
+								}, 
+								"MAX_LENGTH_PLAYER_NAME": {
+									"type": "integer", 
+									"example": 50
+								}
 							}
 						}
 					}
 				}
-			}, 
-			"400": {
-				"description": "SessionID invalid."
 			}, 
 			"401": {
 				"description": "No token."
