@@ -1,0 +1,42 @@
+
+
+{
+	"delete": {
+		"summary": "Logout.", 
+		"tags": [
+			"/auth"
+		], 
+		"responses": {
+			"204": {
+				"description": "Successfully logged out.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"request_already_has_no_refresh_cookie": {
+								"summary": "Request already has no refresh_cookie.", 
+								"value": {
+									"message": "Request already has no refresh_cookie."
+								}
+							}, 
+							"no_user_with_that_refresh_token": {
+								"summary": "No user with that refresh token - cleared cookie from request.", 
+								"value": {
+									"message": "No user with that refresh token - cleared cookie from request."
+								}
+							}, 
+							"cleared_refresh_token_from_user_and_request": {
+								"summary": "Cleared refresh token from user and request.", 
+								"value": {
+									"message": "Cleared refresh token from user and request."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

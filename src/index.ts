@@ -51,13 +51,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 // __________________________________________________ Routers __________________________________________________
 
-import route__auth from './routes/Auth.js'
-import route__logout from './routes/Logout.js'
-import route__refresh_token from './routes/Refresh_Token.js'
-
-app.use('/auth', route__auth)
-app.use('/logout', route__logout)
-app.use('/refreshtoken', route__refresh_token)
+import route__auth 	from './routes/Auth.js'
+app.use('/auth', 	route__auth)
 
 app.get('/version', (_, res) => res.json(package_json.version))
 
@@ -70,17 +65,17 @@ app.get('/version', (_, res) => res.json(package_json.version))
 import verifyJWT from './middleware/verifyJWT.js'
 app.use(verifyJWT)
 
-import route__user from './routes/User.js'
-import route__game from './routes/Game/Game.js'
-import route__final_score from './routes/Final_Score.js'
-import route__session from './routes/Session/Session.js'
-import route__analytics from './routes/Analytics/Analytics.js'
+import route__user 			from './routes/User.js'
+import route__game 			from './routes/Game/Game.js'
+import route__final_score 	from './routes/Final_Score.js'
+import route__session 		from './routes/Session/Session.js'
+import route__analytics 	from './routes/Analytics/Analytics.js'
 
-app.use('/user', route__user)
-app.use('/game', route__game)
-app.use('/session', route__session)
-app.use('/analytics', route__analytics)
-app.use('/finalscore', route__final_score)
+app.use('/user', 			route__user)
+app.use('/game', 			route__game)
+app.use('/session', 		route__session)
+app.use('/analytics', 		route__analytics)
+app.use('/finalscore', 		route__final_score)
 
 
 
