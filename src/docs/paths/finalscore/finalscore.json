@@ -1,0 +1,118 @@
+
+
+{
+	"get": {
+		"summary": "Get a specific final_score of a specific session.", 
+		"tags": [
+			"/finalscore"
+		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}, {
+				"name": "finalscore_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of final_score that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
+		"responses": {
+			"200": {
+				"description": "Requested final_score.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "../../schemas/final_score.json#/Final_Score"
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID inalid."
+								}
+							}, 
+							"finalscoreid_invalid": {
+								"summary": "FinalScoreID invalid.", 
+								"value": {
+									"message": "FinalScoreID invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}, 
+							"final_score_not_found": {
+								"summary": "Final_Score not found.", 
+								"value": {
+									"message": "Final_Score not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

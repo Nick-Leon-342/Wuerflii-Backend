@@ -1,0 +1,97 @@
+
+
+{
+	"Final_Score": {
+		"type": "object",
+		"properties": {
+			"id": {
+				"type": "integer",
+				"example": 1
+			},
+			"Start": {
+				"type": "string",
+				"format": "date-time"
+			},
+			"End": {
+				"type": "string",
+				"format": "date-time"
+			},
+			"Columns": {
+				"type": "integer",
+				"example": 4
+			},
+			"Surrendered": {
+				"type": "boolean"
+			},
+			"createdAt": {
+				"type": "string",
+				"format": "date-time"
+			},
+			"updatedAt": {
+				"type": "string",
+				"format": "date-time"
+			},
+			"List_Winner": {
+				"type": "array",
+				"items": {
+					"type": "integer"
+				}
+			},
+			"PlayerScores": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__Before": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__After": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__Before_Year": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__After_Year": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__Before_Month": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__After_Month": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__Before_SinceCustomDate": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			},
+			"Wins__After_SinceCustomDate": {
+				"type": "object",
+				"additionalProperties": { "type": "number" }
+			}
+		},
+		"required": [
+			"id",
+			"Start",
+			"End",
+			"Columns",
+			"Surrendered",
+			"createdAt",
+			"updatedAt",
+			"List_Winner",
+			"PlayerScores",
+			"Wins__Before",
+			"Wins__After",
+			"Wins__Before_Year",
+			"Wins__After_Year",
+			"Wins__Before_Month",
+			"Wins__After_Month",
+			"Wins__Before_SinceCustomDate",
+			"Wins__After_SinceCustomDate"
+		]
+	}
+}

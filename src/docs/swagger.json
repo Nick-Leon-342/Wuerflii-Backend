@@ -29,7 +29,10 @@
 		"/game":			 			{ "$ref": "./paths/game/game.json" }, 
 		"/game/gnadenwurf": 			{ "$ref": "./paths/game/game__gnadenwurf.json" }, 
 		"/game/table_columns": 			{ "$ref": "./paths/game/game__table_columns.json" }, 
-		"/game/table_columns/archive":	{ "$ref": "./paths/game/game__table_columns__archive.json" }
+		"/game/table_columns/archive":	{ "$ref": "./paths/game/game__table_columns__archive.json" }, 
+
+		"/finalscore":		 			{ "$ref": "./paths/finalscore/finalscore.json" }, 
+		"/finalscore/all":	 			{ "$ref": "./paths/finalscore/finalscore__all.json" } 
 	}, 
 	"components": {
 		"securitySchemes": {
