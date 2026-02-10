@@ -62,7 +62,7 @@ app.get('/version', (_, res) => res.json(package_json.version))
 
 // __________________________________________________ Middleware __________________________________________________
 
-import verifyJWT from './middleware/verifyJWT.js'
+import verifyJWT 			from './middleware/verifyJWT.js'
 app.use(verifyJWT)
 
 import route__user 			from './routes/User.js'
