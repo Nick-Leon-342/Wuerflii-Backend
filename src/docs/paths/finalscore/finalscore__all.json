@@ -1,0 +1,107 @@
+
+
+{
+	"get": {
+		"summary": "Get all final_scores of a specific session.", 
+		"tags": [
+			"/finalscore/all"
+		], 
+		"responses": {
+			"200": {
+				"description": "Requested final_scores.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "object", 
+							"required": [
+								"Has_More", 
+								"List"
+							], 
+							"properties": {
+								"Has_More": {
+									"type": "boolean", 
+									"example": "true"
+								}, 
+								"List": {
+									"type": "array", 
+									"items": {
+										"$ref": "../../schemas/final_score.json#/Final_Score"
+									}
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "SessionID invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID invalid."
+								}
+							}, 
+							"offset_invalid": {
+								"summary": "Offset invalid.", 
+								"value": {
+									"message": "Offset invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

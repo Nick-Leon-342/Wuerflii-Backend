@@ -4,6 +4,7 @@
 ___
 
 
+Use `npm install` to install all dependencies and then `npx prisma generate` to generate the necessary prisma folder.
 Use `npm run backend` to start the dev-server.
 
 Don't forget to set a _.env_-file. For some explanation or a template look at _.env.example_.

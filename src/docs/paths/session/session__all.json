@@ -1,0 +1,58 @@
+
+
+{
+	"get": {
+		"summary": "Get all sessions.", 
+		"tags": [
+			"/session/all"
+		], 
+		"responses": {
+			"200": {
+				"description": "All sessions of the user.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "array", 
+							"items": {
+								"$ref": "../../schemas/session.json#/Session"
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "SessionID invalid."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "User not found."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

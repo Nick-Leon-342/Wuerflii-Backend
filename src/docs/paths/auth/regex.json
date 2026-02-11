@@ -1,0 +1,106 @@
+
+
+{
+	"get": {
+		"summary": "Get regex for credentials to create a new user.", 
+		"tags": [
+			"/auth"
+		], 
+		"responses": {
+			"200": {
+				"description": "Regex", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "object", 
+							"required": [
+								"NAME__MIN_CHARACTER",
+								"NAME__MAX_CHARACTER",
+								
+								"NAME__REGEX",
+								"NAME__REGEX_MINMAX",
+								"NAME__REGEX_LETTERFIRST",
+								"NAME__REGEX_ALLOWEDCHARS",
+
+
+								"PASSWORD__MIN_CHARACTER",
+								"PASSWORD__MAX_CHARACTER",
+
+								"PASSWORD__REGEX",
+								"PASSWORD__REGEX_MINMAX",
+								"PASSWORD__REGEX_ALLOWEDCHARS",
+								"PASSWORD__REGEX_ALLOWEDSYMBOL"
+							], 
+							"properties": {
+								"NAME__MIN_CHARACTER": {
+									"type": "integer", 
+									"description": "Minimum amount of characters for username", 
+									"example": 4
+								}, 
+								"NAME__MAX_CHARACTER": {
+									"type": "integer", 
+									"description": "Maximum amount of characters for username", 
+									"example": 64
+								}, 
+
+								"NAME__REGEX": {
+									"type": "string", 
+									"description": "Regex string for testing username", 
+									"example": "^[A-z][A-z0-9-_]{3,63}$"
+								}, 
+								"NAME__REGEX_MINMAX": {
+									"type": "string", 
+									"description": "Regex string for testing length of username", 
+									"example": "^.{4,64}$"
+								}, 
+								"NAME__REGEX_LETTERFIRST": {
+									"type": "string", 
+									"description": "Regex string for testing first character of username", 
+									"example": "^[A-z]"
+								}, 
+								"NAME__REGEX_ALLOWEDCHARS": {
+									"type": "string", 
+									"description": "Regex string for testing if characters of username are valid", 
+									"example": "^[a-zA-Z0-9_-]+$"
+								}, 
+
+
+								"PASSWORD__MIN_CHARACTER": {
+									"type": "number", 
+									"description": "Minimum amount of characters for password", 
+									"example": 8
+								}, 
+								"PASSWORD__MAX_CHARACTER": {
+									"type": "number", 
+									"description": "Maximum amount of characters for password", 
+									"example": 128
+								}, 
+								
+								"PASSWORD__REGEX": {
+									"type": "string", 
+									"description": "Regex string for testing password", 
+									"example": "^(?=.*[-_!#%@$])[a-zA-Z0-9-_!#%@$]{8,128}$"
+								}, 
+								"PASSWORD__REGEX_MINMAX": {
+									"type": "string", 
+									"description": "Regex string for testing length of password", 
+									"example": "^.{8,128}$"
+								}, 
+								"PASSWORD__REGEX_ALLOWEDCHARS": {
+									"type": "string", 
+									"description": "Regex string for testing if characters of password are valid", 
+									"example": "[a-zA-Z0-9]+"
+								}, 
+								"PASSWORD__REGEX_ALLOWEDSYMBOL": {
+									"type": "string", 
+									"description": "Regex string for testing if password contains some of the allowed symbols", 
+									"example": "[-_!#%@$]+"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -10,7 +10,9 @@ import { isInt } from '../../IsDataType.js'
 import { prisma } from '../../index.js'
 
 import route__table_columns from './Game__Table_Columns.js'
+import route__gnadenwurf from './Gnadenwurf.js'
 router.use('/table_columns', route__table_columns)
+router.use('/gnadenwurf', route__gnadenwurf)
 
 
 
@@ -43,8 +45,8 @@ router.get('', async (req, res) => {
 				}
 			})
 	
-			if(!user										) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 
 			const session = user.List___Association__Users_And_Sessions[0].Session
 			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error('Players not found.', 404)
@@ -155,7 +157,6 @@ router.post('', async (req, res) => {
 				orderBy: { createdAt: 'desc' }, 
 				include: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						// where: { SessionID: SessionID }, 
 						include: {
 							Player: true
 						}
@@ -320,8 +321,8 @@ router.delete('', async (req, res) => {
 				}
 			})
 	
-			if(!user			) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 	
 	
 			// __________________________________________________ Delete game __________________________________________________

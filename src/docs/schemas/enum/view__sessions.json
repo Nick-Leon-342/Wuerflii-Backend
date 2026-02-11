@@ -1,0 +1,12 @@
+
+
+{
+	"View__Sessions": {
+		"type": "string",
+		"enum": [
+			"LAST_PLAYED",
+			"CREATED",
+			"NAME"
+		]
+	}
+}

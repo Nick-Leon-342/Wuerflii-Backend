@@ -246,29 +246,20 @@ router.get('/archive', async (req, res) => {
 	if(isNaN(FinalScoreID)	) return res.status(400).send('FinalScoreID invalid.')
 	
 
-	try {
-		await prisma.$transaction(async (tx) => {
-			
-	
-	
-			// __________________________________________________ User __________________________________________________
-	
-			const user = await tx.users.findUnique({
-				where: { id: UserID }, 
+	prisma.users.findUnique({
+		where: { id: UserID }, 
+		include: {
+			List___Association__Users_And_Sessions: {
+				where: { SessionID: SessionID }, 
 				include: {
-					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+					Session: {
 						include: {
-							Session: {
+							List___Association__Players_And_FinalScores_And_Sessions: {
+								where: { Final_ScoreID: FinalScoreID }, 
 								include: {
-									List___Association__Players_And_FinalScores_And_Sessions: {
-										where: { Final_ScoreID: FinalScoreID }, 
+									Final_Score: {
 										include: {
-											Final_Score: {
-												include: {
-													Table_Archive: true
-												}
-											}
+											Table_Archive: true
 										}
 									}
 								}
@@ -276,23 +267,21 @@ router.get('/archive', async (req, res) => {
 						}
 					}
 				}
-			})
-	
-			// Check if user exists
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]) throw new Custom__Handled_Error('Session not found.', 404)
-			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]) throw new Custom__Handled_Error('Final_Score not found.', 404)
-			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive) throw new Custom__Handled_Error('Table_Archive not found.', 404)
-	
+			}
+		}
+	}).then(user => {
 
-			res.json(session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table)
-	
+		if(!user																							) throw new Custom__Handled_Error('User not found.', 404)
+		if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error('Session not found.', 404)
+		const session = user.List___Association__Users_And_Sessions[0].Session
+		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]								) throw new Custom__Handled_Error('Final_Score not found.', 404)
+		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive	) throw new Custom__Handled_Error('Table_Archive not found.', 404)
 
-		})
-	} catch(err) {
-		await handle_error(res, err, 'GET /session/preview/table')
-	}
+		res.json(session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table)
+
+	}).catch(err => {
+		handle_error(res, err, 'GET /game/table_column/archive')
+	})
 
 })
 

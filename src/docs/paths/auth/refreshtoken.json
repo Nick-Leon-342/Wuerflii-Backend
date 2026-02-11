@@ -1,0 +1,65 @@
+
+
+{
+	"get": {
+		"summary": "Refresh the access token.", 
+		"tags": [
+			"/auth"
+		], 
+		"responses": {
+			"200": {
+				"description": "Successfully refreshed access token.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "object", 
+							"required": [
+								"accessToken"
+							], 
+							"properties": {
+								"accessToken": {
+									"type": "string", 
+									"description": "JWT access token", 
+									"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No cookie found."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}, 
+							"user_mismatch": {
+								"summary": "User mismatch.", 
+								"value": {
+									"message": "User mismatch."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

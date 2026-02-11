@@ -1,0 +1,49 @@
+
+
+{
+	"openapi": "3.0.0", 
+	"security": [
+		{
+			"bearerAuth": []
+		}
+	], 
+	"info": {
+		"title": "Wuerflii API", 
+		"version": "0.0.0",
+		"description": "Swagger documentation for wuerflii API"
+	},
+	"paths": {
+		"/auth/regex": 					{ "$ref": "./paths/auth/regex.json" }, 
+		"/auth/registration": 			{ "$ref": "./paths/auth/registration.json" }, 
+		"/auth/login": 					{ "$ref": "./paths/auth/login.json" }, 
+		"/auth/logout": 				{ "$ref": "./paths/auth/logout.json" }, 
+
+		"/auth/refreshtoken": 			{ "$ref": "./paths/auth/refreshtoken.json" }, 
+
+		"/user": 						{ "$ref": "./paths/user.json" }, 
+		"/session": 					{ "$ref": "./paths/session/session.json" }, 
+		"/session/env": 				{ "$ref": "./paths/session/session__env.json" },
+		"/session/all": 				{ "$ref": "./paths/session/session__all.json" },
+		"/session/date": 				{ "$ref": "./paths/session/session__date.json" }, 
+
+		"/session/players": 			{ "$ref": "./paths/session/players/players.json" }, 
+		"/session/players/env":			{ "$ref": "./paths/session/players/players__env.json" }, 
+
+		"/game":			 			{ "$ref": "./paths/game/game.json" }, 
+		"/game/gnadenwurf": 			{ "$ref": "./paths/game/game__gnadenwurf.json" }, 
+		"/game/table_columns": 			{ "$ref": "./paths/game/game__table_columns.json" }, 
+		"/game/table_columns/archive":	{ "$ref": "./paths/game/game__table_columns__archive.json" }, 
+
+		"/finalscore":		 			{ "$ref": "./paths/finalscore/finalscore.json" }, 
+		"/finalscore/all":	 			{ "$ref": "./paths/finalscore/finalscore__all.json" } 
+	}, 
+	"components": {
+		"securitySchemes": {
+			"bearerAuth": {
+				"type": "http", 
+				"scheme": "bearer", 
+				"bearerFormat": "JWT"
+			}
+		}
+	}
+}

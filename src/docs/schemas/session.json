@@ -1,0 +1,98 @@
+
+
+{
+	"Session": {
+		"type": "object", 
+		"description": "Session", 
+		"required": [
+			"id",
+			"Name",
+			"Color",
+			"Columns",
+			"LastPlayed",
+			"Input_Type",
+			"Show_Scores",
+			"View",
+			"View__Month",
+			"View__Year",
+			"View__Custom_Date",
+			"Statistics__Show_Border",
+			"Statistics__View",
+			"Statistics__View_Month",
+			"Statistics__View_Year"
+		], 
+		"properties": {
+			"id": { 
+				"type": "integer", 
+				"example": 1 
+			},
+			"Name": { 
+				"type": "string", 
+				"example": "The Homies" 
+			},
+			"Color": { 
+				"type": "string", 
+				"example": "#FF5733" 
+			},
+			"Columns": { 
+				"type": "integer", 
+				"example": 3 
+			},
+			"View__List_Years": {
+				"type": "array",
+				"items": { "type": "integer" },
+				"example": [ 2023, 2024 ]
+			},
+			"CurrentGameStart": {
+				"type": "string",
+				"format": "date-time",
+				"nullable": true
+			},
+			"LastPlayed": { 
+				"type": "string", 
+				"format": "date-time" 
+			},
+			"createdAt": { 
+				"type": "string", 
+				"format": "date-time" 
+			},
+			"updatedAt": { 
+				"type": "string", 
+				"format": "date-time" 
+			},
+			"Input_Type": { 
+				"$ref": "./enum/input_type.json#/Input_Type" 
+			},
+			"Show_Scores": { 
+				"type": "boolean" 
+			},
+			"View": { 
+				"$ref": "./enum/view.json#/View" 
+			},
+			"View__Month": { 
+				"$ref": "./enum/list__months.json#/List__Months" 
+			},
+			"View__Year": { 
+				"type": "integer", 
+				"example": 2026
+			},
+			"View__Custom_Date": { 
+				"type": "string", 
+				"format": "date-time" 
+			},
+			"Statistics__Show_Border": { 
+				"type": "boolean" 
+			},
+			"Statistics__View": { 
+				"$ref": "./enum/statistics__view.json#/Statistics__View" 
+			},
+			"Statistics__View_Month": { 
+				"$ref": "./enum/list__months.json#/List__Months" 
+			},
+			"Statistics__View_Year": { 
+				"type": "integer", 
+				"example": 2026
+			}
+		}
+	}
+}

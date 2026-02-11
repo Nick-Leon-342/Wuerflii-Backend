@@ -1,0 +1,62 @@
+
+
+{
+	"get": {
+		"summary": "Get environment variables for creating a new session.", 
+		"tags": [
+			"/session/env"
+		], 
+		"responses": {
+			"200": {
+				"description": "Session", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "object", 
+							"properties": {
+								"MAX_COLUMNS": {
+									"type": "integer", 
+									"example": 16
+								}, 
+								"MAX_LENGTH_SESSION_NAME": {
+									"type": "integer", 
+									"example": 50
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "User not found."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

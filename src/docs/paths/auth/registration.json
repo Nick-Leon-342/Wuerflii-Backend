@@ -1,0 +1,102 @@
+
+
+{
+	"post": {
+		"summary": "Register as a new user.", 
+		"tags": [
+			"/auth"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "object", 
+						"required": [
+							"Name", 
+							"Password"
+						], 
+						"properties": {
+							"Name": {
+								"type": "string", 
+								"example": "Nick"
+							}, 
+							"Password": {
+								"type": "string", 
+								"format": "password", 
+								"example": "Pass123!"
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"200": {
+				"description": "Logged in successfully", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "object", 
+							"required": [
+								"accessToken"
+							], 
+							"properties": {
+								"accessToken": {
+									"type": "string", 
+									"description": "JWT access token", 
+									"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "Invalid input", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"name_invalid": {
+								"summary": "Name invalid.", 
+								"value": {
+									"message": "Name invalid."
+								}
+							}, 
+							"password_invalid": {
+								"summary": "Password invalid.", 
+								"value": {
+									"message": "Password invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"409": {
+				"description": "Conflict", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_registration_is_disabled": {
+								"summary": "User registration is disabled.", 
+								"value": {
+									"message": "User registration is disabled."
+								}
+							}, 
+							"username_already_taken": {
+								"summary": "Username already taken.", 
+								"value": {
+									"message": "Username already taken."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

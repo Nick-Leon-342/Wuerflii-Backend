@@ -1,0 +1,53 @@
+
+
+{
+	"Player": {
+		"type": "object",
+		"description": "User",
+		"required": [
+			"id",
+			"Name",
+			"Color", 
+
+			"Order_Index", 
+			"Gnadenwurf_Used", 
+
+			"createdAt",
+			"updatedAt"
+		],
+		"properties": {
+			"id": {
+				"type": "integer",
+				"example": 342
+			},
+			"Name": {
+				"type": "string",
+				"example": "Player Name"
+			},
+			"Color": { 
+				"type": "string", 
+				"example": "#0000FF" 
+			},
+			
+			"Order_Index": {
+				"type": "integer",
+				"example": 1
+			},
+			"Gnadenwurf_Used": {
+				"type": "boolean",
+				"example": true
+			},
+
+			"createdAt": {
+				"type": "string",
+				"format": "date-time",
+				"example": "2025-01-01T12:00:00Z"
+			},
+			"updatedAt": {
+				"type": "string",
+				"format": "date-time",
+				"example": "2025-01-02T12:00:00Z"
+			}
+		}
+	}
+}

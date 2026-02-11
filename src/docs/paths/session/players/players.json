@@ -1,0 +1,335 @@
+
+
+{
+	"get": {
+		"summary": "Get a specific session.", 
+		"tags": [
+			"/session/players"
+		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
+		"responses": {
+			"200": {
+				"description": "Players of a session.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "array", 
+							"items": {
+								"$ref": "../../../schemas/player.json#/Player"
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "SessionID invalid."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"post": {
+		"summary": "Create players for a session.", 
+		"tags": [
+			"/session/players"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "array", 
+						"items": {
+							"type": "object", 
+							"required": [
+								"Color", 
+								"Name"
+							], 
+							"properties": {
+								"Name": {
+									"type": "string", 
+									"example": "Player Name"
+								}, 
+								"Color": { 
+									"type": "string", 
+									"example": "#00FF00" 
+								}
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"200": {
+				"description": "Successfully created players and returning all created players.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "array", 
+							"items": {
+								"$ref": "../../../schemas/player.json#/Player"
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID invalid."
+								}
+							}, 
+							"list_players_invalid": {
+								"summary": "List_Players invalid.", 
+								"value": {
+									"message": "List_Players invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"409": {
+				"description": "Players already exist."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}, 
+	"patch": {
+		"summary": "Customize players of a session.", 
+		"tags": [
+			"/session/players"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "array", 
+						"items": {
+							"type": "object", 
+							"required": [
+								"id", 
+								"Color", 
+								"Name"
+							], 
+							"properties": {
+								"id": {
+									"type": "integer", 
+									"example": 420
+								}, 
+								"Name": {
+									"type": "string", 
+									"example": "Player Name"
+								}, 
+								"Color": { 
+									"type": "string", 
+									"example": "#00FF00" 
+								}
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"204": {
+				"description": "Successfully customized players of a session."
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID invalid."
+								}
+							}, 
+							"list_players_invalid": {
+								"summary": "List_Players invalid.", 
+								"value": {
+									"message": "List_Players invalid."
+								}
+							}, 
+							"list_players_doesnt_match": {
+								"summary": "List__Players doesn't match.", 
+								"value": {
+									"message": "List__Players doesn't match."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							},
+							"players_not_found": {
+								"summary": "Players not found.", 
+								"value": {
+									"message": "Players not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"409": {
+				"description": "Players already exist."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}

@@ -1,0 +1,275 @@
+
+
+{
+	"get": {
+		"summary": "Get a specific session.", 
+		"tags": [
+			"/game/table_columns"
+		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
+		"responses": {
+			"200": {
+				"description": "Table_Columns of a session.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"type": "array", 
+							"items": {
+								"allOf": [
+									{ "$ref": "../../schemas/player.json#/Player" }, 
+									{
+										"type": "object", 
+										"properties": {
+											"List__Table_Columns": {
+												"type": "array", 
+												"items": {
+													"$ref": "../../schemas/table_column.json#/Table_Column"
+												}
+											}
+										}
+									}
+								]
+							}
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "SessionID invalid."
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							},
+							"players_not_found": {
+								"summary": "Players not found.", 
+								"value": {
+									"message": "Players not found."
+								}
+							},
+							"table_columns_not_found": {
+								"summary": "Table_Columns not found.", 
+								"value": {
+									"message": "Table_Columns not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	},
+	"patch": {
+		"summary": "Editing an input value of a specific table_column in game.", 
+		"tags": [
+			"/game/table_columns"
+		], 
+		"requestBody": {
+			"required": "true", 
+			"content": {
+				"application/json": {
+					"schema": {
+						"type": "object", 
+						"required": [
+							"SessionID", 
+							"PlayerID", 
+							"Column", 
+							"Name", 
+							"Value" 
+						], 
+						"properties": {
+							"SessionID": { 
+								"type": "integer", 
+								"example": 1 
+							},
+							"PlayerID": { 
+								"type": "integer", 
+								"example": 420
+							},
+							
+							"Column": { 
+								"type": "integer", 
+								"example": 3 
+							}, 
+							"Name": { 
+								"type": "string", 
+								"example": "Upper_Table_1" 
+							},
+							"Value": { 
+								"type": "integer", 
+								"example": 4
+							}
+						}
+					}
+				}
+			}
+		}, 
+		"responses": {
+			"200": {
+				"description": "Successfully edited table_column.", 
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "../../schemas/table_column.json#/Table_Column"
+						}
+					}
+				}
+			}, 
+			"400": {
+				"description": "Input invalid.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"sessionid_invalid": {
+								"summary": "SessionID invalid.", 
+								"value": {
+									"message": "SessionID invalid."
+								}
+							}, 
+							"playerid_invalid": {
+								"summary": "PlayerID invalid.", 
+								"value": {
+									"message": "PlayerID invalid."
+								}
+							}, 
+
+
+							"column_invalid": {
+								"summary": "Column invalid.", 
+								"value": {
+									"message": "Column invalid."
+								}
+							}, 
+							"name_invalid": {
+								"summary": "Name invalid.", 
+								"value": {
+									"message": "Name invalid."
+								}
+							}, 
+							"value_invalid": {
+								"summary": "Value invalid.", 
+								"value": {
+									"message": "Value invalid."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"401": {
+				"description": "No token."
+			}, 
+			"403": {
+				"description": "Forbidden", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"token_payload_is_missing_id": {
+								"summary": "Token payload is missing id.", 
+								"value": {
+									"message": "Token payload is missing id."
+								}
+							}, 
+							"invalid_token": {
+								"summary": "Invalid token.", 
+								"value": {
+									"message": "Invalid token."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"404": {
+				"description": "Not found.", 
+				"content": {
+					"application/json": {
+						"examples": {
+							"user_not_found": {
+								"summary": "User not found.", 
+								"value": {
+									"message": "User not found."
+								}
+							}, 
+							"session_not_found": {
+								"summary": "Session not found.", 
+								"value": {
+									"message": "Session not found."
+								}
+							}, 
+							"players_not_found": {
+								"summary": "Players not found.", 
+								"value": {
+									"message": "Players not found."
+								}
+							}, 
+							"table_column_not_found": {
+								"summary": "Table_Column not found.", 
+								"value": {
+									"message": "Table_Column not found."
+								}
+							}
+						}
+					}
+				}
+			}, 
+			"409": {
+				"description": "Input invalid."
+			}, 
+			"500": {
+				"description": "Internal Server Error"
+			}
+		}
+	}
+}
