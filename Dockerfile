@@ -22,6 +22,8 @@ ARG DB_TYPE=postgresql
 RUN npx prisma generate
 RUN npm run build
 
+RUN mkdir -p dist/src/docs && cp -r src/docs/* dist/src/docs/
+
 # ____________________ Production ____________________
 FROM node:25.5 AS runner
 
@@ -37,6 +39,6 @@ COPY --from=builder /wuerflii-backend/generated ./dist/generated
 
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "sh", "./entrypoint.sh" ]
 
 CMD [ "npm", "run", "prod" ]
