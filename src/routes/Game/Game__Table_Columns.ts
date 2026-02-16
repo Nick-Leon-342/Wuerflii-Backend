@@ -34,6 +34,7 @@ router.get('', async (req, res) => {
 							Session: {
 								include: {
 									List___Association__Sessions_And_Players_And_Table_Columns: {
+										orderBy: { Order_Index: 'asc' }, 
 										include: {
 											Player: true, 
 											List__Table_Columns: {
@@ -55,7 +56,7 @@ router.get('', async (req, res) => {
 			const session = user.List___Association__Users_And_Sessions[0].Session
 			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error('Players not found.', 404)
 			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error('Table_Columns not found.', 404)
-	
+
 			res.json(session.List___Association__Sessions_And_Players_And_Table_Columns.map(association => ({
 				...filter__association_sessions_and_players_and_table_columns(association), 
 				...filter__player(association.Player), 
@@ -133,7 +134,7 @@ router.patch('', async (req, res) => {
 
 })
 
-function calculate_table_column(table_column: Table_Columns ): Table_Columns {
+function calculate_table_column(table_column: Table_Columns): Table_Columns {
 
 	const table_column__updated = { ...table_column }
 
@@ -194,7 +195,6 @@ function calculate_table_column(table_column: Table_Columns ): Table_Columns {
 	}
 
 	table_column__updated.Total_Score = (table_column__updated.Upper_Table_TotalScore !== null ? table_column__updated.Upper_Table_TotalScore : upper_table_score) + bottom_table_score
-
 	
 	return table_column__updated
 

@@ -9,7 +9,6 @@ import { isArray, isString, isColor, isInt } from '../../IsDataType.js'
 import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
 import type { Type__Player } from '../../types/Type__Player.js'
 import { handle_error } from '../../handle_error.js'
-import sort__list_players from '../../Functions.js'
 import { prisma } from '../../index.js'
 
 
@@ -33,6 +32,7 @@ router.get('', (req, res) => {
 					Session: {
 						include: {
 							List___Association__Sessions_And_Players_And_Table_Columns: {
+								orderBy: { Order_Index: 'asc' }, 
 								include: {
 									Player: true
 								}
@@ -53,7 +53,7 @@ router.get('', (req, res) => {
 			...filter__player(asso.Player)
 		}))
 		
-		res.json(sort__list_players(list__players))
+		res.json(list__players)
 
 	}).catch(async err => {
 		await handle_error(res, err, 'GET /session/players')
