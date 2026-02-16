@@ -91,7 +91,7 @@ export async function handle_error(
 
 	res.sendStatus(500)
 
-	log__error(`Server encountered an unhandled error. ${error}`)
+	log__error(`Server encountered an unhandled error at ${api_url}\n${error}`)
 
 	await send_email(
 		'Unhandled server error', 

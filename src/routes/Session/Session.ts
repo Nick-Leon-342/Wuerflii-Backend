@@ -12,7 +12,6 @@ import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
 import type { Type__Session } from '../../types/Type__Session.js'
 import type { Type__Player } from '../../types/Type__Player.js'
 import { handle_error } from '../../handle_error.js'
-import sort__list_players from '../../Functions.js'
 import { prisma } from '../../index.js'
 import { isDate } from 'util/types'
 
@@ -323,6 +322,7 @@ router.get('/all', async (req, res) => {
 							Session: {
 								include: {
 									List___Association__Sessions_And_Players_And_Table_Columns: {
+										orderBy: { Order_Index: 'asc' }, 
 										include: {
 											Player: true
 										}
@@ -346,7 +346,7 @@ router.get('/all', async (req, res) => {
 				const session: Type__Session = {
 					...filter__session(association.Session), 
 					...filter__association_users_and_sessions(association), 
-					List__Players: 		sort__list_players(list__players), 
+					List__Players: 		list__players, 
 					Checkbox_Checked:	false, 
 				}
 
