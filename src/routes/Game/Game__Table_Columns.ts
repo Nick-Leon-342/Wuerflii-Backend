@@ -236,6 +236,11 @@ const possible_entries = {
 
 
 
+interface Table_Element {
+	PlayerID:			number
+	List__Table_Columns: Array<Table_Columns>
+}
+
 router.get('/archive', async (req, res) => {
 
 	const { UserID } 	= req
@@ -261,7 +266,13 @@ router.get('/archive', async (req, res) => {
 										include: {
 											Table_Archive: true
 										}
-									}
+									}, 
+								}
+							}, 
+							List___Association__Sessions_And_Players_And_Table_Columns: {
+								orderBy: { Order_Index: 'asc' }, 
+								include: {
+									Player: true
 								}
 							}
 						}
@@ -277,7 +288,21 @@ router.get('/archive', async (req, res) => {
 		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]								) throw new Custom__Handled_Error('Final_Score not found.', 404)
 		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive	) throw new Custom__Handled_Error('Table_Archive not found.', 404)
 
-		res.json(session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table)
+		const list = []
+		const table = (session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table as unknown) as Array<Table_Element>
+		
+		for(const element of table) {
+			const player = session.List___Association__Sessions_And_Players_And_Table_Columns.find(association => association.PlayerID === element.PlayerID)?.Player
+
+			if(!player) throw new Custom__Handled_Error('Huh, there is a player missing?', 500)
+
+			list.push({
+				...filter__player(player),
+				List__Table_Columns: element.List__Table_Columns
+			})
+		}
+
+		res.json(list)
 
 	}).catch(err => {
 		handle_error(res, err, 'GET /game/table_column/archive')
