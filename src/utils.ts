@@ -3,7 +3,7 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-import { Enum___Refresh_Token_Samesite } from './types/Enum___Refresh_Token_Samesite.js'
+import { Enum___Cookie_Samesite } from './types/Enum___Cookie__Samesite.js'
 
 
 
@@ -45,18 +45,24 @@ export const DATABASE_URL	: string	= `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}
 
 
 
-// ____________________ JWT-Session-Tokens ____________________
+// ____________________ Redis ____________________
 
-export const ACCESS_TOKEN_SECRET				: string						= process.env.ACCESS_TOKEN_SECRET 					|| '1234'
-export const REFRESH_TOKEN_SECRET				: string						= process.env.REFRESH_TOKEN_SECRET 					|| '1234'
+export const REDIS__HOST: string = process.env.REDIS__HOST || 'localhost'
+export const REDIS__PORT: number = +(process.env.REDIS__PORT || 6379)
 
-export const REFRESH_TOKEN_SAMESITE 			: Enum___Refresh_Token_Samesite	= 
-				Object.values(Enum___Refresh_Token_Samesite).includes(process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
-					? (process.env.REFRESH_TOKEN_SAMESITE as Enum___Refresh_Token_Samesite)
-					: Enum___Refresh_Token_Samesite.none
-export const REFRESH_TOKEN_SECURE 				: boolean						= process.env.REFRESH_TOKEN_SECURE === 'true' 		|| false
-export const ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.ACCESS_TOKEN_MAX_AGE_IN_MINUTES 	|| 15)
-export const REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	: number						= +(process.env.REFRESH_TOKEN_MAX_AGE_IN_MINUTES 	|| 1440) * 60 * 1000
+
+
+
+
+// ____________________ Session ____________________
+
+if(!process.env.SESSION__SECRET) throw new Error('Missing SESSION__SECRET.')
+export const SESSION__SECRET	: string	= process.env.SESSION__SECRET
+export const COOKIE__SECURE 	: boolean	= process.env.REFRESH_TOKEN_SECURE === 'true' 		|| false
+export const COOKIE__SAMESITE 	: Enum___Cookie_Samesite	
+					= Object.values(Enum___Cookie_Samesite).includes(process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
+					? (process.env.REFRESH_TOKEN_SAMESITE as Enum___Cookie_Samesite)
+					: Enum___Cookie_Samesite.none
 
 
 

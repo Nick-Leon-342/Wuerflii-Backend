@@ -3,13 +3,13 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
+import session 				from 'express-session'
 import express 				from 'express'
 import http					from 'http'
 const app 					= express()
 const httpServer			= http.createServer(app)
-import cookieParser 		from 'cookie-parser'
 
-import { ALLOWED_ORIGIN, DATABASE_URL, PORT } from './utils.js'
+import { ALLOWED_ORIGIN, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, PORT, REDIS__HOST, REDIS__PORT, SESSION__SECRET } from './utils.js'
 import package_json from '../package.json' with { type: 'json' }
 import { send_email, log__error, log__info } from './handle_error.js'
 
@@ -19,8 +19,32 @@ const corsOptions = {
 	credentials: true
 }
 app.use(express.json())
-app.use(cookieParser())
 app.use(cors(corsOptions))
+app.set('trust proxy', 1)
+
+import { createClient }		from 'redis'
+import { RedisStore } from 'connect-redis'
+
+const redis_client = createClient({
+	url: `redis://${REDIS__HOST}:${REDIS__PORT}`
+})
+
+redis_client.connect().catch(console.error)
+
+app.use(session({
+	store: new RedisStore({
+		client: redis_client, 
+	}), 
+	secret:	SESSION__SECRET, 
+	resave: false, 
+	saveUninitialized: false, 
+	cookie: {
+		httpOnly: true, 
+		secure: COOKIE__SECURE, 
+		sameSite: COOKIE__SAMESITE, 
+		maxAge: undefined, 
+	}
+}))
 
 
 
@@ -49,7 +73,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 
 
 
-// __________________________________________________ Routers __________________________________________________
+// __________________________________________________ Routes __________________________________________________
 
 import route__auth 	from './routes/Auth.js'
 app.use('/auth', 	route__auth)
@@ -62,8 +86,14 @@ app.get('/version', (_, res) => res.json(package_json.version))
 
 // __________________________________________________ Middleware __________________________________________________
 
-import verifyJWT 			from './middleware/verifyJWT.js'
-app.use(verifyJWT)
+import is_authenticated 	from './middleware/is_authenticated.js'
+app.use(is_authenticated)
+
+
+
+
+
+// __________________________________________________ Protected Routes __________________________________________________
 
 import route__user 			from './routes/User.js'
 import route__game 			from './routes/Game/Game.js'
