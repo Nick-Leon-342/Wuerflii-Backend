@@ -78,6 +78,8 @@ router.get('', async (req, res) => {
 					list__final_scores.push(final_score)
 				}
 			}
+
+			console.log(statistics__view, statistics__view_month, statistics__view_year, list__final_scores)
 	
 	
 			// __________________________________________________ Prepare response JSON __________________________________________________
@@ -199,7 +201,7 @@ router.get('', async (req, res) => {
 	
 			res.json({ 
 				Total: total, 
-				list__years: list__years, 
+				List__Years: list__years, 
 			})
 
 		})

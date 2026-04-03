@@ -13,9 +13,6 @@ import { prisma } from '../index.js'
 import { 
 	NAME__REGEX, 
 	PASSWORD__REGEX, 
-
-	REFRESH_TOKEN_SAMESITE, 
-	REFRESH_TOKEN_SECURE, 
 } from '../utils.js'
 
 
@@ -190,8 +187,13 @@ router.delete('', async (req, res) => {
 	
 			await tx.users.delete({ where: { id: UserID } })
 	
-			res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
-			res.sendStatus(204)
+			req.session.destroy(err => {
+				if(err) {
+					throw new Custom__Handled_Error('Encountered error while deleting session cookie.', 500)
+				}
+				res.clearCookie('connect.sid')
+				res.status(204).send('Deleted user successfully.')
+			})
 
 		})
 	} catch(err) {
