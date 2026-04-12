@@ -6,7 +6,6 @@ const router = express.Router()
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import type { Final_Scores } from '../../../generated/prisma/index.js'
 import { List__Months_Enum } from '../../types/Type___List__Months.js'
 
 

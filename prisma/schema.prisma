@@ -50,7 +50,6 @@ model Users {
 
 	Name									String							@unique
 	Password								String							@unique
-	Refresh_Token							String?							@unique
 	DarkMode								Boolean
 
 	// For session list in /session/select

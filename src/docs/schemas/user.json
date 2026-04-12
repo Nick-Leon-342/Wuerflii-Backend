@@ -35,11 +35,6 @@
 				"format": "password",
 				"example": "Pass123!"
 			},
-			"Refresh_Token": {
-				"type": "string",
-				"nullable": true,
-				"example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-			},
 			"DarkMode": {
 				"type": "boolean",
 				"example": true

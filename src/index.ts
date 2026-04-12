@@ -9,7 +9,7 @@ import http					from 'http'
 const app 					= express()
 const httpServer			= http.createServer(app)
 
-import { ALLOWED_ORIGIN, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, PORT, REDIS__HOST, REDIS__PORT, SESSION__SECRET } from './utils.js'
+import { ALLOWED_ORIGIN, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, PORT, REDIS__HOST, REDIS__PASSWORD, REDIS__PORT, SESSION__SECRET } from './utils.js'
 import package_json from '../package.json' with { type: 'json' }
 import { send_email, log__error, log__info } from './handle_error.js'
 
@@ -22,11 +22,16 @@ app.use(express.json())
 app.use(cors(corsOptions))
 app.set('trust proxy', 1)
 
+
+
+
+
+// __________ Redis for sessions __________
+
 import { createClient }		from 'redis'
 import { RedisStore } from 'connect-redis'
-
 const redis_client = createClient({
-	url: `redis://${REDIS__HOST}:${REDIS__PORT}`
+	url: `redis://:${REDIS__PASSWORD}@${REDIS__HOST}:${REDIS__PORT}`,
 })
 
 redis_client.connect().catch(console.error)
@@ -64,10 +69,12 @@ export const prisma = new PrismaClient({ adapter })
 
 // __________________________________________________ Swagger API-Documentation __________________________________________________
 
-import swaggerUi			from  'swagger-ui-express'
-import getSwaggerDocument	from './docs/swagger.js'
-const swaggerDocument 		= await getSwaggerDocument()
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+if(process.env.NODE_ENV !== 'production') {
+	const swaggerUi				= await import('swagger-ui-express')
+	const getSwaggerDocument	= await import('./docs/swagger.js')
+	const swaggerDocument 		= await getSwaggerDocument.default()
+	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+}
 
 
 

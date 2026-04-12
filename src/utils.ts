@@ -9,7 +9,7 @@ import { Enum___Cookie_Samesite } from './types/Enum___Cookie__Samesite.js'
 
 
 
-export const isProd			: boolean	= process.env.NODE_ENV === 'prod'
+export const isProd			: boolean	= process.env.NODE_ENV === 'production'
 export const PORT			: number	= isProd ? 5000 : +(process.env.PORT || 5000)
 export const ALLOWED_ORIGIN	: string	= process.env.DOMAIN || 'http://localhost:5173'
 
@@ -22,24 +22,24 @@ export const DISABLE_REGISTRATION_OF_NEW_USERS: boolean = process.env.DISABLE_RE
 // ____________________ Database ____________________
 
 const {
-	DB_USERNAME,
-	DB_PASSWORD,
-	DB_DATABASE,
-	DB_HOST,
-	DB_PORT,
+	POSTGRES_USER,
+	POSTGRES_PASSWORD,
+	POSTGRES_DB,
+	POSTGRES_HOST,
+	POSTGRES_PORT,
 	DB_TYPE, 
 } = process.env
 
 if(
-	!DB_USERNAME	||
-	!DB_PASSWORD	||
-	!DB_DATABASE	||
-	!DB_HOST		||
-	!DB_PORT		||
+	!POSTGRES_USER		||
+	!POSTGRES_PASSWORD	||
+	!POSTGRES_DB		||
+	!POSTGRES_HOST		||
+	!POSTGRES_PORT		||
 	!DB_TYPE
-) throw new Error('Missing database environment variables!')
+) throw new Error('Missing database environment variables.')
 
-export const DATABASE_URL	: string	= `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`
+export const DATABASE_URL	: string	= `${DB_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`
 
 
 
@@ -47,8 +47,11 @@ export const DATABASE_URL	: string	= `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}
 
 // ____________________ Redis ____________________
 
-export const REDIS__HOST: string = process.env.REDIS__HOST || 'localhost'
-export const REDIS__PORT: number = +(process.env.REDIS__PORT || 6379)
+if(!process.env.REDIS__PASSWORD) throw new Error('Missing REDIS__PASSWORD.')
+
+export const REDIS__HOST: 		string = process.env.REDIS__HOST || 'localhost'
+export const REDIS__PORT: 		number = +(process.env.REDIS__PORT || 6379)
+export const REDIS__PASSWORD:	string = process.env.REDIS__PASSWORD
 
 
 
@@ -58,10 +61,11 @@ export const REDIS__PORT: number = +(process.env.REDIS__PORT || 6379)
 
 if(!process.env.SESSION__SECRET) throw new Error('Missing SESSION__SECRET.')
 export const SESSION__SECRET	: string	= process.env.SESSION__SECRET
-export const COOKIE__SECURE 	: boolean	= process.env.REFRESH_TOKEN_SECURE === 'true' 		|| false
+
+export const COOKIE__SECURE 	: boolean	= process.env.COOKIE__SECURE === 'true' 		|| false
 export const COOKIE__SAMESITE 	: Enum___Cookie_Samesite	
 					= Object.values(Enum___Cookie_Samesite).includes(process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
-					? (process.env.REFRESH_TOKEN_SAMESITE as Enum___Cookie_Samesite)
+					? (process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
 					: Enum___Cookie_Samesite.none
 
 

@@ -1,14 +1,14 @@
 
 
 # ____________________ Build ____________________
-FROM node:25.5 AS builder
+FROM node:25-alpine3.22 AS builder
 
-WORKDIR /wuerflii-backend
+WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/ 
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
@@ -21,24 +21,23 @@ ARG DB_TYPE=postgresql
 
 RUN npx prisma generate
 RUN npm run build
+RUN npm prune --omit=dev && npm cache clean --force
 
-RUN mkdir -p dist/src/docs && cp -r src/docs/* dist/src/docs/
 
 # ____________________ Production ____________________
-FROM node:25.5 AS runner
+FROM node:25-alpine3.22 AS runner
 
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+ENV NODE_ENV=production
 
-WORKDIR /wuerflii-backend
-
-COPY --from=builder /wuerflii-backend/node_modules ./node_modules
-COPY --from=builder /wuerflii-backend/dist ./dist
-COPY --from=builder /wuerflii-backend/package*.json ./
-COPY --from=builder /wuerflii-backend/prisma ./prisma
-COPY --from=builder /wuerflii-backend/generated ./dist/generated
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/generated ./dist/generated
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
 
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
-ENTRYPOINT [ "sh", "./entrypoint.sh" ]
 
+ENTRYPOINT [ "sh", "./entrypoint.sh" ]
 CMD [ "npm", "run", "prod" ]
