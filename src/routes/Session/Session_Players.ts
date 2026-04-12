@@ -4,10 +4,11 @@ import express from 'express'
 const router = express.Router()
 
 import { filter__association_sessions_and_players_and_table_columns, filter__player } from '../../Filter_DatabaseJSON.js'
+import { Zod__Player_List__With_PlayerID, Zod__Player_List__Without_PlayerID } from '../../types/Zod__Player.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import { isArray, isString, isColor, isInt } from '../../IsDataType.js'
 import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
 import type { Type__Player } from '../../types/Type__Player.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
 
@@ -18,16 +19,18 @@ import { prisma } from '../../index.js'
 router.get('', (req, res) => {
 
 	const { UserID } = req
-	const SessionID = +(req.query.session_id || 0)
 
-	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 
 
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: { 
 			List___Association__Users_And_Sessions: {
-				where: { SessionID },
+				where: { SessionID: session_id },
 				include: {
 					Session: {
 						include: {
@@ -61,35 +64,21 @@ router.get('', (req, res) => {
 
 })
 
-
-
-
-
-interface Type__POST__Player {
-	Name:	string
-	Color:	string
-}
-
-function is_player_valid__POST(player: any): player is Type__POST__Player {
-	return (
-		player.Name && isString(player.Name) &&
-		player.Name.length <= MAX_LENGTH_PLAYER_NAME && 
-		player.Color && isColor(player.Color)
-	)
-}
-
 router.post('', async (req, res) => {
 
 	// ____________________________________________________________________________________________________ Add players to session (first time) ____________________________________________________________________________________________________
 
 	const { UserID } = req
-	const { SessionID, List__Players } = req.body
+	
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
 
-	if(!SessionID || !isInt(SessionID)) return res.status(400).send('SessionID invalid.')
-	if(
-		!List__Players || !isArray(List__Players) || List__Players.length < 1 || List__Players.length > MAX_PLAYERS || 
-		!List__Players.every(is_player_valid__POST)
-	) return res.status(400).send('List_Players invalid.')
+	// Verify List__Players
+	const zod_result__list_players = Zod__Player_List__Without_PlayerID.safeParse(req.body)
+	if(!zod_result__list_players.success) return res.status(400).send(zod_result__list_players.error.message)
+	const { List__Players } = zod_result__list_players.data
 
 
 	try {
@@ -99,7 +88,7 @@ router.post('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -123,30 +112,33 @@ router.post('', async (req, res) => {
 	
 			// __________________________________________________ Create players __________________________________________________
 	
-			const list_players: Array<Type__Player> = []
-			for(let i = 0; List__Players.length > i; i++) {
-				const player = await tx.players.create({ 
-					data: {
-						Name:	List__Players[i].Name, 
-						Color:	List__Players[i].Color, 
-					}
-				})
-				
-				const association = await tx.association__Sessions_And_Players_And_Table_Columns.create({
-					data: {
-						SessionID:	session.id, 
-						PlayerID:	player.id, 
+			const list_players = await Promise.all(
+				List__Players.map(async (tmp_player, index) => {
+
+					const player = await tx.players.create({ 
+						data: {
+							Name:	tmp_player.Name, 
+							Color:	tmp_player.Color, 
+						}
+					})
+					
+					const association = await tx.association__Sessions_And_Players_And_Table_Columns.create({
+						data: {
+							SessionID:	session.id, 
+							PlayerID:	player.id, 
+			
+							Gnadenwurf_Used:	false, 
+							Order_Index: 		index, 
+						}
+					})
 		
-						Gnadenwurf_Used:	false, 
-						Order_Index: 		i, 
+					return {
+						...filter__player(player), 
+						...filter__association_sessions_and_players_and_table_columns(association)
 					}
+
 				})
-	
-				list_players.push({
-					...filter__player(player), 
-					...filter__association_sessions_and_players_and_table_columns(association)
-				})
-			}
+			)
 	
 			res.json(list_players)
 
@@ -157,32 +149,19 @@ router.post('', async (req, res) => {
 
 })
 
-
-
-
-
-interface Type__PATCH__Player {
-	id:		number
-	Name:	string
-	Color:	string
-}
-
-function is_player_valid__PATCH(player: any): player is Type__PATCH__Player {
-	return (
-		player.id && isInt(player.id) &&
-		player.Name && isString(player.Name) &&
-		player.Name.length <= MAX_LENGTH_PLAYER_NAME && 
-		player.Color && isColor(player.Color)
-	)
-}
-
 router.patch('', async (req, res) => {
 
 	const { UserID } = req
-	const { SessionID, List__Players } = req.body
+	
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
 
-	if(!SessionID || !isInt(SessionID)															) return res.status(400).send('SessionID invalid.')
-	if(!List__Players || !isArray(List__Players) || !List__Players.every(is_player_valid__PATCH)) return res.status(400).send('List_Players invalid.')
+	// Verify List__Players
+	const zod_result__list_players = Zod__Player_List__With_PlayerID.safeParse(req.body)
+	if(!zod_result__list_players.success) return res.status(400).send(zod_result__list_players.error.message)
+	const { List__Players } = zod_result__list_players.data
 
 	
 	try {
@@ -192,7 +171,7 @@ router.patch('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -215,36 +194,30 @@ router.patch('', async (req, res) => {
 			const tmp__list_associations = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
 			if(
 				tmp__list_associations.length !== List__Players.length || 
-				!tmp__list_associations.every(association => List__Players.some((p: Type__PATCH__Player) => p.id === association.PlayerID))
+				!tmp__list_associations.every(association => List__Players.some(p => p.id === association.PlayerID))
 			) throw new Custom__Handled_Error(`List__Players doesn't match.`, 400)
 	
 	
 			// __________________________________________________ Update players __________________________________________________
-	
-			for(let i = 0; List__Players.length > i; i++) {
-				const player = List__Players[i]
-	
-				for(const association of tmp__list_associations) {
-					if(association.PlayerID === player.id) {
-						await tx.players.update({
-							where: { id: player.id }, 
-							data: {
-								Name:	player.Name, 
-								Color:	player.Color, 
+
+			await Promise.all(List__Players.map((player, index) => {
+				return tx.players.update({
+					where: { id: player.id }, 
+					data: {
+						Name:	player.Name, 
+						Color:	player.Color, 
+						Association__Sessions_And_Players_And_Table_Columns: {
+							update: {
+								where: {
+									SessionID:	session_id, 
+									PlayerID:	player.id, 
+								}, 
+								data: { Order_Index: index }
 							}
-						})
-	
-						await tx.association__Sessions_And_Players_And_Table_Columns.update({ 
-							data: { Order_Index: i }, 
-							where: {
-								SessionID:	user.List___Association__Users_And_Sessions[0].SessionID, 
-								PlayerID:	association.PlayerID, 	
-							}
-						})
-						break
+						}
 					}
-				}
-			}
+				})
+			}))
 	
 			res.sendStatus(204)
 

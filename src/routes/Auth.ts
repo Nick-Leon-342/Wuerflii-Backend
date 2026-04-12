@@ -3,11 +3,10 @@
 import express from 'express'
 const router = express.Router()
 
-import * as z from 'zod'
 import bcrypt from 'bcrypt'
 import { prisma } from '../index.js'
-import { isString } from '../IsDataType.js'
 import { handle_error } from '../handle_error.js'
+import { Zod__User } from '../types/Zod__User.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 
@@ -34,18 +33,6 @@ import {
 
 
 
-const Credentials = z.object({
-	Name:		z
-		.string()
-		.min(NAME__MIN_CHARACTER, { message: 'Name too short.' })
-		.max(NAME__MAX_CHARACTER, { message: 'Name too long.' })
-		.regex(new RegExp(NAME__REGEX), { message: 'Name invalid.' }), 
-	Password:	z
-		.string()
-		.min(PASSWORD__MIN_CHARACTER, { message: 'Password too short.' })
-		.max(PASSWORD__MAX_CHARACTER, { message: 'Password too long.' })
-		.regex(new RegExp(PASSWORD__REGEX), { message: 'Password invalid.' }), 
-})
 
 router.get('/regex', (_, res) => {
 
@@ -72,13 +59,15 @@ router.get('/regex', (_, res) => {
 
 router.post('/login', async (req, res) => {
 
-	const { 
-		Name, 
-		Password 
-	} = req.body
+	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
-	if(!Name && !isString(Name)			) return res.status(400).send('Name invalid.')
-	if(!Password && !isString(Password)	) return res.status(400).send('Password invalid.')
+	const zod_result = Zod__User.pick({ Name: true, Password: true }).safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+
+	const {
+		Name,
+		Password, 
+	} = zod_result.data
 
 
 	try {
@@ -108,7 +97,7 @@ router.post('/registration', async (req, res) => {
 
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
-	const zod_result = Credentials.safeParse(req.body)
+	const zod_result = Zod__User.pick({ Name: true, Password: true }).safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 
 	const {
