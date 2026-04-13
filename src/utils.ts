@@ -41,6 +41,8 @@ if(
 
 export const DATABASE_URL	: string	= `${DB_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`
 
+export const COLOR__REGEX: RegExp = /^#([0-9A-Fa-f]{3}){1,2}$/
+
 
 
 
@@ -97,11 +99,11 @@ export const PASSWORD__REGEX_ALLOWEDSYMBOLS : string	= '[-_!#%@$]+'
 
 // ____________________ Game ____________________
 
-export const MAX_LENGTH_SESSION_NAME 	: number	= +(process.env.MAX_LENGTH_SESSION_NAME	|| 50)
-export const MAX_LENGTH_PLAYER_NAME 	: number	= +(process.env.MAX_LENGTH_PLAYER_NAME	|| 50)
-export const MAX_PLAYERS 				: number	= +(process.env.MAX_PLAYERS				|| 16)
-export const MAX_COLUMNS 				: number	= +(process.env.MAX_COLUMNS				|| 10)
-export const MAX_FINALSCORES_LIMIT 		: number	= +(process.env.MAX_FINALSCORES_LIMIT	|| 10)
+export const MAX_LENGTH_SESSION_NAME 	: number	= +(process.env.VITE__MAX_LENGTH_SESSION_NAME	|| 50)
+export const MAX_LENGTH_PLAYER_NAME 	: number	= +(process.env.VITE__MAX_LENGTH_PLAYER_NAME	|| 50)
+export const MAX_PLAYERS 				: number	= +(process.env.VITE__MAX_PLAYERS				|| 16)
+export const MAX_COLUMNS 				: number	= +(process.env.VITE__MAX_COLUMNS				|| 10)
+export const MAX_FINALSCORES_LIMIT 		: number	= +(process.env.VITE__MAX_FINALSCORES_LIMIT	|| 10)
 
 
 

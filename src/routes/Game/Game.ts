@@ -5,12 +5,14 @@ const router = express.Router()
 
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { filter__table_column } from '../../Filter_DatabaseJSON.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
-import { isInt } from '../../IsDataType.js'
 import { prisma } from '../../index.js'
+import * as z from 'zod'
 
 import route__table_columns from './Game__Table_Columns.js'
 import route__gnadenwurf from './Gnadenwurf.js'
+
 router.use('/table_columns', route__table_columns)
 router.use('/gnadenwurf', route__gnadenwurf)
 
@@ -19,11 +21,13 @@ router.use('/gnadenwurf', route__gnadenwurf)
 
 
 router.get('', async (req, res) => {
+
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 	
 	const { UserID }	= req
-	const SessionID		= Number(req.query.session_id)
-	
-	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
 
 
 	try {
@@ -33,7 +37,7 @@ router.get('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -62,7 +66,7 @@ router.get('', async (req, res) => {
 				})
 	
 				await tx.association__Sessions_And_Players_And_Table_Columns.updateMany({
-					where: { SessionID: SessionID }, 
+					where: { SessionID: session_id }, 
 					data: { Gnadenwurf_Used: false }
 				})
 
@@ -99,12 +103,19 @@ router.post('', async (req, res) => {
 	
 	// ____________________________________________________________________________________________________ Game has been finished or surrendered ____________________________________________________________________________________________________
 
-	const { UserID } = req
-	const { SessionID, Surrendered_PlayerID } = req.body
-	const date = new Date()
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
 
-	if(!SessionID || !isInt(SessionID)						) return res.status(400).send('SessionID invalid.')
-	if(Surrendered_PlayerID && !isInt(Surrendered_PlayerID)	) return res.status(400).send('Surrendered_PlayerID invalid.')
+	// Verify input
+	const Zod__Surrendered_PlayerID = z.object({ Surrendered_PlayerID: z.number().int() })
+	const zod_result = Zod__Surrendered_PlayerID.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send('Surrendered_PlayerID invalid.')
+	const { Surrendered_PlayerID } = zod_result.data
+
+	const { UserID } = req
+	const date = new Date()
 
 
 	try {
@@ -114,7 +125,7 @@ router.post('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -151,7 +162,7 @@ router.post('', async (req, res) => {
 			const final_score__latest_found = await tx.final_Scores.findFirst({
 				where: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						every: { SessionID: SessionID }, 
+						every: { SessionID: session_id }, 
 					}
 				}, 
 				orderBy: { createdAt: 'desc' }, 
@@ -296,10 +307,12 @@ router.post('', async (req, res) => {
 
 router.delete('', async (req, res) => {
 
-	const { UserID } = req
-	const SessionID = Number(req.query.session_id)
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 
-	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
+	const { UserID } = req
 
 
 	try {
@@ -309,7 +322,7 @@ router.delete('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -328,14 +341,14 @@ router.delete('', async (req, res) => {
 			// __________________________________________________ Delete game __________________________________________________
 
 			await tx.sessions.update({
-				where: { id: SessionID }, 
+				where: { id: session_id }, 
 				data: { CurrentGameStart: null }
 			})
 
 			await tx.table_Columns.deleteMany({
 				where: {
 					Association__Sessions_And_Players_And_Table_Columns: {
-						SessionID: SessionID
+						SessionID: session_id
 					}
 				}
 			})

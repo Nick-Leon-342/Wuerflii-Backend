@@ -23,6 +23,7 @@ import {
 
 
 export const Zod__User = z.object({
+	id:			z.number().int(), 
 	Name:		z
 		.string()
 		.min(NAME__MIN_CHARACTER, 'Name too short.')
@@ -45,4 +46,25 @@ export const Zod__User = z.object({
 	Statistics__View:			z.enum(Enum___Statistics__View), 
 	Statistics__View_Month:		z.enum(Enum___List__Month), 
 	Statistics__View_Year:		z.number().int(), 
+})
+
+export const Zod__User_POST = Zod__User.pick({
+	Password: true, 
+	Name: true, 
+})
+
+export const Zod__User_PATCH = Zod__User.partial({
+	Name: true, 
+	Password: true, 
+	DarkMode: true, 
+
+	Show__Session_Names: true, 
+	Show__Session_Date: true, 
+
+	View__Sessions: true, 
+	View__Sessions_Desc: true, 
+
+	Statistics__View: true, 
+	Statistics__View_Month: true, 
+	Statistics__View_Year: true, 
 })

@@ -3,12 +3,12 @@
 import express from 'express'
 const router = express.Router()
 
-import bcrypt from 'bcrypt'
-import { prisma } from '../index.js'
-import { handle_error } from '../handle_error.js'
-import { Zod__User } from '../types/Zod__User.js'
-import { List__Months_Enum } from '../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
+import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { Zod__User_POST } from '../types/Zod__User.js'
+import { handle_error } from '../handle_error.js'
+import { prisma } from '../index.js'
+import bcrypt from 'bcrypt'
 
 import {
 	NAME__MIN_CHARACTER, 
@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
 
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
-	const zod_result = Zod__User.pick({ Name: true, Password: true }).safeParse(req.body)
+	const zod_result = Zod__User_POST.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 
 	const {
@@ -97,7 +97,7 @@ router.post('/registration', async (req, res) => {
 
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
-	const zod_result = Zod__User.pick({ Name: true, Password: true }).safeParse(req.body)
+	const zod_result = Zod__User_POST.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 
 	const {

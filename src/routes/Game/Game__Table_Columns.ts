@@ -6,20 +6,23 @@ const router = express.Router()
 import { filter__association_sessions_and_players_and_table_columns, filter__player, filter__table_column } from '../../Filter_DatabaseJSON.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import type { Table_Columns } from '../../../generated/prisma/index.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
-import { isInt, isString } from '../../IsDataType.js'
 import { prisma } from '../../index.js'
+import * as z from 'zod'
 
 
 
 
 
 router.get('', async (req, res) => {
+
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 	
 	const { UserID } = req
-	const SessionID = Number(req.query.session_id)
-	
-	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
 
 
 	try {
@@ -29,7 +32,7 @@ router.get('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -72,16 +75,19 @@ router.get('', async (req, res) => {
 
 router.patch('', async (req, res) => {
 
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
+
+	// Verify input
+	const zod_result = Zod__Game_Table_Columns.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { PlayerID, Column, Name, Value } = zod_result.data
+	if(!is_valid_input(Name, Value)) return res.status(409).send('Input invalid.')
+
 	const { UserID } = req
-	const { SessionID, PlayerID, Column, Name, Value } = req.body
 
-	if(!SessionID || !isInt(SessionID)	) return res.status(400).send('SessionID invalid.')
-	if(!PlayerID || !isInt(PlayerID)	) return res.status(400).send('PlayerID invalid.')
-	if(!isInt(Column)					) return res.status(400).send('Column invalid.')
-	if(!Name || !isString(Name)			) return res.status(400).send('Name invalid.')
-	if(Value !== null && !isInt(Value)	) return res.status(400).send('Value invalid.')
-
-	if(!is_valid_input(Name, Value)		) return res.status(409).send('Input invalid.')
 
 
 	try {
@@ -91,7 +97,7 @@ router.patch('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -201,12 +207,14 @@ function calculate_table_column(table_column: Table_Columns): Table_Columns {
 }
 
 function is_valid_input( 
-	Name: keyof typeof possible_entries, 
+	Name: string, 
 	Value: number | null 
 ): boolean {
 
-	if (possible_entries.hasOwnProperty(Name)) {
-		const validValues = possible_entries[Name]
+	const tmp_name = Name as keyof typeof possible_entries
+
+	if(possible_entries.hasOwnProperty(tmp_name)) {
+		const validValues = possible_entries[tmp_name]
 		return (Value === null || validValues.includes(Value))
 	}
 	return false
@@ -232,6 +240,13 @@ const possible_entries = {
 
 }
 
+const Zod__Game_Table_Columns = z.object({
+	Value:		z.number().int().nullable(), 
+	PlayerID:	z.number().int(), 
+	Column:		z.number().int(),
+	Name:		z.enum(Object.keys(possible_entries)), 
+})
+
 
 
 
@@ -243,24 +258,24 @@ interface Table_Element {
 
 router.get('/archive', async (req, res) => {
 
-	const { UserID } 	= req
-	const SessionID 	= Number(req.query.session_id)
-	const FinalScoreID 	= Number(req.query.finalscore_id)
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true, finalscore_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id, finalscore_id } = zod_result.data
 
-	if(isNaN(SessionID)		) return res.status(400).send('SessionID invalid.')
-	if(isNaN(FinalScoreID)	) return res.status(400).send('FinalScoreID invalid.')
+	const { UserID } 	= req
 	
 
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: {
 			List___Association__Users_And_Sessions: {
-				where: { SessionID: SessionID }, 
+				where: { SessionID: session_id }, 
 				include: {
 					Session: {
 						include: {
 							List___Association__Players_And_FinalScores_And_Sessions: {
-								where: { Final_ScoreID: FinalScoreID }, 
+								where: { Final_ScoreID: finalscore_id }, 
 								include: {
 									Final_Score: {
 										include: {

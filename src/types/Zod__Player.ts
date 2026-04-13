@@ -3,6 +3,7 @@
 import * as z from 'zod'
 
 import {
+	COLOR__REGEX,
 	MAX_LENGTH_PLAYER_NAME,
 	MAX_PLAYERS, 
 } from '../utils.js'
@@ -11,15 +12,32 @@ import {
 
 
 
-const Zod__Player = z.object({
-	Name:	z
-		.string()
-		.min(1, 'Name too short.')
-		.max(MAX_LENGTH_PLAYER_NAME, 'Name too long.'), 
-	Color:	z
-		.string()
-		.regex(/^#([0-9A-Fa-f]{3}){1,2}$/, 'Color invalid.')
+export const Zod__Player = z.object({
+	id:					z.number().int(), 
+	Name:				z.string()
+							.min(1, 'Name too short.')
+							.max(MAX_LENGTH_PLAYER_NAME, 'Name too long.'), 
+	Color:				z.string()
+							.regex(COLOR__REGEX, 'Color invalid.'), 
+
+	Order_Index:		z.number().int(), 
+	Gnadenwurf_Used:	z.boolean(), 
+
+	createdAt:			z.date(), 
+	updatedAt:			z.date(), 
 })
+
+export type Type__Player = z.infer<typeof Zod__Player>
+
+
+
+
+
+
+
+export const Zod__Player_List = z.array(Zod__Player)
+		.min(1, 'List__Players too short.')
+		.max(MAX_PLAYERS, 'List__Players too long.')
 
 export const Zod__Player_List__Without_PlayerID = z.object({
 	List__Players: z

@@ -11,6 +11,10 @@ export const Zod__Query = z.object({
 		.number()
 		.int()
 		.positive('finalscore_id invalid.'), 
+	player_id: 		z.coerce
+		.number()
+		.int()
+		.positive('finalscore_id invalid.'), 
 	offset_block: 	z.coerce
 		.number()
 		.int()
