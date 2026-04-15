@@ -4,15 +4,13 @@ import express from 'express'
 const router = express.Router()
 
 import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
+import { Zod__Session_PATCH, Zod__Session_POST, type Type__Session } from '../../types/Zod__Session.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../../types/Type___List__Months.js'
+import type { Users } from '../../../generated/prisma/index.js'
 import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
-
-import { Zod__Session_PATCH, Zod__Session_POST, type Type__Session } from '../../types/Zod__Session.js'
-import { zod_clean_undefined_from_safeparse } from '../../types/Zod_Clean_Undefined_From_SafeParse.js'
-import type { Users } from '../../../generated/prisma/index.js'
 
 import route__session_players from './Session_Players.js'
 router.use('/players', route__session_players)
@@ -127,7 +125,23 @@ router.patch('', async (req, res) => {
 	// Verify input
 	const zod_result = Zod__Session_PATCH.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
-	const cleaned_result = zod_clean_undefined_from_safeparse(zod_result.data) as any
+	const {
+		Name, 
+		Color, 
+		Columns, 
+
+		Input_Type, 
+		Show_Scores, 
+
+		View, 
+		View__Month, 
+		View__Year, 
+
+		Statistics__View, 
+		Statistics__View_Month, 
+		Statistics__View_Year, 
+		Statistics__Show_Border, 
+	} = zod_result.data
 
 	const { UserID } = req
 
@@ -151,19 +165,43 @@ router.patch('', async (req, res) => {
 			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 	
 
-			await tx.sessions.update({
-				where: { id: session_id }, 
-				data: cleaned_result
-			})
+			const json_session: any = {}
+			if(Name		) json_session.Name = Name
+			if(Color	) json_session.Color = Color
+			if(Columns	) json_session.Columns = Columns
+
+			if(Object.keys(json_session).length > 0) {
+				await tx.sessions.update({
+					where: { id: session_id }, 
+					data: json_session
+				})
+			}
 	
-			await tx.association__Users_And_Sessions.update({
-				where: {
-					SessionID: session_id, 
-					UserID, 
-				}, 
-				data: cleaned_result,
-			})
+
+			const json_association: any = {}
+			if(Input_Type	) json_association.Input_Type  = Input_Type
+			if(Show_Scores	) json_association.Show_Scores  = Show_Scores
+
+			if(View			) json_association.View  = View
+			if(View__Month	) json_association.View__Month  = View__Month
+			if(View__Year	) json_association.View__Year  = View__Year
+
+			if(Statistics__View			) json_association.Statistics__View  = Statistics__View
+			if(Statistics__View_Month	) json_association.Statistics__View_Month  = Statistics__View_Month
+			if(Statistics__View_Year	) json_association.Statistics__View_Year  = Statistics__View_Year
+			if(Statistics__Show_Border	) json_association.Statistics__Show_Border  = Statistics__Show_Border
 			
+			if(Object.keys(json_association).length > 0) {
+				await tx.association__Users_And_Sessions.update({
+					where: {
+						SessionID: session_id, 
+						UserID, 
+					}, 
+					data: json_association,
+				})
+			}
+			
+
 			res.sendStatus(204)
 
 		})

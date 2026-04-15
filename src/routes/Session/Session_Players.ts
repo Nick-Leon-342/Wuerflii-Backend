@@ -4,10 +4,8 @@ import express from 'express'
 const router = express.Router()
 
 import { filter__association_sessions_and_players_and_table_columns, filter__player } from '../../Filter_DatabaseJSON.js'
-import { Zod__Player_List__With_PlayerID, Zod__Player_List__Without_PlayerID } from '../../types/Zod__Player.js'
+import { Zod__Player_List__PATCH, Zod__Player_List__POST } from '../../types/Zod__Player.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import { MAX_PLAYERS, MAX_LENGTH_PLAYER_NAME } from '../../utils.js'
-import type { Type__Player } from '../../types/Type__Player.js'
 import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
@@ -51,7 +49,7 @@ router.get('', (req, res) => {
 		if(!user.List___Association__Users_And_Sessions[0]	) return res.status(404).send('Session not found.')
 
 		const list__associations_players = user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns
-		const list__players: Array<Type__Player> = list__associations_players.map(asso => ({
+		const list__players = list__associations_players.map(asso => ({
 			...filter__association_sessions_and_players_and_table_columns(asso), 
 			...filter__player(asso.Player)
 		}))
@@ -76,9 +74,9 @@ router.post('', async (req, res) => {
 	const { session_id } = zod_result__query.data
 
 	// Verify List__Players
-	const zod_result__list_players = Zod__Player_List__Without_PlayerID.safeParse(req.body)
+	const zod_result__list_players = Zod__Player_List__POST.safeParse(req.body.List__Players)
 	if(!zod_result__list_players.success) return res.status(400).send(zod_result__list_players.error.message)
-	const { List__Players } = zod_result__list_players.data
+	const List__Players = zod_result__list_players.data
 
 
 	try {
@@ -159,9 +157,9 @@ router.patch('', async (req, res) => {
 	const { session_id } = zod_result__query.data
 
 	// Verify List__Players
-	const zod_result__list_players = Zod__Player_List__With_PlayerID.safeParse(req.body)
+	const zod_result__list_players = Zod__Player_List__PATCH.safeParse(req.body.List__Players)
 	if(!zod_result__list_players.success) return res.status(400).send(zod_result__list_players.error.message)
-	const { List__Players } = zod_result__list_players.data
+	const List__Players = zod_result__list_players.data
 
 	
 	try {
@@ -225,29 +223,6 @@ router.patch('', async (req, res) => {
 	} catch(err) {
 		await handle_error(res, err, 'PATCH /session/players')
 	}
-
-})
-
-
-
-
-
-router.get('/env', (req, res) => {
-
-	const { UserID } = req
-
-	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
-
-		if(!user) return res.status(404).send('User not found.')
-
-		res.json({
-			MAX_PLAYERS,
-			MAX_LENGTH_PLAYER_NAME, 
-		})
-
-	}).catch(async err => {
-		await handle_error(res, err, 'GET /session/players/env')
-	})
 
 })
 
