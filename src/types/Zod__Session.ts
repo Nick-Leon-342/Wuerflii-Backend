@@ -10,7 +10,7 @@ import * as z from 'zod'
 
 
 export const Zod__Session = z.object({
-	id: 							z.number().int, 
+	id: 							z.number().int(), 
 	Name:							z.string()
 										.min(1, 'Session name too short.')
 										.max(MAX_LENGTH_SESSION_NAME, `Max session name length is ${MAX_LENGTH_SESSION_NAME} characters.`),
