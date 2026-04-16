@@ -118,3 +118,26 @@ export const EMAIL_SMTP_PORT 			: number	= +(process.env.EMAIL_SMTP_PORT 		|| 46
 export const EMAIL_SMTP_SSL 			: boolean	= process.env.EMAIL_SMTP_SSL === 'true'
 export const EMAIL_SMTP_USERNAME 		: string	= process.env.EMAIL_SMTP_USERNAME 		|| ''
 export const EMAIL_SMTP_PASSWORD 		: string	= process.env.EMAIL_SMTP_PASSWORD 		|| ''
+
+
+
+
+
+export const Possible_Entries = {
+
+	Upper_Table_1: [ 0, 1, 2, 3, 4, 50 ],
+	Upper_Table_2: [ 0, 2, 4, 6, 8, 50 ],
+	Upper_Table_3: [ 0, 3, 6, 9, 12, 50 ],
+	Upper_Table_4: [ 0, 4, 8, 12, 16, 50 ],
+	Upper_Table_5: [ 0, 5, 10, 15, 20, 50 ],
+	Upper_Table_6: [ 0, 6, 12, 18, 24, 50 ],
+
+	Bottom_Table_1: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],
+	Bottom_Table_2: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ], 
+	Bottom_Table_3: [ 0, 25, 50 ], 
+	Bottom_Table_4: [ 0, 30, 40, 50 ], 
+	Bottom_Table_5: [ 0, 40, 50 ], 
+	Bottom_Table_6: [ 0, 50 ], 
+	Bottom_Table_7: [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],  
+
+}

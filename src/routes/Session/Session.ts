@@ -6,6 +6,7 @@ const router = express.Router()
 import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
 import { Zod__Session_PATCH, Zod__Session_POST, type Type__Session } from '../../types/Zod__Session.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { Zod__Session_Date__PATCH } from '../../types/Zod__Session_Date.js'
 import { List__Months_Enum } from '../../types/Type___List__Months.js'
 import type { Users } from '../../../generated/prisma/index.js'
 import { Zod__Query } from '../../types/Zod__Query..js'
@@ -21,12 +22,12 @@ router.use('/players', route__session_players)
 
 router.get('', (req, res) => {
 
-	const { UserID } = req
-
 	// Verify query
 	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 	const { session_id } = zod_result.data
+
+	const { UserID } = req
 
 
 	prisma.users.findUnique({
@@ -358,116 +359,121 @@ function sort__list_sessions(user: Users, list__sessions: Array<Type__Session>) 
 
 // __________________________________________________ New CustomDate __________________________________________________
 
-// TODO
-// router.patch('/date', async (req, res) => {
+router.patch('/date', async (req, res) => {
 
-// 	const { UserID } = req
-// 	const { SessionID, View__Custom_Date } = req.body
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
 
-// 	if(!SessionID || !isInt(SessionID)							) return res.status(400).send('SessionID invalid.')
-// 	if(!View__Custom_Date || !isDate(new Date(View__Custom_Date))	) return res.status(400).send('CustomDate invalid.')
+	// Verify input
+	const zod_result = Zod__Session_Date__PATCH.safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { View__Custom_Date} = zod_result.data
+
+	const { UserID } = req
 
 
-// 	try {
-// 		await prisma.$transaction(async (tx) => {
+	try {
+		await prisma.$transaction(async (tx) => {
 
-// 			const user = await tx.users.findUnique({ 
-// 				where: { id: UserID },
-// 				include: {
-// 					List___Association__Users_And_Sessions: {
-// 						where: { SessionID: SessionID }, 
-// 						include: {
-// 							Session: {
-// 								include: {
-// 									List___Association__Sessions_And_Players_And_Table_Columns: {
-// 										include: {
-// 											Player: true
-// 										}
-// 									}
-// 								}
-// 							}
-// 						}
-// 					}
-// 				}
-// 			})
+			const user = await tx.users.findUnique({ 
+				where: { id: UserID },
+				include: {
+					List___Association__Users_And_Sessions: {
+						where: { SessionID: session_id }, 
+						include: {
+							Session: {
+								include: {
+									List___Association__Sessions_And_Players_And_Table_Columns: {
+										include: {
+											Player: true
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			})
 
-// 			if(!user																	) throw new Custom__Handled_Error('User not found.', 404)
-// 			if(!user.List___Association__Users_And_Sessions[0]							) throw new Custom__Handled_Error('Session not found.', 404)
-// 			const session = user.List___Association__Users_And_Sessions[0].Session
-// 			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]	) throw new Custom__Handled_Error('Players not found.', 404)
+			if(!user																	) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user.List___Association__Users_And_Sessions[0]							) throw new Custom__Handled_Error('Session not found.', 404)
+			const session = user.List___Association__Users_And_Sessions[0].Session
+			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]	) throw new Custom__Handled_Error('Players not found.', 404)
 	
 	
-// 			// __________________________________________________ Update session with customdate __________________________________________________
+			// __________________________________________________ Update session with customdate __________________________________________________
 	
-// 			await tx.association__Users_And_Sessions.update({ 
-// 				where: {
-// 					SessionID, 
-// 					UserID, 
-// 				},
-// 				data: { View__Custom_Date: View__Custom_Date },
-// 			})
-	
-	
-// 			// __________________________________________________ Update scores of finalscores __________________________________________________
-	
-// 			const list_finalscores = await tx.final_Scores.findMany({
-// 				include: {
-// 					List___Association__Players_And_FinalScores_And_Sessions: {
-// 						where: { SessionID: SessionID },
-// 					}
-// 				},
-// 				orderBy: { End: 'asc'}, 
-// 			}) 
+			await tx.association__Users_And_Sessions.update({ 
+				where: {
+					SessionID: session_id, 
+					UserID, 
+				},
+				data: { View__Custom_Date: View__Custom_Date },
+			})
 	
 	
-// 			let wins_before	: Record<string, number> = {}
-// 			let wins_after	: Record<string, number> = {}
-// 			for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) { wins_after[association.PlayerID] = 0 }
+			// __________________________________________________ Update scores of finalscores __________________________________________________
 	
-// 			for(const finalscore of list_finalscores) {
-// 				if(new Date(finalscore.End) >= new Date(View__Custom_Date)) {
+			const list_finalscores = await tx.final_Scores.findMany({
+				include: {
+					List___Association__Players_And_FinalScores_And_Sessions: {
+						where: { SessionID: session_id },
+					}
+				},
+				orderBy: { End: 'asc'}, 
+			}) 
 	
-// 					wins_before = structuredClone(wins_after)
 	
-// 					// Add wins to wins_after
+			let wins_before	: Record<string, number> = {}
+			let wins_after	: Record<string, number> = {}
+			for(const association of session.List___Association__Sessions_And_Players_And_Table_Columns) { wins_after[association.PlayerID] = 0 }
 	
-// 					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
-// 						if(association.IsWinner) wins_after[association.PlayerID] = (wins_after[association.PlayerID] || 0) + 1
+			for(const finalscore of list_finalscores) {
+				if(new Date(finalscore.End) >= new Date(View__Custom_Date)) {
 	
-// 						await tx.association__Players_And_FinalScores_And_Sessions.update({
-// 							where: { id: association.id },
-// 							data: {
-// 								Wins__Before_SinceCustomDate:	wins_before[association.PlayerID] || 0, 
-// 								Wins__After_SinceCustomDate:	wins_after[association.PlayerID] || 0, 
-// 							}, 
-// 						})
-// 					}
+					wins_before = structuredClone(wins_after)
 	
-// 				} else {
+					// Add wins to wins_after
 	
-// 					// Finalscore isn't later than customdate, therefore set scores to null
-// 					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
+					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
+						if(association.IsWinner) wins_after[association.PlayerID] = (wins_after[association.PlayerID] || 0) + 1
 	
-// 						await tx.association__Players_And_FinalScores_And_Sessions.update({
-// 							where: { id: association.id }, 
-// 							data: {
-// 								Wins__Before_SinceCustomDate:	null, 
-// 								Wins__After_SinceCustomDate:	null, 
-// 							}
-// 						})
-// 					}
+						await tx.association__Players_And_FinalScores_And_Sessions.update({
+							where: { id: association.id },
+							data: {
+								Wins__Before_SinceCustomDate:	wins_before[association.PlayerID] || 0, 
+								Wins__After_SinceCustomDate:	wins_after[association.PlayerID] || 0, 
+							}, 
+						})
+					}
 	
-// 				}
-// 			}
+				} else {
 	
-// 			res.sendStatus(204)
+					// Finalscore isn't later than customdate, therefore set scores to null
+					for(const association of finalscore.List___Association__Players_And_FinalScores_And_Sessions) {
+	
+						await tx.association__Players_And_FinalScores_And_Sessions.update({
+							where: { id: association.id }, 
+							data: {
+								Wins__Before_SinceCustomDate:	null, 
+								Wins__After_SinceCustomDate:	null, 
+							}
+						})
+					}
+	
+				}
+			}
+	
+			res.sendStatus(204)
 
-// 		})
-// 	} catch(err) {
-// 		await handle_error(res, err, 'PATCH /session/date')
-// 	}
+		})
+	} catch(err) {
+		await handle_error(res, err, 'PATCH /session/date')
+	}
 
-// })
+})
 
 
 

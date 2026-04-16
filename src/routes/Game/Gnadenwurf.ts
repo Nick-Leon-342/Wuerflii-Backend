@@ -4,18 +4,14 @@ import express from 'express'
 const router = express.Router()
 
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { Zod__Gnadenwurf } from '../../types/Zod__Gnadenwurf.js'
 import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
-import * as z from 'zod'
 
 
 
 
-
-const Zod__Gnadenwurf_Used = z.object({
-	Gnadenwurf_Used: z.boolean(), 
-})
 
 router.patch('', async (req, res) => {
 
@@ -25,7 +21,7 @@ router.patch('', async (req, res) => {
 	const { session_id, player_id } = zod_result__query.data
 
 	// Verify input
-	const zod_result = Zod__Gnadenwurf_Used.safeParse(req.body)
+	const zod_result = Zod__Gnadenwurf.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 	const { Gnadenwurf_Used } = zod_result.data
 

@@ -5,11 +5,12 @@ const router = express.Router()
 
 import { filter__association_sessions_and_players_and_table_columns, filter__player, filter__table_column } from '../../Filter_DatabaseJSON.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { Zod__Game_Table_Columns } from '../../types/Zod__Game_Table_Columns.js'
 import type { Table_Columns } from '../../../generated/prisma/index.js'
 import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
+import { Possible_Entries } from '../../utils.js'
 import { prisma } from '../../index.js'
-import * as z from 'zod'
 
 
 
@@ -211,41 +212,15 @@ function is_valid_input(
 	Value: number | null 
 ): boolean {
 
-	const tmp_name = Name as keyof typeof possible_entries
+	const tmp_name = Name as keyof typeof Possible_Entries
 
-	if(possible_entries.hasOwnProperty(tmp_name)) {
-		const validValues = possible_entries[tmp_name]
+	if(Possible_Entries.hasOwnProperty(tmp_name)) {
+		const validValues = Possible_Entries[tmp_name]
 		return (Value === null || validValues.includes(Value))
 	}
 	return false
 
 }
-
-const possible_entries = {
-
-	Upper_Table_1: [ 0, 1, 2, 3, 4, 50 ],
-	Upper_Table_2: [ 0, 2, 4, 6, 8, 50 ],
-	Upper_Table_3: [ 0, 3, 6, 9, 12, 50 ],
-	Upper_Table_4: [ 0, 4, 8, 12, 16, 50 ],
-	Upper_Table_5: [ 0, 5, 10, 15, 20, 50 ],
-	Upper_Table_6: [ 0, 6, 12, 18, 24, 50 ],
-
-	Bottom_Table_1: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],
-	Bottom_Table_2: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ], 
-	Bottom_Table_3: [ 0, 25, 50 ], 
-	Bottom_Table_4: [ 0, 30, 40, 50 ], 
-	Bottom_Table_5: [ 0, 40, 50 ], 
-	Bottom_Table_6: [ 0, 50 ], 
-	Bottom_Table_7: [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],  
-
-}
-
-const Zod__Game_Table_Columns = z.object({
-	Value:		z.number().int().nullable(), 
-	PlayerID:	z.number().int(), 
-	Column:		z.number().int(),
-	Name:		z.enum(Object.keys(possible_entries)), 
-})
 
 
 
