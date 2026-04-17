@@ -3,10 +3,11 @@
 import express from 'express'
 const router = express.Router()
 
-import { handle_error } from '../../handle_error.js'
-import { prisma } from '../../index.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../../types/Type___List__Months.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
+import { handle_error } from '../../handle_error.js'
+import { prisma } from '../../index.js'
 
 
 
@@ -14,10 +15,12 @@ import { List__Months_Enum } from '../../types/Type___List__Months.js'
 
 router.get('', async (req, res) => {
 
-	const { UserID } = req
-	const SessionID = Number(req.query.session_id)
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 
-	if(isNaN(SessionID)) return res.status(400).send('SessionID invalid.')
+	const { UserID } = req
 
 
 	try {
@@ -27,7 +30,7 @@ router.get('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -62,7 +65,6 @@ router.get('', async (req, res) => {
 			
 			// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
 	
-			const list__years 		: Array<number>			= []	// List of all the years in which games were played
 			const list__final_scores = []
 			for(const association__users_and_sessions of user.List___Association__Users_And_Sessions) {
 				
@@ -71,14 +73,13 @@ router.get('', async (req, res) => {
 
 				for(const final_score of list__final_scores__filtered) {	
 					const date = new Date(final_score.End)
-					if(!list__years.includes(date.getFullYear())) list__years.push(date.getFullYear())
 					if(statistics__view === 'STATISTICS_YEAR' && date.getFullYear() !== statistics__view_year) break
 					if(statistics__view === 'STATISTICS_MONTH' && (date.getFullYear() !== statistics__view_year || List__Months_Enum[date.getMonth()] !== statistics__view_month)) break
 					list__final_scores.push(final_score)
 				}
 			}
 
-			console.log(statistics__view, statistics__view_month, statistics__view_year, list__final_scores)
+			// console.log(statistics__view, statistics__view_month, statistics__view_year, list__final_scores)
 	
 	
 			// __________________________________________________ Prepare response JSON __________________________________________________
@@ -98,7 +99,6 @@ router.get('', async (req, res) => {
 	
 			// __________________________________________________ Init years/months/days of data with zeros __________________________________________________
 	
-			if(statistics__view === 'STATISTICS_OVERALL') list__years.forEach(year => Data[year] = structuredClone(json))
 			if(statistics__view === 'STATISTICS_YEAR') {
 				for(let month = 0; 12 >= month; month++) {
 					Data[month] = structuredClone(json)
@@ -184,7 +184,9 @@ router.get('', async (req, res) => {
 					Scores__Average[player_id] = Math.round((Scores__Total[player_id] || 0) / Total__Games_Played)
 				}
 			}
-			const total = {
+	
+	
+			res.json({
 				Total__Games_Played:	Total__Games_Played, 
 				Total__Wins: 			Total__Wins,		// Wins of each player
 				Total__Draws: 			Total__Draws, 
@@ -195,16 +197,11 @@ router.get('', async (req, res) => {
 				Scores__Total: 			Scores__Total,		// Every score of each player combined
 				
 				Data: 					Data, 
-			}
-	
-	
-			res.json({ 
-				Total: total, 
-				List__Years: list__years, 
 			})
 
 		})
 	} catch(err) {
+		console.log(err)
 		await handle_error(res, err, 'GET /analytics/session')
 	}
 

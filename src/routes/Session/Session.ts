@@ -367,7 +367,7 @@ router.patch('/date', async (req, res) => {
 	const { session_id } = zod_result__query.data
 
 	// Verify input
-	const zod_result = Zod__Session_Date__PATCH.safeParse(req.query)
+	const zod_result = Zod__Session_Date__PATCH.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 	const { View__Custom_Date} = zod_result.data
 

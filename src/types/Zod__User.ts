@@ -46,6 +46,9 @@ export const Zod__User = z.object({
 	Statistics__View:			z.enum(Enum___Statistics__View), 
 	Statistics__View_Month:		z.enum(Enum___List__Month), 
 	Statistics__View_Year:		z.number().int(), 
+
+	updatedAt:					z.date(), 
+	createdAt:					z.date(), 
 })
 
 export const Zod__User_POST = Zod__User.pick({
