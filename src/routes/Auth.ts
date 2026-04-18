@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
 	const zod_result = Zod__User_POST.safeParse(req.body)
-	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	if(!zod_result.success) return res.status(409).send(zod_result.error.message)
 
 	const {
 		Name,
