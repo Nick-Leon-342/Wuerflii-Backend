@@ -12,6 +12,7 @@ import * as z from 'zod'
 
 import route__table_columns from './Game__Table_Columns.js'
 import route__gnadenwurf from './Gnadenwurf.js'
+import { Zod__Game } from '../../types/Zod__Game.js'
 
 router.use('/table_columns', route__table_columns)
 router.use('/gnadenwurf', route__gnadenwurf)
@@ -109,8 +110,7 @@ router.post('', async (req, res) => {
 	const { session_id } = zod_result__query.data
 
 	// Verify input
-	const Zod__Surrendered_PlayerID = z.object({ Surrendered_PlayerID: z.number().int() })
-	const zod_result = Zod__Surrendered_PlayerID.safeParse(req.body)
+	const zod_result = Zod__Game.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send('Surrendered_PlayerID invalid.')
 	const { Surrendered_PlayerID } = zod_result.data
 
