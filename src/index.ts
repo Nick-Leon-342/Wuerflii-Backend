@@ -9,7 +9,7 @@ import http					from 'http'
 const app 					= express()
 const httpServer			= http.createServer(app)
 
-import { ALLOWED_ORIGIN, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, PORT, REDIS__HOST, REDIS__PASSWORD, REDIS__PORT, SESSION__SECRET } from './utils.js'
+import { ALLOWED_ORIGIN, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, MAX_COLUMNS, MAX_FINALSCORES_LIMIT, MAX_LENGTH_PLAYER_NAME, MAX_LENGTH_SESSION_NAME, MAX_PLAYERS, NAME__MAX_CHARACTER, NAME__MIN_CHARACTER, NAME__REGEX, NAME__REGEX_ALLOWEDCHARS, NAME__REGEX_LETTERFIRST, NAME__REGEX_MINMAX, PASSWORD__MAX_CHARACTER, PASSWORD__MIN_CHARACTER, PASSWORD__REGEX, PASSWORD__REGEX_ALLOWEDCHARS, PASSWORD__REGEX_ALLOWEDSYMBOLS, PASSWORD__REGEX_MINMAX, PORT, REDIS__HOST, REDIS__PASSWORD, REDIS__PORT, SESSION__SECRET } from './utils.js'
 import package_json from '../package.json' with { type: 'json' }
 import { send_email, log__error, log__info } from './handle_error.js'
 
@@ -86,6 +86,32 @@ import route__auth 	from './routes/Auth.js'
 app.use('/auth', 	route__auth)
 
 app.get('/version', (_, res) => res.json(package_json.version))
+
+app.get('/env', (_, res) => {
+	res.json({
+		NAME__MIN_CHARACTER, 
+		NAME__MAX_CHARACTER, 
+
+		NAME__REGEX, 
+		NAME__REGEX_MINMAX, 
+		NAME__REGEX_LETTERFIRST, 
+		NAME__REGEX_ALLOWEDCHARS, 
+
+		PASSWORD__MIN_CHARACTER, 
+		PASSWORD__MAX_CHARACTER, 
+
+		PASSWORD__REGEX, 
+		PASSWORD__REGEX_MINMAX, 
+		PASSWORD__REGEX_ALLOWEDCHARS, 
+		PASSWORD__REGEX_ALLOWEDSYMBOLS, 
+
+		MAX_LENGTH_SESSION_NAME, 
+		MAX_PLAYERS, 
+		MAX_LENGTH_PLAYER_NAME, 
+		MAX_COLUMNS, 
+		MAX_FINALSCORES_LIMIT, 
+	})
+})
 
 
 
