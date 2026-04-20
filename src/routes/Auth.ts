@@ -5,6 +5,7 @@ const router = express.Router()
 
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { filter__user } from '../Filter_DatabaseJSON.js'
 import { Zod__User_POST } from '../types/Zod__User.js'
 import { handle_error } from '../handle_error.js'
 import { prisma } from '../index.js'
@@ -61,13 +62,16 @@ router.post('/login', async (req, res) => {
 
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
 
-	const zod_result = Zod__User_POST.safeParse(req.body)
-	if(!zod_result.success) return res.status(409).send(zod_result.error.message)
-
 	const {
-		Name,
+		Name, 
 		Password, 
-	} = zod_result.data
+	} = req.body
+
+	if(!Name || typeof Name !== 'string' || !Password || typeof Password !== 'string') return res.status(400).send('Credentials missing or faulty.')
+
+	// This throws an error if the min/max length of name/password changes after a user already created an account
+	// const zod_result = Zod__User_POST.safeParse(req.body)
+	// if(!zod_result.success) return res.status(400).send(zod_result.error.message) 
 
 
 	try {
@@ -83,7 +87,7 @@ router.post('/login', async (req, res) => {
 			req.session.userid = user.id
 			req.session.save(err => {
 				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
-				res.sendStatus(200)
+				res.json(filter__user(user))
 			})
 
 		})	
@@ -146,7 +150,7 @@ router.post('/registration', async (req, res) => {
 			req.session.userid = user.id
 			req.session.save(err => {
 				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
-				res.sendStatus(200)
+				res.json(filter__user(user))
 			})
 
 		})
