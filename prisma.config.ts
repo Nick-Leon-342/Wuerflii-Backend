@@ -5,19 +5,19 @@ import { defineConfig } from 'prisma/config'
 
 const { 
 	DB_TYPE, 
-	DB_USERNAME, 
-	DB_PASSWORD, 
-	DB_HOST, 
-	DB_PORT, 
-	DB_DATABASE 
+	POSTGRES_USER, 
+	POSTGRES_PASSWORD, 
+	POSTGRES_HOST, 
+	POSTGRES_PORT, 
+	POSTGRES_DB 
 } = process.env
 
 if(
-	!DB_USERNAME	||
-	!DB_PASSWORD	||
-	!DB_DATABASE	||
-	!DB_HOST		||
-	!DB_PORT		||
+	!POSTGRES_USER		||
+	!POSTGRES_PASSWORD	||
+	!POSTGRES_DB		||
+	!POSTGRES_HOST		||
+	!POSTGRES_PORT		||
 	!DB_TYPE
 ) console.error('Missing database environment variables!')
 
@@ -31,6 +31,6 @@ export default defineConfig({
 		path: 'prisma/migrations',
 	},
 	datasource: {
-		url: `${DB_TYPE}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}`, 
+		url: `${DB_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`, 
 	},
 })

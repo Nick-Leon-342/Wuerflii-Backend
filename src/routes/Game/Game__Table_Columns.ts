@@ -5,9 +5,11 @@ const router = express.Router()
 
 import { filter__association_sessions_and_players_and_table_columns, filter__player, filter__table_column } from '../../Filter_DatabaseJSON.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
+import { Zod__Game_Table_Columns } from '../../types/Zod__Game_Table_Columns.js'
 import type { Table_Columns } from '../../../generated/prisma/index.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
-import { isInt, isString } from '../../IsDataType.js'
+import { Possible_Entries } from '../../utils.js'
 import { prisma } from '../../index.js'
 
 
@@ -15,11 +17,13 @@ import { prisma } from '../../index.js'
 
 
 router.get('', async (req, res) => {
+
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 	
 	const { UserID } = req
-	const SessionID = Number(req.query.session_id)
-	
-	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
 
 
 	try {
@@ -29,7 +33,7 @@ router.get('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -72,16 +76,19 @@ router.get('', async (req, res) => {
 
 router.patch('', async (req, res) => {
 
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
+
+	// Verify input
+	const zod_result = Zod__Game_Table_Columns.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { PlayerID, Column, Name, Value } = zod_result.data
+	if(!is_valid_input(Name, Value)) return res.status(409).send('Input invalid.')
+
 	const { UserID } = req
-	const { SessionID, PlayerID, Column, Name, Value } = req.body
 
-	if(!SessionID || !isInt(SessionID)	) return res.status(400).send('SessionID invalid.')
-	if(!PlayerID || !isInt(PlayerID)	) return res.status(400).send('PlayerID invalid.')
-	if(!isInt(Column)					) return res.status(400).send('Column invalid.')
-	if(!Name || !isString(Name)			) return res.status(400).send('Name invalid.')
-	if(Value !== null && !isInt(Value)	) return res.status(400).send('Value invalid.')
-
-	if(!is_valid_input(Name, Value)		) return res.status(409).send('Input invalid.')
 
 
 	try {
@@ -91,7 +98,7 @@ router.patch('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -201,67 +208,61 @@ function calculate_table_column(table_column: Table_Columns): Table_Columns {
 }
 
 function is_valid_input( 
-	Name: keyof typeof possible_entries, 
+	Name: string, 
 	Value: number | null 
 ): boolean {
 
-	if (possible_entries.hasOwnProperty(Name)) {
-		const validValues = possible_entries[Name]
+	const tmp_name = Name as keyof typeof Possible_Entries
+
+	if(Possible_Entries.hasOwnProperty(tmp_name)) {
+		const validValues = Possible_Entries[tmp_name]
 		return (Value === null || validValues.includes(Value))
 	}
 	return false
 
 }
 
-const possible_entries = {
 
-	Upper_Table_1: [ 0, 1, 2, 3, 4, 50 ],
-	Upper_Table_2: [ 0, 2, 4, 6, 8, 50 ],
-	Upper_Table_3: [ 0, 3, 6, 9, 12, 50 ],
-	Upper_Table_4: [ 0, 4, 8, 12, 16, 50 ],
-	Upper_Table_5: [ 0, 5, 10, 15, 20, 50 ],
-	Upper_Table_6: [ 0, 6, 12, 18, 24, 50 ],
 
-	Bottom_Table_1: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],
-	Bottom_Table_2: [ 0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ], 
-	Bottom_Table_3: [ 0, 25, 50 ], 
-	Bottom_Table_4: [ 0, 30, 40, 50 ], 
-	Bottom_Table_5: [ 0, 40, 50 ], 
-	Bottom_Table_6: [ 0, 50 ], 
-	Bottom_Table_7: [ 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 50 ],  
 
+
+interface Table_Element {
+	PlayerID:			number
+	List__Table_Columns: Array<Table_Columns>
 }
-
-
-
-
 
 router.get('/archive', async (req, res) => {
 
-	const { UserID } 	= req
-	const SessionID 	= Number(req.query.session_id)
-	const FinalScoreID 	= Number(req.query.finalscore_id)
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true, finalscore_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id, finalscore_id } = zod_result.data
 
-	if(isNaN(SessionID)		) return res.status(400).send('SessionID invalid.')
-	if(isNaN(FinalScoreID)	) return res.status(400).send('FinalScoreID invalid.')
+	const { UserID } 	= req
 	
 
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: {
 			List___Association__Users_And_Sessions: {
-				where: { SessionID: SessionID }, 
+				where: { SessionID: session_id }, 
 				include: {
 					Session: {
 						include: {
 							List___Association__Players_And_FinalScores_And_Sessions: {
-								where: { Final_ScoreID: FinalScoreID }, 
+								where: { Final_ScoreID: finalscore_id }, 
 								include: {
 									Final_Score: {
 										include: {
 											Table_Archive: true
 										}
-									}
+									}, 
+								}
+							}, 
+							List___Association__Sessions_And_Players_And_Table_Columns: {
+								orderBy: { Order_Index: 'asc' }, 
+								include: {
+									Player: true
 								}
 							}
 						}
@@ -277,7 +278,21 @@ router.get('/archive', async (req, res) => {
 		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]								) throw new Custom__Handled_Error('Final_Score not found.', 404)
 		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive	) throw new Custom__Handled_Error('Table_Archive not found.', 404)
 
-		res.json(session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table)
+		const list = []
+		const table = (session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table as unknown) as Array<Table_Element>
+		
+		for(const element of table) {
+			const player = session.List___Association__Sessions_And_Players_And_Table_Columns.find(association => association.PlayerID === element.PlayerID)?.Player
+
+			if(!player) throw new Custom__Handled_Error('Huh, there is a player missing?', 500)
+
+			list.push({
+				...filter__player(player),
+				List__Table_Columns: element.List__Table_Columns
+			})
+		}
+
+		res.json(list)
 
 	}).catch(err => {
 		handle_error(res, err, 'GET /game/table_column/archive')

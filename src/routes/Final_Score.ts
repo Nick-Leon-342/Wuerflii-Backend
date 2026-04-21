@@ -7,6 +7,7 @@ import { filter____list___association__players_and_finalscores_and_sessions, fil
 import type { Association__Users_And_Sessions, Prisma } from '../../generated/prisma/index.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { Zod__Query } from '../types/Zod__Query..js'
 import { MAX_FINALSCORES_LIMIT } from '../utils.js'
 import { handle_error } from '../handle_error.js'
 import { prisma } from '../index.js'
@@ -18,11 +19,11 @@ import { prisma } from '../index.js'
 router.get('', async (req, res) => {
 
 	const { UserID }	= req
-	const SessionID		= Number(req.query.session_id)
-	const FinalScoreID	= Number(req.query.finalscore_id)
-
-	if(isNaN(SessionID)		|| SessionID <= 0	) return res.status(400).send('SessionID invalid.')
-	if(isNaN(FinalScoreID)	|| FinalScoreID <= 0) return res.status(400).send('FinalScoreID invalid.')
+	
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true, finalscore_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id, finalscore_id } = zod_result.data
 
 
 	try {
@@ -32,12 +33,12 @@ router.get('', async (req, res) => {
 				where: { id: UserID },
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
 									List___Association__Players_And_FinalScores_And_Sessions: {
-										where: { Final_ScoreID: FinalScoreID },
+										where: { Final_ScoreID: finalscore_id },
 										include: {
 											Final_Score: true
 										}
@@ -70,12 +71,12 @@ router.get('', async (req, res) => {
 
 router.get('/all', async (req, res) => {
 
-	const { UserID } 	= req
-	const SessionID 	= Number(req.query.session_id)
-	const offset_block 	= Number(req.query.offset_block)
-
-	if(isNaN(SessionID) || SessionID <= 0)	return res.status(400).send('SessionID invalid.')
-	if(isNaN(offset_block))					return res.status(400).send('Offset invalid.')
+	const { UserID } = req
+	
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true, offset_block: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id, offset_block } = zod_result.data
 
 
 	try {
@@ -87,7 +88,7 @@ router.get('/all', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: { 
 							Session: true 
 						}
@@ -105,7 +106,7 @@ router.get('/all', async (req, res) => {
 				...getQuery(user.List___Association__Users_And_Sessions[0]), 
 				List___Association__Players_And_FinalScores_And_Sessions: {
 					every: {
-						SessionID: SessionID
+						SessionID: session_id
 					}
 				}
 			}

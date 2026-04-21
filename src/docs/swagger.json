@@ -22,12 +22,10 @@
 
 		"/user": 						{ "$ref": "./paths/user.json" }, 
 		"/session": 					{ "$ref": "./paths/session/session.json" }, 
-		"/session/env": 				{ "$ref": "./paths/session/session__env.json" },
 		"/session/all": 				{ "$ref": "./paths/session/session__all.json" },
 		"/session/date": 				{ "$ref": "./paths/session/session__date.json" }, 
 
 		"/session/players": 			{ "$ref": "./paths/session/players/players.json" }, 
-		"/session/players/env":			{ "$ref": "./paths/session/players/players__env.json" }, 
 
 		"/game":			 			{ "$ref": "./paths/game/game.json" }, 
 		"/game/gnadenwurf": 			{ "$ref": "./paths/game/game__gnadenwurf.json" }, 

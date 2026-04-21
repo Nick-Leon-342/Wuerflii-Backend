@@ -3,17 +3,15 @@
 import express from 'express'
 const router = express.Router()
 
-import { Enum___Association__Users_And_Sessions___Input_Type, Enum___Association__Users_And_Sessions___View, Enum___Statistics__View, type Users } from '../../../generated/prisma/index.js'
 import { filter__association_sessions_and_players_and_table_columns, filter__association_users_and_sessions, filter__player, filter__session } from '../../Filter_DatabaseJSON.js'
+import { Zod__Session_PATCH, Zod__Session_POST, type Type__Session } from '../../types/Zod__Session.js'
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import { isInt, isBoolean, isString, isColor } from '../../IsDataType.js'
+import { Zod__Session_Date__PATCH } from '../../types/Zod__Session_Date.js'
 import { List__Months_Enum } from '../../types/Type___List__Months.js'
-import { MAX_COLUMNS, MAX_LENGTH_SESSION_NAME } from '../../utils.js'
-import type { Type__Session } from '../../types/Type__Session.js'
-import type { Type__Player } from '../../types/Type__Player.js'
+import type { Users } from '../../../generated/prisma/index.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
-import { isDate } from 'util/types'
 
 import route__session_players from './Session_Players.js'
 router.use('/players', route__session_players)
@@ -24,17 +22,19 @@ router.use('/players', route__session_players)
 
 router.get('', (req, res) => {
 
-	const { UserID } = req
-	const SessionID = +(req.query.session_id || 0)
+	// Verify query
+	const zod_result = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { session_id } = zod_result.data
 
-	if(isNaN(SessionID) || SessionID <= 0) return res.status(400).send('SessionID invalid.')
+	const { UserID } = req
 
 
 	prisma.users.findUnique({
 		where: { id: UserID }, 
 		include: {
 			List___Association__Users_And_Sessions: {
-				where: { SessionID: SessionID }, 
+				where: { SessionID: session_id }, 
 				include: {
 					Session: true
 				}
@@ -58,18 +58,14 @@ router.get('', (req, res) => {
 })
 
 router.post('', async (req, res) => {
+	
+	// Verify input
+	const zod_result = Zod__Session_POST.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { Name, Color, Columns } = zod_result.data
 
 	const { UserID } = req
 	const date = new Date()
-	const { 
-		Name, 
-		Color, 
-		Columns 
-	} = req.body
-
-	if(!Color || !isColor(Color)) 											return res.status(400).send('Color invalid.')
-	if(!Name || !isString(Name) || Name.length > MAX_LENGTH_SESSION_NAME) 	return res.status(400).send('Name invalid.')
-	if(!Columns || !isInt(Columns) || Columns < 1 || Columns > MAX_COLUMNS) return res.status(400).send('Columns invalid.')
 
 
 	try {
@@ -121,43 +117,34 @@ router.post('', async (req, res) => {
 })
 
 router.patch('', async (req, res) => {
-
-	const { UserID } = req
-	const { 
-		SessionID,
-
+	
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
+	
+	// Verify input
+	const zod_result = Zod__Session_PATCH.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const {
 		Name, 
 		Color, 
 		Columns, 
 
-		View, 
-		View__Month, 
-		View__Year, 
-		
 		Input_Type, 
 		Show_Scores, 
 
-		Statistics__Show_Border, 
+		View, 
+		View__Month, 
+		View__Year, 
+
 		Statistics__View, 
 		Statistics__View_Month, 
 		Statistics__View_Year, 
-	} = req.body
-	
-	if(!SessionID || !isInt(SessionID)																			) return res.status(400).send('SessionID invalid.')
-	if(Name && !isString(Name)																					) return res.status(400).send('Name invalid.')
-	if(Color && !isColor(Color)																					) return res.status(400).send('Color invalid.')
-	if(Columns && !isInt(Columns)																				) return res.status(400).send('Columns invalid.')
+		Statistics__Show_Border, 
+	} = zod_result.data
 
-	if(View && !Object.values(Enum___Association__Users_And_Sessions___View).includes(View)						) return res.status(400).send('View invalid.')
-	if(View__Month && !Object.values(List__Months_Enum).includes(View__Month)									) return res.status(400).send('View__Month invalid.')
-	if(View__Year && !isInt(View__Year)																			) return res.status(400).send('View__Year invalid.')
-	if(Input_Type && !Object.values(Enum___Association__Users_And_Sessions___Input_Type).includes(Input_Type)	) return res.status(400).send('Input_Type invalid.')
-	if(Show_Scores !== undefined && !isBoolean(Show_Scores)														) return res.status(400).send('Show_Scores invalid.')
-		
-	if(Statistics__Show_Border !== undefined && !isBoolean(Statistics__Show_Border)								) return res.status(400).send('Statistics__Show_Border invalid.')
-	if(Statistics__View && !Object.values(Enum___Statistics__View).includes(Statistics__View)					) return res.status(400).send('Statistics__View invalid.')
-	if(Statistics__View_Month && !Object.values(List__Months_Enum).includes(Statistics__View_Month)				) return res.status(400).send('Statistics__View_Month invalid.')
-	if(Statistics__View_Year && !isInt(Statistics__View_Year)													) return res.status(400).send('Statistics__View_Year invalid.')
+	const { UserID } = req
 
 
 	try {
@@ -167,7 +154,7 @@ router.patch('', async (req, res) => {
 				where: { id: UserID },  
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: true
 						}
@@ -178,40 +165,44 @@ router.patch('', async (req, res) => {
 			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
 			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
 	
+
+			const json_session: any = {}
+			if(Name		) json_session.Name = Name
+			if(Color	) json_session.Color = Color
+			if(Columns	) json_session.Columns = Columns
+
+			if(Object.keys(json_session).length > 0) {
+				await tx.sessions.update({
+					where: { id: session_id }, 
+					data: json_session
+				})
+			}
 	
-			// __________________________________________________ Update session __________________________________________________
-	
-			await tx.sessions.update({
-				where: { id: SessionID }, 
-				data: {
-					Name:		Name, 
-					Color:		Color, 
-					Columns:	Columns, 
-				}
-			})
-	
-	
-			// Update association if there are some variables to change	
-			await tx.association__Users_And_Sessions.update({
-				where: {
-					SessionID, 
-					UserID, 
-				}, 
-				data: {
-					Input_Type, 
-					Show_Scores, 
-		
-					View, 
-					View__Month, 
-					View__Year, 
-		
-					Statistics__Show_Border, 
-					Statistics__View, 
-					Statistics__View_Month, 
-					Statistics__View_Year, 
-				},
-			})
+
+			const json_association: any = {}
+			if(Input_Type	) json_association.Input_Type  = Input_Type
+			if(Show_Scores	) json_association.Show_Scores  = Show_Scores
+
+			if(View			) json_association.View  = View
+			if(View__Month	) json_association.View__Month  = View__Month
+			if(View__Year	) json_association.View__Year  = View__Year
+
+			if(Statistics__View			) json_association.Statistics__View  = Statistics__View
+			if(Statistics__View_Month	) json_association.Statistics__View_Month  = Statistics__View_Month
+			if(Statistics__View_Year	) json_association.Statistics__View_Year  = Statistics__View_Year
+			if(Statistics__Show_Border	) json_association.Statistics__Show_Border  = Statistics__Show_Border
 			
+			if(Object.keys(json_association).length > 0) {
+				await tx.association__Users_And_Sessions.update({
+					where: {
+						SessionID: session_id, 
+						UserID, 
+					}, 
+					data: json_association,
+				})
+			}
+			
+
 			res.sendStatus(204)
 
 		})
@@ -288,25 +279,6 @@ router.delete('', async (req, res) => {
 
 
 
-router.get('/env', (req, res) => {
-
-	const { UserID } = req
-
-	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
-
-		if(!user) return res.status(404).send('User not found.')
-
-		res.json({
-			MAX_COLUMNS,
-			MAX_LENGTH_SESSION_NAME, 
-		})
-
-	}).catch(async err => {
-		await handle_error(res, err, 'GET /session/env')
-	})
-
-})
-
 router.get('/all', async (req, res) => {
 
 	const { UserID } = req
@@ -338,7 +310,7 @@ router.get('/all', async (req, res) => {
 			const list__sessions: Array<Type__Session> = []
 			for(const association of user.List___Association__Users_And_Sessions) {
 
-				const list__players: Array<Type__Player> = association.Session.List___Association__Sessions_And_Players_And_Table_Columns.map(asso => ({
+				const list__players = association.Session.List___Association__Sessions_And_Players_And_Table_Columns.map(asso => ({
 					...filter__association_sessions_and_players_and_table_columns(asso), 
 					...filter__player(asso.Player), 
 				}))
@@ -346,8 +318,8 @@ router.get('/all', async (req, res) => {
 				const session: Type__Session = {
 					...filter__session(association.Session), 
 					...filter__association_users_and_sessions(association), 
-					List__Players: 		list__players, 
-					Checkbox_Checked:	false, 
+					List__Players: 				list__players, 
+					Checkbox_Checked_To_Delete:	false, 
 				}
 
 				list__sessions.push(session)
@@ -389,11 +361,17 @@ function sort__list_sessions(user: Users, list__sessions: Array<Type__Session>) 
 
 router.patch('/date', async (req, res) => {
 
-	const { UserID } = req
-	const { SessionID, View__Custom_Date } = req.body
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id } = zod_result__query.data
 
-	if(!SessionID || !isInt(SessionID)							) return res.status(400).send('SessionID invalid.')
-	if(!View__Custom_Date || !isDate(new Date(View__Custom_Date))	) return res.status(400).send('CustomDate invalid.')
+	// Verify input
+	const zod_result = Zod__Session_Date__PATCH.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { View__Custom_Date} = zod_result.data
+
+	const { UserID } = req
 
 
 	try {
@@ -403,7 +381,7 @@ router.patch('/date', async (req, res) => {
 				where: { id: UserID },
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
@@ -429,7 +407,7 @@ router.patch('/date', async (req, res) => {
 	
 			await tx.association__Users_And_Sessions.update({ 
 				where: {
-					SessionID, 
+					SessionID: session_id, 
 					UserID, 
 				},
 				data: { View__Custom_Date: View__Custom_Date },
@@ -441,7 +419,7 @@ router.patch('/date', async (req, res) => {
 			const list_finalscores = await tx.final_Scores.findMany({
 				include: {
 					List___Association__Players_And_FinalScores_And_Sessions: {
-						where: { SessionID: SessionID },
+						where: { SessionID: session_id },
 					}
 				},
 				orderBy: { End: 'asc'}, 

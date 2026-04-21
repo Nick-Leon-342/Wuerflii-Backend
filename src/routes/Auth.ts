@@ -3,21 +3,15 @@
 import express from 'express'
 const router = express.Router()
 
-import bcrypt from 'bcrypt'
-import { prisma } from '../index.js'
-import send_token from './Send_Token.js'
-import { isString } from '../IsDataType.js'
-import { handle_error } from '../handle_error.js'
-import jwt, { type JwtPayload } from 'jsonwebtoken'
-import { List__Months_Enum } from '../types/Type___List__Months.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
+import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { filter__user } from '../Filter_DatabaseJSON.js'
+import { Zod__User_POST } from '../types/Zod__User.js'
+import { handle_error } from '../handle_error.js'
+import { prisma } from '../index.js'
+import bcrypt from 'bcrypt'
 
 import {
-	REFRESH_TOKEN_SECURE, 
-	REFRESH_TOKEN_SAMESITE, 
-	REFRESH_TOKEN_MAX_AGE_IN_MINUTES , 
-
-
 	NAME__MIN_CHARACTER, 
 	NAME__MAX_CHARACTER, 
 	
@@ -35,11 +29,7 @@ import {
 	PASSWORD__REGEX_ALLOWEDCHARS, 
 	PASSWORD__REGEX_ALLOWEDSYMBOLS,
 	DISABLE_REGISTRATION_OF_NEW_USERS,
-	REFRESH_TOKEN_SECRET,
-	ACCESS_TOKEN_SECRET,
-	ACCESS_TOKEN_MAX_AGE_IN_MINUTES, 
 } from '../utils.js'
-
 
 
 
@@ -70,13 +60,18 @@ router.get('/regex', (_, res) => {
 
 router.post('/login', async (req, res) => {
 
-	const { 
+	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
+
+	const {
 		Name, 
-		Password 
+		Password, 
 	} = req.body
 
-	if(!Name && !isString(Name)			) return res.status(400).send('Name invalid.')
-	if(!Password && !isString(Password)	) return res.status(400).send('Password invalid.')
+	if(!Name || typeof Name !== 'string' || !Password || typeof Password !== 'string') return res.status(400).send('Credentials missing or faulty.')
+
+	// This throws an error if the min/max length of name/password changes after a user already created an account
+	// const zod_result = Zod__User_POST.safeParse(req.body)
+	// if(!zod_result.success) return res.status(400).send(zod_result.error.message) 
 
 
 	try {
@@ -89,13 +84,10 @@ router.post('/login', async (req, res) => {
 			if(!user || !(await bcrypt.compare(Password, user.Password)))
 				throw new Custom__Handled_Error('Wrong credentials!', 409)
 
-
-			// ____________________ Response ____________________
-
-			await send_token({
-				UserID: 			user.id, 
-				res:				res, 
-				Transaction_Prisma:	tx, 
+			req.session.userid = user.id
+			req.session.save(err => {
+				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
+				res.json(filter__user(user))
 			})
 
 		})	
@@ -108,11 +100,14 @@ router.post('/login', async (req, res) => {
 router.post('/registration', async (req, res) => {
 
 	if(DISABLE_REGISTRATION_OF_NEW_USERS) return res.status(409).send('User registration is disabled.')
-	
-	const { Name, Password } = req.body
-	
-	if(!Name || !(new RegExp(NAME__REGEX)).test(Name)) return res.status(400).send('Name invalid.')
-	if(!Password || !(new RegExp(PASSWORD__REGEX)).test(Password)) return res.status(400).send('Password invalid.')
+
+	const zod_result = Zod__User_POST.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+
+	const {
+		Name,
+		Password, 
+	} = zod_result.data
 
 
 	try {
@@ -152,10 +147,10 @@ router.post('/registration', async (req, res) => {
 	
 			// ____________________ Response ____________________
 	
-			await send_token({
-				UserID:				user.id, 
-				res:				res, 
-				Transaction_Prisma:	tx, 
+			req.session.userid = user.id
+			req.session.save(err => {
+				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
+				res.json(filter__user(user))
 			})
 
 		})
@@ -167,84 +162,13 @@ router.post('/registration', async (req, res) => {
 
 router.delete('/logout', async (req, res) => {
 
-    const cookies = req.cookies
-	if (!cookies?.Wuerflii__Refresh_Token) return res.status(204).send('Request already has no refresh_cookie.')				// check for cookies and check for cookies with 'RefreshToken' properties (name of cookie)	-->since there is no RefreshToken, the logout request is finished
-	const refresh_token = cookies.Wuerflii__Refresh_Token
-
-
-	try {
-		await prisma.$transaction(async (tx) => {
-
-			const user = await tx.users.findUnique({ 
-				where: { Refresh_Token: refresh_token }
-			})
-		
-			// there is no user with that Refresh_Token, therefore, the Refresh_Token cookie will be cleared
-			if(!user) {
-				res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE || 'None', maxAge: REFRESH_TOKEN_MAX_AGE_IN_MINUTES, secure: REFRESH_TOKEN_SECURE })
-				return res.status(204).send('No user with that refresh token - cleared cookie from request.')
-			}
-	
-			// Delete Refresh_Token
-			await tx.users.update({ 
-				where: { Refresh_Token: refresh_token }, 
-				data: { Refresh_Token: null } 
-			})
-	
-			res.clearCookie('Wuerflii__Refresh_Token', { httpOnly: true, sameSite: REFRESH_TOKEN_SAMESITE, secure: REFRESH_TOKEN_SECURE })
-			res.status(204).send('Cleared refresh token from user and request.')
-
-		})
-	} catch(err) {
-		await handle_error(res, err, 'DELETE /logout')
-	}
-
-})
-
-
-
-
-
-// __________________________________________________ Handle Refresh_Token __________________________________________________
-
-interface JWT_Payload__Refresh_Token extends JwtPayload {
-	id:		number
-	iat:	number
-	exp:	number
-}
-
-router.get('/refreshtoken', async (req, res) => {
-
-    const cookies = req.cookies
-	if (!cookies.Wuerflii__Refresh_Token) return res.status(401).send('No cookie found.')				//check for cookies and check for cookies with 'Refresh_Token' properties (name of cookie)
-	const refresh_token = cookies.Wuerflii__Refresh_Token
-
-	const user = await prisma.users.findUnique({ 
-		where: { 
-			Refresh_Token:	refresh_token, 
-		} 
+	req.session.destroy(err => {
+		if(err) {
+			return res.status(500).send('Encountered error while logging out.')
+		}
+		res.clearCookie('connect.sid')
+		res.status(204).send('Log out successful.')
 	})
-	if(!user) return res.status(403).send('User not found.')
-
-	let decoded: JWT_Payload__Refresh_Token
-	try {
-
-		decoded = jwt.verify(
-			refresh_token, 
-			REFRESH_TOKEN_SECRET, 
-		) as JWT_Payload__Refresh_Token
-
-	} catch(err) { return res.status(403).send('Invalid token.') }
-	
-	if(!decoded || user.id !== decoded.id) return res.status(403).send('User mismatch.')
-	
-	const access_token = jwt.sign(
-		{ 'id': decoded.id },
-		ACCESS_TOKEN_SECRET,
-		{ expiresIn: `${ACCESS_TOKEN_MAX_AGE_IN_MINUTES}m` }
-	)
-
-	res.json({ access_token })
 
 })
 

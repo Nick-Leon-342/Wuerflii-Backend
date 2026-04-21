@@ -90,6 +90,18 @@
 		"tags": [
 			"/session/players"
 		], 
+		"parameters": [
+			{
+				"name": "session_id", 
+				"in": "query", 
+				"required": "true", 
+				"description": "ID of session that is being requested.", 
+				"schema": {
+					"type": "integer", 
+					"example": 1
+				}
+			}
+		], 
 		"requestBody": {
 			"required": "true", 
 			"content": {

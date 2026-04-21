@@ -22,6 +22,44 @@ router.get('', async (req, res) => {
 	try {
 		await prisma.$transaction(async (tx) => {
 
+
+			// ____________________ This section gets the time range in which the final_scores should be analyzed ____________________
+
+			const tmp_user = await tx.users.findUnique({ where: { id: UserID } })
+			if(!tmp_user) throw new Custom__Handled_Error('User not found.', 404)
+	
+			const view 			= tmp_user.Statistics__View
+			const view_month	= tmp_user.Statistics__View_Month
+			const view_year 	= tmp_user.Statistics__View_Year
+
+
+			let where = {}
+			if(view === 'STATISTICS_YEAR') {
+				where = {
+					Final_Score: {
+						End: {
+							gte: new Date(`${view_year}-01-01`), 
+							lte: new Date(`${view_year}-12-31T23:59:59.999`), 
+						}
+					}
+				}
+			}
+			if(view === 'STATISTICS_MONTH') {
+				const month = List__Months_Enum.indexOf(view_month)
+				where = {
+					Final_Score: {
+						End: {
+							gte: new Date(Date.UTC(view_year, month, 1)), 
+							lte: new Date(Date.UTC(view_year, month + 1, 0, 23, 59, 59, 999)), 
+						}
+					}
+				}
+			}
+
+
+
+			// ____________________ This section actually gets the final_scores and dedublicates them ____________________
+
 			const user = await tx.users.findUnique({
 				where: { id: UserID }, 
 				include: {
@@ -32,7 +70,9 @@ router.get('', async (req, res) => {
 									List___Association__Players_And_FinalScores_And_Sessions: {
 										include: {
 											Final_Score: true
-										}
+										}, 
+										where: where,
+										distinct: [ 'Final_ScoreID' ] // This prevents dublicates
 									}
 								}
 							}
@@ -42,56 +82,43 @@ router.get('', async (req, res) => {
 			})
 	
 			if(!user) throw new Custom__Handled_Error('User not found.', 404)
-	
-	
-			const statistics__view 		= user.Statistics__View
-			const statistics__view_month = user.Statistics__View_Month
-			const statistics__view_year 	= user.Statistics__View_Year
-	
-			
-			// __________________________________________________ Search for all finalscores in that selected time __________________________________________________
-	
-			const list__years		: Array<number> 		= []	// List of all the years in which games were played
-			const list__final_scores 	= []
-			for(const association__users_and_sessions of user.List___Association__Users_And_Sessions) {
-				
-				const session = association__users_and_sessions.Session
-				const list__final_scores__filtered = [...new Map(session.List___Association__Players_And_FinalScores_And_Sessions.map(item => [item.Final_ScoreID, item.Final_Score])).values()] // dedublicate finalscores
 
-				for(const final_score of list__final_scores__filtered) {	
-					const date = new Date(final_score.End)
-					if(!list__years.includes(date.getFullYear())) list__years.push(date.getFullYear())
-					if(statistics__view === 'STATISTICS_YEAR' && date.getFullYear() !== statistics__view_year) break
-					if(statistics__view === 'STATISTICS_MONTH' && (date.getFullYear() !== statistics__view_year || List__Months_Enum[date.getMonth()] !== statistics__view_month)) break
-					list__final_scores.push(final_score)
-				}
-			}
-	
-	
-	
-
+			const list__final_scores 				= user.List___Association__Users_And_Sessions.flatMap(association => association.Session.List___Association__Players_And_FinalScores_And_Sessions.map(asso => asso.Final_Score))
 			const json 								= { Games_Played: 0 }
 			const Data: Record<string, typeof json> = {}
 	
 	
-			// __________________________________________________ Init years/months/days of data with zeros __________________________________________________
+
+			// ____________________ Init years/months/days of data with zeros ____________________
 	
-			if(statistics__view === 'STATISTICS_OVERALL') list__years.forEach(year => Data[year] = structuredClone(json))
-			if(statistics__view === 'STATISTICS_YEAR') {
+			if(view === 'STATISTICS_OVERALL') {
+				const start = new Date(user.createdAt).getFullYear()
+				const current = new Date().getFullYear()
+
+				if(current >= start) {
+					for(const year of Array.from({ length: current - start + 1 }, (_, index) => start + index)) {
+						Data[year] = structuredClone(json)
+					}
+				}
+			}
+
+			if(view === 'STATISTICS_YEAR') {
 				for(let month = 1; 12 >= month; month++) {
 					Data[month] = structuredClone(json)
 				}
 			}
-			if(statistics__view === 'STATISTICS_MONTH') {
-				const daysInMonth = new Date(statistics__view_year, List__Months_Enum.indexOf(statistics__view_month) + 1, 0).getDate()
+
+			if(view === 'STATISTICS_MONTH') {
+				const daysInMonth = new Date(view_year, List__Months_Enum.indexOf(view_month) + 1, 0).getDate()
 				const list_days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 				for(const day of list_days) {
 					Data[day] = structuredClone(json)
 				}
 			}
 	
-			
-			// __________________________________________________ Iterate through finalscores and calculate scores, wins etc. __________________________________________________
+
+
+			// ____________________ Iterate through finalscores and calculate scores, wins etc. ____________________
 	
 			for(const final_score of list__final_scores) {
 				
@@ -99,9 +126,9 @@ router.get('', async (req, res) => {
 	
 				// Init the selected time -> selected year or month or day
 				let time: number = 0
-				if(statistics__view === 'STATISTICS_OVERALL') time = date.getFullYear()
-				if(statistics__view === 'STATISTICS_YEAR'	) time = date.getMonth() + 1
-				if(statistics__view === 'STATISTICS_MONTH'	) time = date.getDate()
+				if(view === 'STATISTICS_OVERALL') time = date.getFullYear()
+				if(view === 'STATISTICS_YEAR'	) time = date.getMonth() + 1
+				if(view === 'STATISTICS_MONTH'	) time = date.getDate()
 					
 					
 				// Increase games_played count in specific time
@@ -111,15 +138,12 @@ router.get('', async (req, res) => {
 	
 			}
 
-			const total = {
+
+
+			res.json({
 				Total__Sessions: 		user.List___Association__Users_And_Sessions.length, 
 				Total__Games_Played: 	list__final_scores.length, 
 				Data: 					Data, 
-			}
-	
-			res.json({ 
-				Total: 			total, 
-				List__Years:	list__years, 
 			})
 
 		})

@@ -4,7 +4,8 @@ import express from 'express'
 const router = express.Router()
 
 import { Custom__Handled_Error } from '../../types/Class__Custom_Handled_Error.js'
-import { isInt, isBoolean } from '../../IsDataType.js'
+import { Zod__Gnadenwurf } from '../../types/Zod__Gnadenwurf.js'
+import { Zod__Query } from '../../types/Zod__Query..js'
 import { handle_error } from '../../handle_error.js'
 import { prisma } from '../../index.js'
 
@@ -14,12 +15,17 @@ import { prisma } from '../../index.js'
 
 router.patch('', async (req, res) => {
 
-	const { UserID } = req
-	const { SessionID, PlayerID, Gnadenwurf_Used } = req.body
+	// Verify query
+	const zod_result__query = Zod__Query.pick({ session_id: true, player_id: true }).safeParse(req.query)
+	if(!zod_result__query.success) return res.status(400).send(zod_result__query.error.message)
+	const { session_id, player_id } = zod_result__query.data
 
-	if(!SessionID || !isInt(SessionID)	) return res.status(400).send('SessionID invalid')
-	if(!PlayerID || !isInt(PlayerID)	) return res.status(400).send('PlayerID invalid')
-	if(!isBoolean(Gnadenwurf_Used)		) return res.status(400).send('Gnadenwurf_Used invalid.')
+	// Verify input
+	const zod_result = Zod__Gnadenwurf.safeParse(req.body)
+	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
+	const { Gnadenwurf_Used } = zod_result.data
+
+	const { UserID } = req
 
 	
 	try {
@@ -29,12 +35,12 @@ router.patch('', async (req, res) => {
 				where: { id: UserID }, 
 				include: {
 					List___Association__Users_And_Sessions: {
-						where: { SessionID: SessionID }, 
+						where: { SessionID: session_id }, 
 						include: {
 							Session: {
 								include: {
 									List___Association__Sessions_And_Players_And_Table_Columns: {
-										where: { PlayerID: PlayerID }
+										where: { PlayerID: player_id }
 									}
 								}
 							}
@@ -52,8 +58,8 @@ router.patch('', async (req, res) => {
 	
 			await tx.association__Sessions_And_Players_And_Table_Columns.update({ 
 				where: {
-					PlayerID, 
-					SessionID, 
+					SessionID: session_id, 
+					PlayerID: player_id, 
 				}, 
 				data: { Gnadenwurf_Used: Gnadenwurf_Used }
 			})
