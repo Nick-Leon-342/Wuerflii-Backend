@@ -5,58 +5,16 @@ const router = express.Router()
 
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import { List__Months_Enum } from '../types/Type___List__Months.js'
+import { DISABLE_REGISTRATION_OF_NEW_USERS } from '../utils.js'
 import { filter__user } from '../Filter_DatabaseJSON.js'
 import { Zod__User_POST } from '../types/Zod__User.js'
 import { handle_error } from '../handle_error.js'
 import { prisma } from '../index.js'
 import bcrypt from 'bcrypt'
 
-import {
-	NAME__MIN_CHARACTER, 
-	NAME__MAX_CHARACTER, 
-	
-	NAME__REGEX, 
-	NAME__REGEX_MINMAX, 
-	NAME__REGEX_LETTERFIRST, 
-	NAME__REGEX_ALLOWEDCHARS, 
-
-
-	PASSWORD__MIN_CHARACTER, 
-	PASSWORD__MAX_CHARACTER, 
-
-	PASSWORD__REGEX, 
-	PASSWORD__REGEX_MINMAX, 
-	PASSWORD__REGEX_ALLOWEDCHARS, 
-	PASSWORD__REGEX_ALLOWEDSYMBOLS,
-	DISABLE_REGISTRATION_OF_NEW_USERS,
-} from '../utils.js'
 
 
 
-
-
-router.get('/regex', (_, res) => {
-
-	res.json({
-		NAME__MIN_CHARACTER, 
-		NAME__MAX_CHARACTER, 
-		
-		NAME__REGEX, 
-		NAME__REGEX_MINMAX, 
-		NAME__REGEX_LETTERFIRST, 
-		NAME__REGEX_ALLOWEDCHARS, 
-	
-	
-		PASSWORD__MIN_CHARACTER, 
-		PASSWORD__MAX_CHARACTER, 
-	
-		PASSWORD__REGEX, 
-		PASSWORD__REGEX_MINMAX, 
-		PASSWORD__REGEX_ALLOWEDCHARS, 
-		PASSWORD__REGEX_ALLOWEDSYMBOLS, 
-	})
-
-})
 
 router.post('/login', async (req, res) => {
 
@@ -67,11 +25,8 @@ router.post('/login', async (req, res) => {
 		Password, 
 	} = req.body
 
+	// The reason why zod is not used here is because the environment variables for credentials could have been changed after a user has already created an account.
 	if(!Name || typeof Name !== 'string' || !Password || typeof Password !== 'string') return res.status(400).send('Credentials missing or faulty.')
-
-	// This throws an error if the min/max length of name/password changes after a user already created an account
-	// const zod_result = Zod__User_POST.safeParse(req.body)
-	// if(!zod_result.success) return res.status(400).send(zod_result.error.message) 
 
 
 	try {

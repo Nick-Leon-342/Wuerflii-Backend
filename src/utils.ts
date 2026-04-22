@@ -64,6 +64,7 @@ export const REDIS__PASSWORD:	string = process.env.REDIS__PASSWORD
 if(!process.env.SESSION__SECRET) throw new Error('Missing SESSION__SECRET.')
 export const SESSION__SECRET	: string	= process.env.SESSION__SECRET
 
+export const COOKIE__MAX_AGE	: number	= +(process.env.COOKIE__MAX_AGE || 1000 * 60 * 60 * 24 * 365) // Equals one year in milliseconds
 export const COOKIE__SECURE 	: boolean	= process.env.COOKIE__SECURE === 'true' 		|| false
 export const COOKIE__SAMESITE 	: Enum___Cookie_Samesite	
 					= Object.values(Enum___Cookie_Samesite).includes(process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)

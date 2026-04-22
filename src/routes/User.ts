@@ -4,17 +4,11 @@ import bcrypt from 'bcrypt'
 import express from 'express'
 const router = express.Router()
 
-import { Enum___List__Month, Enum___Statistics__View, Enum___Users___View__Sessions } from '../../generated/prisma/index.js'
 import { Custom__Handled_Error } from '../types/Class__Custom_Handled_Error.js'
 import { filter__user } from '../Filter_DatabaseJSON.js'
+import { Zod__User_PATCH } from '../types/Zod__User.js'
 import { handle_error } from '../handle_error.js'
-import { Zod__User } from '../types/Zod__User.js'
 import { prisma } from '../index.js'
-import * as z from 'zod'
-import { 
-	NAME__REGEX, 
-	PASSWORD__REGEX, 
-} from '../utils.js'
 
 
 
@@ -26,7 +20,7 @@ router.get('', (req, res) => {
 
 	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
 
-		if(!user) return res.status(404).send('User not found.')
+		if(!user) throw new Custom__Handled_Error('User not found.', 404)
 
 		res.json(filter__user(user))
 
@@ -40,7 +34,7 @@ router.patch('', async (req, res) => {
 
 	const { UserID } = req
 	
-	const zod_result = Zod__User.partial().safeParse(req.body)
+	const zod_result = Zod__User_PATCH.safeParse(req.body)
 	if(!zod_result.success) return res.status(400).send(zod_result.error.message)
 
 	const { 
