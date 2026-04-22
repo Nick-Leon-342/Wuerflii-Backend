@@ -56,7 +56,7 @@ export const Zod__User_POST = Zod__User.pick({
 	Name: true, 
 })
 
-export const Zod__User_PATCH = Zod__User.partial({
+export const Zod__User_PATCH = Zod__User.pick({
 	Name: true, 
 	Password: true, 
 	DarkMode: true, 
@@ -70,4 +70,4 @@ export const Zod__User_PATCH = Zod__User.partial({
 	Statistics__View: true, 
 	Statistics__View_Month: true, 
 	Statistics__View_Year: true, 
-})
+}).partial()
