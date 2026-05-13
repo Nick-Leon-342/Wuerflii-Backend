@@ -21,7 +21,7 @@ export function filter__user(user: Users) {
 
 		id:						user.id, 
 		Name:					user.Name, 
-		DarkMode:				user.DarkMode, 
+		Avatar:					user.Avatar, 
 
 		Show__Session_Names:	user.Show__Session_Names, 
 		Show__Session_Date:		user.Show__Session_Date, 

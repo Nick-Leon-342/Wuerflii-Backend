@@ -66,10 +66,6 @@
 								"format": "password", 
 								"example": "#Pass123"
 							}, 
-							"DarkMode": {
-								"type": "boolean", 
-								"example": true
-							}, 
 	
 							"Show__Session_Names": {
 								"type": "boolean",

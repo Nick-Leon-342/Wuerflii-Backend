@@ -35,8 +35,6 @@ export const Zod__User = z.object({
 		.max(PASSWORD__MAX_CHARACTER, 'Password too long.')
 		.regex(new RegExp(PASSWORD__REGEX), 'Password invalid.'), 
 
-	DarkMode:					z.boolean(), 
-
 	Show__Session_Names:		z.boolean(), 
 	Show__Session_Date:			z.boolean(), 
 
@@ -59,7 +57,6 @@ export const Zod__User_POST = Zod__User.pick({
 export const Zod__User_PATCH = Zod__User.pick({
 	Name: true, 
 	Password: true, 
-	DarkMode: true, 
 
 	Show__Session_Names: true, 
 	Show__Session_Date: true, 

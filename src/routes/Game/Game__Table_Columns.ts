@@ -55,11 +55,11 @@ router.get('', async (req, res) => {
 				}
 			})
 			
-			if(!user																									) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user																									) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error('Players not found.', 404)
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error('Table_Columns not found.', 404)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error(404, 'Players not found.')
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error(404, 'Table_Columns not found.')
 
 			res.json(session.List___Association__Sessions_And_Players_And_Table_Columns.map(association => ({
 				...filter__association_sessions_and_players_and_table_columns(association), 
@@ -117,11 +117,11 @@ router.patch('', async (req, res) => {
 				}
 			})
 			
-			if(!user																							) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user																							) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0					) throw new Custom__Handled_Error('Players not found.', 404)
-			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns[0]	) throw new Custom__Handled_Error('Table_Column not found.', 404)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0					) throw new Custom__Handled_Error(404, 'Players not found.')
+			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns[0]	) throw new Custom__Handled_Error(404, 'Table_Column not found.')
 
 			const table_column = session.List___Association__Sessions_And_Players_And_Table_Columns[0].List__Table_Columns[0]	
 			const table_column__calculated = calculate_table_column({ ...table_column, [Name]: Value })
@@ -272,11 +272,11 @@ router.get('/archive', async (req, res) => {
 		}
 	}).then(user => {
 
-		if(!user																							) throw new Custom__Handled_Error('User not found.', 404)
-		if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error('Session not found.', 404)
+		if(!user																							) throw new Custom__Handled_Error(404, 'User not found.')
+		if(!user.List___Association__Users_And_Sessions[0]													) throw new Custom__Handled_Error(404, 'Session not found.')
 		const session = user.List___Association__Users_And_Sessions[0].Session
-		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]								) throw new Custom__Handled_Error('Final_Score not found.', 404)
-		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive	) throw new Custom__Handled_Error('Table_Archive not found.', 404)
+		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]								) throw new Custom__Handled_Error(404, 'Final_Score not found.')
+		if(!session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive	) throw new Custom__Handled_Error(404, 'Table_Archive not found.')
 
 		const list = []
 		const table = (session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score.Table_Archive.Table as unknown) as Array<Table_Element>
@@ -284,7 +284,7 @@ router.get('/archive', async (req, res) => {
 		for(const element of table) {
 			const player = session.List___Association__Sessions_And_Players_And_Table_Columns.find(association => association.PlayerID === element.PlayerID)?.Player
 
-			if(!player) throw new Custom__Handled_Error('Huh, there is a player missing?', 500)
+			if(!player) throw new Custom__Handled_Error(500, 'Huh, there is a player missing?')
 
 			list.push({
 				...filter__player(player),

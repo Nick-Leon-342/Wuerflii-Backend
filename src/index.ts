@@ -128,17 +128,19 @@ app.use(is_authenticated)
 
 // __________________________________________________ Protected Routes __________________________________________________
 
-import route__user 			from './routes/User.js'
-import route__game 			from './routes/Game/Game.js'
-import route__final_score 	from './routes/Final_Score.js'
-import route__session 		from './routes/Session/Session.js'
 import route__analytics 	from './routes/Analytics/Analytics.js'
+import route__session 		from './routes/Session/Session.js'
+import route__final_score 	from './routes/Final_Score.js'
+import route__game 			from './routes/Game/Game.js'
+import route__avatar 		from './routes/Avatar.js'
+import route__user 			from './routes/User.js'
 
+app.use('/finalscore', 		route__final_score)
+app.use('/analytics', 		route__analytics)
+app.use('/session', 		route__session)
+app.use('/avatar', 			route__avatar)
 app.use('/user', 			route__user)
 app.use('/game', 			route__game)
-app.use('/session', 		route__session)
-app.use('/analytics', 		route__analytics)
-app.use('/finalscore', 		route__final_score)
 
 
 

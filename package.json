@@ -21,6 +21,8 @@
 		"dotenv": "^17.4.1",
 		"express": "^5.2.1",
 		"express-session": "^1.19.0",
+		"file-type": "^22.0.1",
+		"multer": "^2.1.1",
 		"nodemailer": "^8.0.1",
 		"redis": "^5.11.0",
 		"zod": "^4.3.6"
@@ -32,6 +34,7 @@
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.6",
 		"@types/express-session": "^1.18.2",
+		"@types/multer": "^2.1.0",
 		"@types/node": "^25.0.9",
 		"@types/nodemailer": "^8.0.0",
 		"@types/swagger-jsdoc": "^6.0.4",

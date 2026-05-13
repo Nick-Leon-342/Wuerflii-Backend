@@ -5,8 +5,8 @@ export class Custom__Handled_Error extends Error {
 	public readonly is_operational:	boolean
 
 	constructor(
-		message:		string, 
 		status_code:	number,
+		message:		string, 
 	) {
 		super(message)
 		this.status_code = status_code

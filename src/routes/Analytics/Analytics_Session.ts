@@ -38,8 +38,8 @@ router.get('', async (req, res) => {
 					}
 				}
 			})
-			if(!tmp_user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!tmp_user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!tmp_user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!tmp_user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 	
 			const tmp_association	= tmp_user.List___Association__Users_And_Sessions[0]
 			const view 				= tmp_association.Statistics__View
@@ -104,15 +104,15 @@ router.get('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
 
 			const list__final_scores 	= session.List___Association__Players_And_FinalScores_And_Sessions.map(asso => asso.Final_Score)
-			if(list__final_scores.length === 0) throw new Custom__Handled_Error('Data to create statistics is missing.', 409)
+			if(list__final_scores.length === 0) throw new Custom__Handled_Error(409, 'Data to create statistics is missing.')
 
 			const list__players			= session.List___Association__Sessions_And_Players_And_Table_Columns.map(association => association.PlayerID)
-			if(!list__players) throw new Custom__Handled_Error('Players not found.', 404)
+			if(!list__players) throw new Custom__Handled_Error(404, 'Players not found.')
 
 	
 	
@@ -186,7 +186,7 @@ router.get('', async (req, res) => {
 				
 				// Increase games_played count in specific time
 				const target = Data[time]
-				if(!target || target?.Games_Played === undefined) throw new Custom__Handled_Error('Something went wrong while creating statistics.', 500)
+				if(!target || target?.Games_Played === undefined) throw new Custom__Handled_Error(500, 'Something went wrong while creating statistics.')
 				target.Games_Played++
 	
 	
@@ -212,7 +212,7 @@ router.get('', async (req, res) => {
 					}
 	
 	
-					if(Scores__Lowest[player_id] === undefined || Scores__Highest[player_id] === undefined || Scores__Total[player_id] === undefined) throw new Custom__Handled_Error('Something went wrong while creating statistics.', 500)
+					if(Scores__Lowest[player_id] === undefined || Scores__Highest[player_id] === undefined || Scores__Total[player_id] === undefined) throw new Custom__Handled_Error(500, 'Something went wrong while creating statistics.')
 
 					const score = association.Score
 					if(Scores__Lowest[player_id] > score || Scores__Lowest[player_id] === 0) Scores__Lowest[player_id] = score

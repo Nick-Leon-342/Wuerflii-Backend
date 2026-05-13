@@ -20,7 +20,7 @@ router.get('', (req, res) => {
 
 	prisma.users.findUnique({ where: { id: UserID } }).then(user => {
 
-		if(!user) throw new Custom__Handled_Error('User not found.', 404)
+		if(!user) throw new Custom__Handled_Error(404, 'User not found.')
 
 		res.json(filter__user(user))
 
@@ -48,7 +48,7 @@ router.patch('', async (req, res) => {
 		await prisma.$transaction(async (tx) => {
 	
 			const user = await tx.users.findUnique({ where: { id: UserID } })
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user) throw new Custom__Handled_Error(404, 'User not found.')
 			
 	
 			const json_update: any = { ...otherData }
@@ -56,7 +56,7 @@ router.patch('', async (req, res) => {
 			if(Name) {
 	
 				const already_existing_user = await tx.users.findUnique({ where: { Name } })
-				if(already_existing_user) throw new Custom__Handled_Error('Username already taken.', 409)
+				if(already_existing_user) throw new Custom__Handled_Error(409, 'Username already taken.')
 	
 				json_update.Name = Name
 	
@@ -96,8 +96,8 @@ router.delete('', async (req, res) => {
 				}
 			})
 	
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
-	
+			if(!user) throw new Custom__Handled_Error(404, 'User not found.')
+
 	
 			// __________________________________________________ Remove all sessions __________________________________________________
 
@@ -130,7 +130,7 @@ router.delete('', async (req, res) => {
 	
 			req.session.destroy(err => {
 				if(err) {
-					throw new Custom__Handled_Error('Encountered error while deleting session cookie.', 500)
+					throw new Custom__Handled_Error(500, 'Encountered error while deleting session cookie.')
 				}
 				res.clearCookie('connect.sid')
 				res.status(204).send('Deleted user successfully.')

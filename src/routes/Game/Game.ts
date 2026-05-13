@@ -49,11 +49,11 @@ router.get('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error('Players not found.', 404)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error(404, 'Players not found.')
 	
 	
 			// __________________________________________________ Create new game if it doesn't exist __________________________________________________
@@ -145,16 +145,16 @@ router.post('', async (req, res) => {
 				}
 			})
 			
-			if(!user																									) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user																									) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error('Players not found.', 404)
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error('Table_Columns not found.', 404)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0							) throw new Custom__Handled_Error(404, 'Players not found.')
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns[0]?.List__Table_Columns.length === 0	) throw new Custom__Handled_Error(404, 'Table_Columns not found.')
 	
 	
 			// __________________________________________________ Check if some entries are missing __________________________________________________
 	
-			if(!Surrendered_PlayerID && session.List___Association__Sessions_And_Players_And_Table_Columns.some(association => association.List__Table_Columns.some(tc => !tc.Bottom_Table_TotalScore))) throw new Custom__Handled_Error('Missing entries.', 409)
+			if(!Surrendered_PlayerID && session.List___Association__Sessions_And_Players_And_Table_Columns.some(association => association.List__Table_Columns.some(tc => !tc.Bottom_Table_TotalScore))) throw new Custom__Handled_Error(409, 'Missing entries.')
 	
 	
 			// Get latest finalscore
@@ -333,8 +333,8 @@ router.delete('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 	
 	
 			// __________________________________________________ Delete game __________________________________________________

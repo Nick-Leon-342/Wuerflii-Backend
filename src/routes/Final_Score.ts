@@ -50,11 +50,11 @@ router.get('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 				
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]	) throw new Custom__Handled_Error('Final_Score not found.', 404)
+			if(!session.List___Association__Players_And_FinalScores_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Final_Score not found.')
 			const final_score = session.List___Association__Players_And_FinalScores_And_Sessions[0].Final_Score	
 	
 			res.json({
@@ -96,8 +96,8 @@ router.get('/all', async (req, res) => {
 				}
 			})
 	
-			if(!user)											throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0])	throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user)											throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0])	throw new Custom__Handled_Error(404, 'Session not found.')
 	
 			
 			// __________________________________________________ Get all finalscores __________________________________________________
