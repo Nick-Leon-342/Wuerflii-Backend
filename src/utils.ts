@@ -13,6 +13,8 @@ export const isProd			: boolean	= process.env.NODE_ENV === 'production'
 export const PORT			: number	= isProd ? 5000 : +(process.env.PORT || 5000)
 export const ALLOWED_ORIGIN	: string	= process.env.DOMAIN || 'http://localhost:5173'
 
+
+export const UPLOAD_PATH_OF_AVATARS				: string	= 'avatars/'
 export const DISABLE_REGISTRATION_OF_NEW_USERS: boolean = process.env.DISABLE_REGISTRATION_OF_NEW_USERS === 'true'
 
 
@@ -64,12 +66,13 @@ export const REDIS__PASSWORD:	string = process.env.REDIS__PASSWORD
 if(!process.env.SESSION__SECRET) throw new Error('Missing SESSION__SECRET.')
 export const SESSION__SECRET	: string	= process.env.SESSION__SECRET
 
+
 export const COOKIE__MAX_AGE	: number	= +(process.env.COOKIE__MAX_AGE || 1000 * 60 * 60 * 24 * 365) // Equals one year in milliseconds
-export const COOKIE__SECURE 	: boolean	= process.env.COOKIE__SECURE === 'true' 		|| false
+export const COOKIE__SECURE 	: boolean	= process.env.COOKIE__SECURE === 'true'
 export const COOKIE__SAMESITE 	: Enum___Cookie_Samesite	
-					= Object.values(Enum___Cookie_Samesite).includes(process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
-					? (process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
-					: Enum___Cookie_Samesite.none
+									= Object.values(Enum___Cookie_Samesite).includes(process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
+									? (process.env.COOKIE__SAMESITE as Enum___Cookie_Samesite)
+									: Enum___Cookie_Samesite.none
 
 
 

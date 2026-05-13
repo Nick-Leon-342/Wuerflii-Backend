@@ -49,9 +49,9 @@ router.patch('', async (req, res) => {
 				}
 			})
 	
-			if(!user																									) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]															) throw new Custom__Handled_Error('Session not found.', 404)
-			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0) throw new Custom__Handled_Error('Players not found.', 404)
+			if(!user																															) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]																					) throw new Custom__Handled_Error(404, 'Session not found.')
+			if(user.List___Association__Users_And_Sessions[0].Session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0	) throw new Custom__Handled_Error(404, 'Players not found.')
 	
 	
 			// __________________________________________________ Update Gnadenwurf __________________________________________________

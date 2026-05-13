@@ -10,8 +10,8 @@ const app 					= express()
 const httpServer			= http.createServer(app)
 
 import { ALLOWED_ORIGIN, COOKIE__MAX_AGE, COOKIE__SAMESITE, COOKIE__SECURE, DATABASE_URL, MAX_COLUMNS, MAX_FINALSCORES_LIMIT, MAX_LENGTH_PLAYER_NAME, MAX_LENGTH_SESSION_NAME, MAX_PLAYERS, NAME__MAX_CHARACTER, NAME__MIN_CHARACTER, NAME__REGEX, NAME__REGEX_ALLOWEDCHARS, NAME__REGEX_LETTERFIRST, NAME__REGEX_MINMAX, PASSWORD__MAX_CHARACTER, PASSWORD__MIN_CHARACTER, PASSWORD__REGEX, PASSWORD__REGEX_ALLOWEDCHARS, PASSWORD__REGEX_ALLOWEDSYMBOLS, PASSWORD__REGEX_MINMAX, PORT, REDIS__HOST, REDIS__PASSWORD, REDIS__PORT, SESSION__SECRET } from './utils.js'
-import package_json from '../package.json' with { type: 'json' }
 import { send_email, log__error, log__info } from './handle_error.js'
+import package_json from '../package.json' with { type: 'json' }
 
 import cors from 'cors'
 const corsOptions = {
@@ -128,17 +128,19 @@ app.use(is_authenticated)
 
 // __________________________________________________ Protected Routes __________________________________________________
 
-import route__user 			from './routes/User.js'
-import route__game 			from './routes/Game/Game.js'
-import route__final_score 	from './routes/Final_Score.js'
-import route__session 		from './routes/Session/Session.js'
 import route__analytics 	from './routes/Analytics/Analytics.js'
+import route__session 		from './routes/Session/Session.js'
+import route__final_score 	from './routes/Final_Score.js'
+import route__game 			from './routes/Game/Game.js'
+import route__avatar 		from './routes/Avatar.js'
+import route__user 			from './routes/User.js'
 
+app.use('/finalscore', 		route__final_score)
+app.use('/analytics', 		route__analytics)
+app.use('/session', 		route__session)
+app.use('/avatar', 			route__avatar)
 app.use('/user', 			route__user)
 app.use('/game', 			route__game)
-app.use('/session', 		route__session)
-app.use('/analytics', 		route__analytics)
-app.use('/finalscore', 		route__final_score)
 
 
 

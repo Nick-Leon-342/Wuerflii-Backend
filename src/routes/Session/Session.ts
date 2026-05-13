@@ -42,8 +42,8 @@ router.get('', (req, res) => {
 		}
 	}).then(user => {
 
-		if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-		if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+		if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+		if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 
 		res.json({
 			...filter__session(user.List___Association__Users_And_Sessions[0].Session), 
@@ -72,7 +72,7 @@ router.post('', async (req, res) => {
 		await prisma.$transaction(async (tx) => {
 	
 			const user = await tx.users.findUnique({ where: { id: UserID } })
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user) throw new Custom__Handled_Error(404, 'User not found.')
 	
 			const session = await tx.sessions.create({
 				data: {
@@ -162,8 +162,8 @@ router.patch('', async (req, res) => {
 				}
 			})
 			
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 	
 
 			const json_session: any = {}
@@ -240,8 +240,8 @@ router.delete('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 
 			const session = user.List___Association__Users_And_Sessions[0].Session
 
@@ -305,7 +305,7 @@ router.get('/all', async (req, res) => {
 					}
 				}, 
 			})
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user) throw new Custom__Handled_Error(404, 'User not found.')
 	
 			const list__sessions: Array<Type__Session> = []
 			for(const association of user.List___Association__Users_And_Sessions) {
@@ -397,10 +397,10 @@ router.patch('/date', async (req, res) => {
 				}
 			})
 
-			if(!user																	) throw new Custom__Handled_Error('User not found.', 404)
-			if(!user.List___Association__Users_And_Sessions[0]							) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user																	) throw new Custom__Handled_Error(404, 'User not found.')
+			if(!user.List___Association__Users_And_Sessions[0]							) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]	) throw new Custom__Handled_Error('Players not found.', 404)
+			if(!session.List___Association__Sessions_And_Players_And_Table_Columns[0]	) throw new Custom__Handled_Error(404, 'Players not found.')
 	
 	
 			// __________________________________________________ Update session with customdate __________________________________________________

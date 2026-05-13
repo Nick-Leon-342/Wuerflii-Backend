@@ -18,7 +18,7 @@ services:
     build:
       context: .
     ports:
-      - 10001:10001
+      - 10000:10000
     env_file:
       - .env
 ```

@@ -102,10 +102,10 @@ router.post('', async (req, res) => {
 				}
 			})
 	
-			if(!user											) throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user											) throw new Custom__Handled_Error(404, 'User not found.')	
+			if(!user.List___Association__Users_And_Sessions[0]	) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0) new Custom__Handled_Error('Players already exist.', 409)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length > 0) new Custom__Handled_Error(409, 'Players already exist.')
 			
 	
 			// __________________________________________________ Create players __________________________________________________
@@ -181,10 +181,10 @@ router.patch('', async (req, res) => {
 				}
 			})
 	
-			if(!user																			) throw new Custom__Handled_Error('User not found.', 404)	
-			if(!user.List___Association__Users_And_Sessions[0]									) throw new Custom__Handled_Error('Session not found.', 404)
+			if(!user																			) throw new Custom__Handled_Error(404, 'User not found.')	
+			if(!user.List___Association__Users_And_Sessions[0]									) throw new Custom__Handled_Error(404, 'Session not found.')
 			const session = user.List___Association__Users_And_Sessions[0].Session
-			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0	) throw new Custom__Handled_Error(`Players don't exist.`, 409)
+			if(session.List___Association__Sessions_And_Players_And_Table_Columns.length === 0	) throw new Custom__Handled_Error(409, `Players don't exist.`)
 	
 	
 			// __________________________________________________ Check if every player exists in both lists __________________________________________________
@@ -193,7 +193,7 @@ router.patch('', async (req, res) => {
 			if(
 				tmp__list_associations.length !== List__Players.length || 
 				!tmp__list_associations.every(association => List__Players.some(p => p.id === association.PlayerID))
-			) throw new Custom__Handled_Error(`List__Players doesn't match.`, 400)
+			) throw new Custom__Handled_Error(400, `List__Players doesn't match.`)
 	
 	
 			// __________________________________________________ Update players __________________________________________________

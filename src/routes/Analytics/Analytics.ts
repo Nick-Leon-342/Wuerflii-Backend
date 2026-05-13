@@ -26,7 +26,7 @@ router.get('', async (req, res) => {
 			// ____________________ This section gets the time range in which the final_scores should be analyzed ____________________
 
 			const tmp_user = await tx.users.findUnique({ where: { id: UserID } })
-			if(!tmp_user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!tmp_user) throw new Custom__Handled_Error(404, 'User not found.')
 	
 			const view 			= tmp_user.Statistics__View
 			const view_month	= tmp_user.Statistics__View_Month
@@ -81,7 +81,7 @@ router.get('', async (req, res) => {
 				}
 			})
 	
-			if(!user) throw new Custom__Handled_Error('User not found.', 404)
+			if(!user) throw new Custom__Handled_Error(404, 'User not found.')
 
 			const list__final_scores 				= user.List___Association__Users_And_Sessions.flatMap(association => association.Session.List___Association__Players_And_FinalScores_And_Sessions.map(asso => asso.Final_Score))
 			const json 								= { Games_Played: 0 }
@@ -133,7 +133,7 @@ router.get('', async (req, res) => {
 					
 				// Increase games_played count in specific time
 				const target = Data[time]
-				if(!target || target.Games_Played === undefined) throw new Custom__Handled_Error('Something went wrong while creating statistics.', 500)
+				if(!target || target.Games_Played === undefined) throw new Custom__Handled_Error(500, 'Something went wrong while creating statistics.')
 				target.Games_Played++
 	
 			}

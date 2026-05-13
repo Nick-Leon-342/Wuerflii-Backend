@@ -37,11 +37,11 @@ router.post('/login', async (req, res) => {
 			const user = await tx.users.findUnique({ where: { Name: Name } })
 
 			if(!user || !(await bcrypt.compare(Password, user.Password)))
-				throw new Custom__Handled_Error('Wrong credentials!', 409)
+				throw new Custom__Handled_Error(409, 'Wrong credentials!')
 
 			req.session.userid = user.id
 			req.session.save(err => {
-				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
+				if(err) throw new Custom__Handled_Error(500, 'Something went wrong while trying to save session.')
 				res.json(filter__user(user))
 			})
 
@@ -72,7 +72,7 @@ router.post('/registration', async (req, res) => {
 			// ____________________ User ____________________
 	
 			const tmp__user = await tx.users.findUnique({ where: { Name: Name } })
-			if(tmp__user) throw new Custom__Handled_Error('Username already taken.', 409)
+			if(tmp__user) throw new Custom__Handled_Error(409, 'Username already taken.')
 		
 	
 			// ____________________ Hash Password ____________________
@@ -85,7 +85,6 @@ router.post('/registration', async (req, res) => {
 			const user = await tx.users.create({
 				data: {
 					Name:					Name,
-					DarkMode:				false, 
 					Password:				hashedPassword, 
 		
 					Show__Session_Names:	true, 
@@ -104,7 +103,7 @@ router.post('/registration', async (req, res) => {
 	
 			req.session.userid = user.id
 			req.session.save(err => {
-				if(err) throw new Custom__Handled_Error('Something went wrong while trying to save session.', 500)
+				if(err) throw new Custom__Handled_Error(500, 'Something went wrong while trying to save session.')
 				res.json(filter__user(user))
 			})
 
